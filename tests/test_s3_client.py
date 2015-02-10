@@ -12,7 +12,7 @@ class S3InitTestCase(unittest.TestCase):
 
     @patch('boto.s3.connection.S3Connection')
     def test_class_init(self, s3con):
-        s3con(False).return_value = {}
+        s3con(is_secure=False).return_value = {}
         client = S3Client(bucket)
         self.assertIsNotNone(client)
 
