@@ -5,7 +5,7 @@ import mimetypes
 
 from StringIO import StringIO
 from boto.s3.key import Key
-from boto.s3.connection import S3Connection
+import boto.s3.connection
 
 
 class S3Client(object):
@@ -18,16 +18,30 @@ class S3Client(object):
         :return:
         """
         self.log = logging.getLogger(self.__class__.__name__)
+        self.bucket_name = bucket
+
+    def connect(self):
+        if self.s3_connection:
+            return
+
         try:
             # --- Amazon S3 credentials will use Boto's fall back config,
             # looks for boto.cfg
             # then environment variables
-            self.s3_connection = S3Connection(is_secure=False)
-            self.bucket = self.s3_connection.get_bucket(bucket, validate=False)
+            self.s3_connection = boto.s3.connection.S3Connection(
+                is_secure=False)
+            self.bucket = self.s3_connection.get_bucket(
+                self.bucket_name, validate=False)
 
         except Exception as s3_connection_exception:
+            # reset the variables on failure, allows reconnect
+            self.s3_connection = None
+            self.bucket = None
+
             self.log.warning("Exception while connecting to S3: " +
                              s3_connection_exception.message)
+
+            raise Exception('Unable to connect to S3')
 
     def store_file(self, s3_path, file_to_store, filename, return_url=False,
                    mime_type=None):
@@ -40,6 +54,8 @@ class S3Client(object):
         :param filename:
         :return:
         """
+        self.connect()
+
         try:
             s3_file = Key(self.bucket)
             s3_file.key = self._generate_file_path(s3_path, filename)
@@ -76,6 +92,8 @@ class S3Client(object):
         :param file_to_get:
         :return:
         """
+        self.connect()
+
         try:
             if self.verify_file(s3_path, file_to_get):
                 retrieved_file = StringIO()
@@ -101,6 +119,7 @@ class S3Client(object):
         :return "True" if .get_key returns an instance of a Key object or
         "False" if .get_key returns "None":
         """
+        self.connect()
         try:
             # --- s3_path = "qa-tools/marketing/baseline_tests/%s/%s/%s"
             # % (brand, branch, build_ID)
@@ -140,6 +159,8 @@ class S3Client(object):
         return value
 
     def get_all_filenames_in_folder(self, path_to_folder, sort_by_date=True):
+        self.connect()
+
         s3_folder_path = str(path_to_folder)
         key_list = self.bucket.list(prefix=s3_folder_path)
         return key_list

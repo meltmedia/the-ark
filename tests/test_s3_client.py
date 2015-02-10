@@ -12,7 +12,7 @@ class S3InitTestCase(unittest.TestCase):
 
     @patch('boto.s3.connection.S3Connection')
     def test_class_init(self, s3con):
-        s3con(is_secure=False).return_value = {}
+        s3con.return_value = {}
         client = S3Client(bucket)
         self.assertIsNotNone(client)
 
@@ -29,6 +29,25 @@ class S3MethodTestCase(unittest.TestCase):
         self.client = S3Client(bucket)
         self.client.s3_connection = Mock()
         self.client.bucket = Mock()
+
+    @patch('boto.s3.connection.S3Connection')
+    def test_connect(self, s3_cls):
+        cls_inst = Mock()
+        s3_cls.return_value = cls_inst
+
+        # Set the client connection to None for testing connect
+        self.client.s3_connection = None
+
+        self.client.connect()
+
+        s3_cls.assert_called_once()
+        cls_inst.get_bucket.assert_called_once()
+
+        # make it go boom
+        self.client.s3_connection = None
+        s3_cls.side_effect = Exception('Boom!')
+
+        self.assertRaises(Exception, self.client.connect)
 
     def test_generate_path(self):
         self.assertEqual('s3_path/file_to_store',
