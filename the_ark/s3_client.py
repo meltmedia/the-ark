@@ -150,9 +150,7 @@ class S3Client(object):
         for key in key_list:
             if not most_recent_key:
                 most_recent_key = key
-                print most_recent_key.last_modified
                 continue
-            print key.last_modified, most_recent_key.last_modified
             if key.last_modified > most_recent_key.last_modified:
                 most_recent_key = key
         return most_recent_key

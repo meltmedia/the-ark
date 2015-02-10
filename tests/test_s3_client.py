@@ -9,11 +9,11 @@ bucket = "some bucket"
 
 
 class S3InitTestCase(unittest.TestCase):
-    def test_class_init(self):
 
+    @patch('boto.s3.connection.S3Connection')
+    def test_class_init(self, s3con):
+        s3con.return_value = {}
         client = S3Client(bucket)
-        self.assertIsNotNone(client.s3_connection)
-        self.assertIsNotNone(client.bucket)
 
     @patch('boto.s3.connection.S3Connection')
     def test_class_init_fail(self, s3con):
