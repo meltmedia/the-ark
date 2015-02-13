@@ -2,8 +2,6 @@ import logging
 import requests
 import json
 
-__author__ = 'chaley'
-
 
 class RhinoClient(object):
 
