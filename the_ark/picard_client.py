@@ -5,12 +5,10 @@ import requests
 #TODO: Possibly create a "build picard object" method that takes a site url and test environment and sets the Schema_url and Referer
 
 class PicardClient(object):
-    s3_connection = None
-    bucket = None
 
     def __init__(self):
         """
-        Creating a connection to the S3 bucket.
+        Contains methods used to query Epsilon.
         :return:
         """
         #TODO: Does this class do any logging, or does the PicardException handle all of it?
@@ -42,18 +40,3 @@ class PicardClient(object):
 class PicardClientException(Exception):
     def __init__(self, arg):
         self.msg = arg
-
-
-if __name__ == '__main__':
-    pc = PicardClient()
-    schema_url = "https://register.genentech.com/7723e4db-f545-4975-8d97-12da804bff69"
-    headers = pc.create_headers(referer="https://register.genentech.com")
-    form_data = {"email-address": "ywnpegu.tnpfbrlabtif@meltmedia.com",
-                 "first-name": "yWNPEGu",
-                 "last-name": "TnpfbRlAbtif"}
-
-    print pc.send_to_picard(
-        schema_url,
-        form_data,
-        headers=headers
-    )
