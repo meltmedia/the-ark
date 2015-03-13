@@ -7,6 +7,14 @@ import time
 
 
 #TODO: Add Custom Exception classes
+
+#TODO: Add a "Random" option to the SELECT Field type, for things like State and year, etc.
+#TODO: Add a parameter to the SELECT Field that lets the code know whether the first option is selectable (if even possible)
+#TODO: Add an underscore to the ZIP_CODE field type
+#TODO: Add "Padding" option to the INTEGER Field type, for doing month as 04
+#TODO: Add Date Field Type with a format parameter like "%m/%d/%Y"
+#TODO: Add "domain" option to the email field.
+
 def _set_required_blank(test_number, field):
     """Sets a generation method's values for whether the field is currently required and if it is not, whether
         to leave it blank.
@@ -14,7 +22,7 @@ def _set_required_blank(test_number, field):
         -   test_number:    Dict containing a site config
         -   field:          The field object. Should include a key:value for all pertinent information to its field type
     :returns
-        Both the required and leave_blank values generated
+        bool, bool:         Both the required and leave_blank values generated
     """
     #- Instantiate the variables to their defaults
     required = None
@@ -45,7 +53,7 @@ def generate_string(min_length=4, max_length=10, test_number=None, field=None):
                             type. If the object has "min" and "max" keys, those values will override the "min_length"
                             and "max_length" parameters.
     :returns
-        -   random_string:  The randomly generated, or blank string
+        -   string:         The randomly generated, or blank string
     """
     try:
         #- Reset min and max lengths with the field object values
@@ -119,7 +127,7 @@ def generate_email(domain="meltmedia.com", test_number=None, field=None):
         -   field:          The field object. Should include a key:value for all pertinent information to its field
                             type. Only the "required" key is used while generating an email field input.
     :returns
-        -   email:          The randomly generated, or blank email
+        -   string:         The randomly generated, or blank email string
     """
     try:
         #- Set test_number to a default of 1 unless a value was passed in.
@@ -211,7 +219,7 @@ def generate_zip_code(test_number=None, field=None):
         -   field:          The field object. Should include a key:value for all pertinent information to its field
                             type. Only the "required" key is used while generating an ZIP Code field input.
     :returns
-        -   zip_code:        The randomly generated, or blank ZIP Code
+        -   sting:          The randomly generated, or blank ZIP Code string
     """
     try:
         #- Set test_number to a default of 1 unless a value was passed in.
@@ -248,7 +256,7 @@ def generate_select(num_of_options=2, test_number=None, field=None):
         -   field:          The field object. Should include a key:value for all pertinent information to its field
                             type. The "required", "enum" and "random" keys are used to calculate the input index.
     :returns
-        -   input_index:    The randomly generated, or blank index to select from the field's options
+        -   integer:        The randomly generated, or blank index to select from the field's options
     """
     #TODO: Consider using this code block when filling out this field type:
     # selected_option = driver.find_elements_by_css_selector("{0} options:nth-child({1})".format(field_config["css_selector"], (test_number % len(field_config["enums"])) + 1))
@@ -307,7 +315,7 @@ def generate_drop_down(num_of_options=2, test_number=None, field=None):
         -   field:          The field object. Should include a key:value for all pertinent information to its field
                             type. The "required" and "enum" keys are used to calculate the input index
     :returns
-        -   input_index:    The randomly generated, or blank index to select from the field's options
+        -   integer:        The randomly generated, or blank index to select from the field's options
     """
     try:
         #TODO: make sure the errors show that it occurred while filling a Drop Down field
@@ -329,7 +337,7 @@ def generate_radio(num_of_options=2, test_number=None, field=None):
         -   field:          The field object. Should include a key:value for all pertinent information to its field
                             type. The "required" and "enum" keys are used to calculate the input index
     :returns
-        -   input_index:    The randomly generated, or blank index to select from the field's options
+        -   integer:        The randomly generated, or blank index to select from the field's options
     """
     try:
         #TODO: make sure the errors show that it occurred while filling a Radio field
@@ -352,7 +360,7 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
         -   field:          The field object. Should include a key:value for all pertinent information to its field
                             type. The "required" and "enum" keys are used to calculate the input index
     :returns
-        -   input_indexes:  A list of indexes to select from the check box list when filling out this form
+        -   list:           A list of indexes (integers) to select from the check box list when filling out this form
     """
     try:
         #- Reset min and max lengths with the field object values
@@ -412,21 +420,23 @@ def generate_date(start_date=None, end_date=None, date_format="%m/%d/%Y", test_n
                             will be. If the user sends through an integer rather than a date the integer will be used
                             to specify how many days in the past to start generating from. If the integer value is
                             negative, then the start date will be in the future. If no start date is given the date
-                            100 years ago will be used.
+                            100 years, or 52*100 weeks, ago will be used.
         -   end_date:       Date in "%Y-%m-%d" format or an integer specifying days. This is the default format for
                             datetime.now().date(). This date is used as the most recent day in history the generated
                             date will be. If the user sends through an integer rather than a date the integer will be
                             used to specify how many days in the past to stop generating from. If the integer value is
                             negative, then the end date will be in the future. If no end date is given an end date of
-                            18 years ago will be used.
-        -   date_format:
+                            18 years, or 52*18 weeks, ago will be used.
+        -   date_format:    The format you'd like the date to be when it is returned. This defaults to %m/%d/%Y which
+                            would make a MM/DD/YYYY format. Other format examples are %y-%m-%d to get YY-MM-DD or
+                            %d%m%Y to get DDMMYYYY, etc.
         -   test_number:    An int that specifies which submission number this generation is being used for. This will
                             help determine whether all options for the field have been used or not and whether to leave
                             it blank
         -   field:          The field object. Should include a key:value for all pertinent information to its field
                             type. The "required" and "enum" keys are used to calculate the input index
     :returns
-        -   input_indexes:  A list of indexes to select from the checkbox list when filling out this form
+        -   string:         A string formatted to look like a date
     """
     try:
         start_date = start_date if not field or "start_date" not in field.keys() else field["start_date"]
@@ -451,40 +461,3 @@ def generate_date(start_date=None, end_date=None, date_format="%m/%d/%Y", test_n
 
     except Exception as e:
         raise e
-
-
-if __name__ == '__main__':
-    pass
-    print datetime.now().date()
-
-    # for i in range(0, 100):
-    #     print generate_zip_code()
-
-    #===================================================================
-    #--- Date Tests
-    #===================================================================
-    # print "Default 100 to 18 years ago: {0}".format(generate_date())
-    # print "Start = 10 day ago, end equals 1 day ago: {0}".format(generate_date(10, 1))
-    # print "Start =  5 day in the future, end equals 10 days in the future: {0}".format(generate_date(-5, -10))
-    # print "Date Format = '%Y-%m-%d': {0}".format(
-    #     generate_date(date_format="%Y-%m-%d"))
-    # print "Date Format = '%m-%y-%y': {0}".format(
-    #     generate_date(date_format="%m-%y-%y"))
-
-    #===================================================================
-    #--- Phone Number Tests
-    #===================================================================
-    # print "Decimals|\tParenth\t|\tDash\t|\tSpace\t|\tNumber"
-    # for i in range(0, 10):
-    #     decimals = True if generate_integer(1, 4) == "4" else False
-    #     parenthesis = True if generate_integer(1, 4) == "4" else False
-    #     dash = True if generate_integer(1, 4) == "4" else False
-    #     space = True if generate_integer(1, 4) == "4" else False
-    #     print "{0}\t|\t{1}\t|\t{2}\t|\t{3}\t|\t{4}".format(decimals, parenthesis, dash, space, generate_phone(decimals, parenthesis, dash, space))
-
-    #TODO: Add a "Random" option to the SELECT Field type, for things like State and year, etc.
-    #TODO: Add a parameter to the SELECT Field that lets the code know whether the first option is selectable (if even possible)
-    #TODO: Add an underscore to the ZIP_CODE field type
-    #TODO: Add "Padding" option to the INTEGER Field type, for doing month as 04
-    #TODO: Add Date Field Type with a format parameter like "%m/%d/%Y"
-    #TODO: Add "domain" option to the email field.
