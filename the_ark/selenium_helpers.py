@@ -5,6 +5,9 @@ import selenium
 
 from selenium import common
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as expected_condition
 
 
 class seleniumHelpers():
@@ -44,6 +47,21 @@ class seleniumHelpers():
             return web_element
         except common.exceptions.NoSuchElementException:
             message = "Element '{0}' does not exist on page '{1}'.".format(css_selector, self.driver.current_url)
+            raise common.exceptions.NoSuchElementException(message)
+
+    def wait_for_element(self, css_selector, wait_time):
+        """
+        This will wait for a specific element to be present on the page within a specified amount of time, in seconds.
+        :param
+            -   css_selector:     string - The specific element that will be interacted with.
+            -   wait_time:        integer - The amount of time, in seconds, given to wait for an element to be present.
+        """
+        try:
+            WebDriverWait(self.driver, wait_time).until(expected_condition.presence_of_element_located((By.CSS_SELECTOR,
+                                                                                                        css_selector)))
+        except common.exceptions.NoSuchElementException:
+            message = "Element '{0}' does not exist on page '{1}' after waiting {2} seconds."\
+                .format(css_selector, self.driver.current_url, wait_time)
             raise common.exceptions.NoSuchElementException(message)
 
     def click_an_element(self, css_selector):
@@ -135,7 +153,7 @@ class seleniumHelpers():
                                                                                      self.driver.current_url)
             raise common.exceptions.ElementNotVisibleException(message)
 
-    def scroll_to_element(self, css_selector, position_top=True, position_bottom=False, position_middle=False):
+    def scroll_to_element(self, css_selector, position_bottom=False, position_middle=False):
         """
         This will scroll to an element on a page. This element can be put at the top, the bottom, or the middle
         (or close to) of the page.
