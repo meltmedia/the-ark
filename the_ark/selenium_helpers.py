@@ -219,11 +219,22 @@ class seleniumHelpers():
 
     def element_current_scroll_position(self, css_selector):
         """
+        Check to see what position the scrollable element is at.
         :param
             -   css_selector:     string - The specific element that will be interacted with.
         :return
             -   scroll_position:  integer - The amount that the element has been scrolled.
         """
+        try:
+            self.ensure_element_visible(css_selector)
+            scroll_position = self.driver.execute_script("var element = document.querySelectorAll('{0}'); "
+                                                         "scrollPosition = element[0].scrollTop; "
+                                                         "return scrollPosition;").format(css_selector)
+            return scroll_position
+        except common.exceptions.WebDriverException:
+            message = "Unable to determine the scroll position of the element '{0}' on page '{1}'."\
+                .format(css_selector, self.driver.current_url)
+            raise common.exceptions.WebDriverException(message)
 
     def element_scroll_position_at_top(self, css_selector):
         """
@@ -233,6 +244,20 @@ class seleniumHelpers():
         :return
             -   at_top:           boolean - Whether or not the scrollable element is at the top.
         """
+        try:
+            self.ensure_element_visible(css_selector)
+            scroll_position = self.driver.execute_script("var element = document.querySelectorAll('{0}'); "
+                                                         "scrollPosition = element[0].scrollTop; "
+                                                         "return scrollPosition;").format(css_selector)
+            if scroll_position != 0:
+                at_top = False
+            else:
+                at_top = True
+            return at_top
+        except common.exceptions.WebDriverException:
+            message = "Unable to determine if the scroll position of the element '{0}' on page '{1}' is at the top."\
+                .format(css_selector, self.driver.current_url)
+            raise common.exceptions.WebDriverException(message)
 
     def element_scroll_position_at_bottom(self, css_selector):
         """
@@ -242,3 +267,20 @@ class seleniumHelpers():
         :return
             -   at_bottom:        boolean - Whether or not the scrollable element is at the bottom.
         """
+        try:
+            self.ensure_element_visible(css_selector)
+            element_max_height = self.driver.execute_script("var element = document.querySelectorAll('{0}'); "
+                                                            "var maxHeight = element[0].scrollTopMax; "
+                                                            "return maxHeight;").format(css_selector)
+            scroll_position = self.driver.execute_script("var element = document.querySelectorAll('{0}'); "
+                                                         "scrollPosition = element[0].scrollTop; "
+                                                         "return scrollPosition;").format(css_selector)
+            if scroll_position != element_max_height:
+                at_bottom = False
+            else:
+                at_bottom = True
+            return at_bottom
+        except common.exceptions.WebDriverException:
+            message = "Unable to determine if the scroll position of the element '{0}' on page '{1}' is at the bottom."\
+                .format(css_selector, self.driver.current_url)
+            raise common.exceptions.WebDriverException(message)
