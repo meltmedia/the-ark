@@ -1,19 +1,21 @@
 __author__ = 'vbraun'
 
 from datetime import datetime, timedelta
+import inspect
+import logging
 import random
 import string
 import time
 
-
-#TODO: Add Custom Exception classes
+logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s at line %(lineno)d - %(message)s (%(threadName)s)',
+                    datefmt='%Y-%m-%d %I:%M:%S %p',
+                    level='INFO')
+log = logging.getLogger("InputGenerator")
 
 #TODO: Add a "Random" option to the SELECT Field type, for things like State and year, etc.
-#TODO: Add a parameter to the SELECT Field that lets the code know whether the first option is selectable (if even possible)
+#TODO: Add a parameter to the SELECT Field that lets the code know whether the first option is selectable (if even possible/needed)
 #TODO: Add an underscore to the ZIP_CODE field type
-#TODO: Add "Padding" option to the INTEGER Field type, for doing month as 04
-#TODO: Add Date Field Type with a format parameter like "%m/%d/%Y"
-#TODO: Add "domain" option to the email field.
+#TODO: Add "padding" option to the INTEGER Field type, for doing month as 04, etc.
 
 def _set_required_blank(test_number, field):
     """Sets a generation method's values for whether the field is currently required and if it is not, whether
@@ -34,26 +36,35 @@ def _set_required_blank(test_number, field):
 
     #- If the field is not required, do logic to determine whether to leave it blank upon fill
     if required is False:
-        #- Always fill in the field with something on the first test
+        #- Always fill in the field on the first test...
         if test_number != 1:
-            leave_blank = True if random.randint(0, 2) == 1 else False
+            # ... but give 25% chance to leave blank otherwise
+            leave_blank = True if random.random() < .25 == 1 else False
 
     return required, leave_blank
 
 
-def generate_string(min_length=4, max_length=10, test_number=None, field=None):
+def _check_min_vs_max(min_length, max_length, field):
+    if min_length > max_length:
+        message = "The minimum cannot be greater than the maximum value"
+        if field:
+            message += ". Please review the 'min' and 'max' values for the field"
+        raise InputGeneratorException(message)
+
+
+def generate_string(min_length=1, max_length=10, test_number=None, field=None):
     """ Creates a str object with a length greater than min_length and less than max_length, made up of randomly
         selected upper and lowercase letters.
     :param
-        -   min_length:     The minimum length, in characters, that the generated string can be
-        -   max_length:     The maximum length, in characters, that the generated string can be
+        -   min_length:     The minimum length, in characters, that the generated string can be. Defaults to 1
+        -   max_length:     The maximum length, in characters, that the generated string can be. Defaults to 10
         -   test_number:    An int that specifies which submission number this generation is being used for. This will
                             help determine whether the field has been populated previously and whether to leave it blank
         -   field:          The field object. Should include a key:value for all pertinent information to its field
                             type. If the object has "min" and "max" keys, those values will override the "min_length"
                             and "max_length" parameters.
     :returns
-        -   string:         The randomly generated, or blank string
+        -   string:         The randomly generated or blank string
     """
     try:
         #- Reset min and max lengths with the field object values
@@ -62,6 +73,9 @@ def generate_string(min_length=4, max_length=10, test_number=None, field=None):
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
 
+        #- Ensure the minmium and maximum values create a valid range
+        _check_min_vs_max(min_length, max_length, field)
+
         #- Instantiate the required and leave_blank variables based on the field object and test number
         required, leave_blank = _set_required_blank(test_number, field)
 
@@ -69,15 +83,20 @@ def generate_string(min_length=4, max_length=10, test_number=None, field=None):
         if leave_blank:
             random_string = ""
         else:
-            random_string = "".join(random.choice(string.ascii_letters) for i in range(random.randint(min_length,
+            random_string = "".join(random.choice(string.ascii_letters) for f in range(random.randint(min_length,
                                                                                                       max_length)))
 
         return random_string
-    except Exception as e:
-        raise e
+
+    except Exception as e_text:
+        message = "Error while generating a String"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"].upper())
+        message += ": {0}".format(e_text)
+        raise InputGeneratorException(message)
 
 
-def generate_integer(min_int=0, max_int=9, padding=1, test_number=None, field=None):
+def generate_integer(min_int=1, max_int=9, padding=1, test_number=None, field=None):
     """ Generates an str object with an int character that is greater that min_int and less than max_int.
     :param
         -   min_int:        The minimum value that the generated integer can be. Defaults to 1
@@ -100,22 +119,34 @@ def generate_integer(min_int=0, max_int=9, padding=1, test_number=None, field=No
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
 
+        # - Ensure the minimum and maximum values create a valid range
+        _check_min_vs_max(min_int, max_int, field)
+
         #- Instantiate the required and leave_blank variables based on the field object and test number
         required, leave_blank = _set_required_blank(test_number, field)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create an integer
         if leave_blank:
-            #TODO: Determine best way to specify a blank value for an int here. Make it negative? Set to None?
             integer = ""
         else:
             #- Create the integer value between the min and max and with the padding provided
-            #TODO: Consider adding padding at time of input so that the return can be an int object rather than string
             integer = "{0:0{1}d}".format(random.randint(min_int, max_int), padding)
 
         return integer
 
-    except Exception as e:
-        raise e
+    except KeyError as key:
+        message = "Error while generating an Integer"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_integer method".format(key)
+        raise InputGeneratorException(message)
+
+    except Exception as e_text:
+        message = "Error while generating an Integer"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"].upper())
+        message += ": {0}".format(e_text)
+        raise InputGeneratorException(message)
 
 
 def generate_email(domain="meltmedia.com", test_number=None, field=None):
@@ -148,8 +179,19 @@ def generate_email(domain="meltmedia.com", test_number=None, field=None):
 
         return email
 
-    except Exception as e:
-        raise e
+    except KeyError as key:
+        message = "Error while generating an Email"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_email method".format(key)
+        raise InputGeneratorException(message)
+
+    except Exception as e_text:
+        message = "Error while generating an Email"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"].upper())
+        message += ": {0}".format(e_text)
+        raise InputGeneratorException(message)
 
 
 def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, test_number=None, field=None):
@@ -172,7 +214,7 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
         -   integer:        The randomly generated, or blank phone number
     """
 
-    #TODO: Other formats to add: ### ### #### all spaces, ###-###-#### all dashes, (###)### #### no space after parenth
+    #TODO: Other formats to add: ###-###-#### all dashes, (###)### #### no space after parenth
     try:
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
@@ -193,13 +235,26 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
             start = "".join(str(random.randint(2, 9)) for x in range(0, 3))
             finish = "".join(str(random.randint(0, 9)) for y in range(0, 4))
 
+            #--- Format the number
+            #- Use only the decimal formatting if the user specified they wanted decimals
             if decimals:
                 phone_number = "{0}.{1}.{2}".format(area_code, start, finish)
             else:
                 #- Surround the area code in parenthesis if parenthesis parameter is True
                 area_code = "({0})".format(area_code) if parenthesis else area_code
-                #- Add the dash between the start and finish of the number if dash parameter is True
-                number = start + finish if not dash else "{0}-{1}".format(start, finish)
+
+                #- Format the "number" portion of the phone number
+                #  Dash takes precedence over space
+                if dash:
+                    #- Add the dash between the start and finish of the number if dash parameter is True
+                    number = "{0}-{1}".format(start, finish)
+                elif space:
+                    #- Add a space if space parameter is True, but dash is False
+                    number = "{0} {1}".format(start, finish)
+                else:
+                    number = "{0}{1}".format(start, finish)
+
+                #- Plug the area code and number together
                 if space:
                     phone_number = "{0} {1}".format(area_code, number)
                 else:
@@ -207,8 +262,19 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
 
         return phone_number
 
-    except Exception as e:
-        raise e
+    except KeyError as key:
+        message = "Error while generating a Phone Number"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_phone method".format(key)
+        raise InputGeneratorException(message)
+
+    except Exception as e_text:
+        message = "Error while generating a Phone Number"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"].upper())
+        message += ": {0}".format(e_text)
+        raise InputGeneratorException(message)
 
 
 def generate_zip_code(test_number=None, field=None):
@@ -240,12 +306,19 @@ def generate_zip_code(test_number=None, field=None):
 
         return zip_code
 
-    except Exception as e:
-        raise e
+    except KeyError as key:
+        message = "Error while generating a Zip Code"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_zip_code method".format(key)
+        raise InputGeneratorException(message)
+
+    except Exception as e_text:
+        raise InputGeneratorException("Zip Code generation error: {0}".format(e_text))
 
 
-def generate_select(num_of_options=2, test_number=None, field=None):
-    """ Calculates which option should be selected from the select list based on test number. The index is randomly
+def _generate_index(num_of_options=2, test_number=None, field=None):
+    """ Calculates which option should be selected from the given field based on test number. The index is randomly
         selected after all options have been used at least once.
     :param
         -   num_of_options: The number oof options available in the list. If a field object is passed in then this
@@ -279,7 +352,7 @@ def generate_select(num_of_options=2, test_number=None, field=None):
         if all_options_used:
             random_choice = True
             #- But give a 25% chance of leaving the field blank too
-            if not required and random.randint(0, 4) == 2:
+            if not required and random.random() < .25:
                 leave_blank = True
 
         #--- Generate the input index to use when filling out this field
@@ -299,8 +372,30 @@ def generate_select(num_of_options=2, test_number=None, field=None):
 
         return input_index
 
-    except Exception as e:
-        raise e
+    except InputGeneratorException:
+        print "yeah"
+    except Exception as e_text:
+        raise InputGeneratorException(e_text)
+
+
+def generate_select(num_of_options=2, test_number=None, field=None):
+    """ Calculates which option should be selected from the select list based on test number. The index is randomly
+        selected after all options have been used at least once.
+    :param
+        -   num_of_options: The number oof options available in the list. If a field object is passed in then this
+                            value is overwritten by the "enum" key for that field. Defaults to a value of 2
+        -   test_number:    An int that specifies which submission number this generation is being used for. This will
+                            help determine whether all options for the field have been used or not and whether to leave
+                            it blank
+        -   field:          The field object. Should include a key:value for all pertinent information to its field
+                            type. The "required", "enum" and "random" keys are used to calculate the input index.
+    :returns
+        -   integer:        The randomly generated, or blank index to select from the field's options
+    """
+    try:
+        return _generate_index(num_of_options, test_number, field)
+    except InputGeneratorException as e_text:
+        raise InputGeneratorException("Select Field input index generator error: {0}".format(e_text))
 
 
 def generate_drop_down(num_of_options=2, test_number=None, field=None):
@@ -318,11 +413,10 @@ def generate_drop_down(num_of_options=2, test_number=None, field=None):
         -   integer:        The randomly generated, or blank index to select from the field's options
     """
     try:
-        #TODO: make sure the errors show that it occurred while filling a Drop Down field
-        return generate_select(num_of_options, test_number, field)
+        return _generate_index(num_of_options, test_number, field)
 
-    except Exception as e:
-        raise e
+    except InputGeneratorException as e_text:
+        raise InputGeneratorException("Drop Down Field input index generator error: {0}".format(e_text))
 
 
 def generate_radio(num_of_options=2, test_number=None, field=None):
@@ -340,11 +434,10 @@ def generate_radio(num_of_options=2, test_number=None, field=None):
         -   integer:        The randomly generated, or blank index to select from the field's options
     """
     try:
-        #TODO: make sure the errors show that it occurred while filling a Radio field
-        return generate_select(num_of_options, test_number, field)
+        return _generate_index(num_of_options, test_number, field)
 
-    except Exception as e:
-        raise e
+    except Exception as e_text:
+        raise InputGeneratorException("Radio Field input index generator error: {0}".format(e_text))
 
 
 def generate_check_box(num_of_options=1, test_number=None, field=None):
@@ -376,7 +469,7 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
 
         #- 25% chance of leaving the field blank if it is not required and all options have already been used
         if required is False and all_options_used:
-            if random.randint(0, 4) == 2:
+            if random.random() < .25:
                 leave_blank = True
 
         #- Always select a random index if all options have already been used
@@ -407,8 +500,8 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
 
         return input_indexes
 
-    except Exception as e:
-        raise e
+    except Exception as e_text:
+        raise InputGeneratorException("Check Box Field input index generator error: {0}".format(e_text))
 
 
 def generate_date(start_date=None, end_date=None, date_format="%m/%d/%Y", test_number=None, field=None):
@@ -459,5 +552,41 @@ def generate_date(start_date=None, end_date=None, date_format="%m/%d/%Y", test_n
 
         return time.strftime(date_format, time.localtime(random_time))
 
-    except Exception as e:
-        raise e
+    except Exception as e_text:
+        raise InputGeneratorException("Date generation error: {0}".format(e_text))
+
+
+class InputGeneratorException(Exception):
+    pass
+
+if __name__ == '__main__':
+    log.info("Starting!")
+    form_data = {"name": "First Name",
+                 "min": 4,
+                 "max": 10,
+                 "required": False}
+    try:
+        field = {"name": "Birth Month", "min": 3, "max": 2}
+        print generate_integer(2, 1, field=field)
+        #===================================================================
+        #--- Generate a whole bunch of junk
+        #===================================================================
+        for i in range(100):
+            log.info(generate_string(test_number=i, field=form_data))
+
+        #===================================================================
+        #--- Generate a "form"
+        #===================================================================
+        # drop_index = generate_drop_down()
+        # form_data = {
+        #     "first_name": generate_string(11, 11),
+        #     "last_name": generate_string(4, 6),
+        #     "date": generate_date(date_format="%m-%d-%y"),
+        #     "phone": generate_phone(),
+        #     "zipcode": generate_zip_code(),
+        #     "birth_month": generate_integer(10, 10, padding=2)
+        # }
+    except InputGeneratorException as e:
+        log.error(e)
+
+    log.info(form_data)
