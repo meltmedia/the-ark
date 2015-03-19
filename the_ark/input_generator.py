@@ -1,16 +1,7 @@
-__author__ = 'vbraun'
-
 from datetime import datetime, timedelta
-import inspect
-import logging
 import random
 import string
 import time
-
-logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s at line %(lineno)d - %(message)s (%(threadName)s)',
-                    datefmt='%Y-%m-%d %I:%M:%S %p',
-                    level='INFO')
-log = logging.getLogger("InputGenerator")
 
 #TODO: Add a "Random" option to the SELECT Field type, for things like State and year, etc.
 #TODO: Add a parameter to the SELECT Field that lets the code know whether the first option is selectable (if even possible/needed)
@@ -558,35 +549,3 @@ def generate_date(start_date=None, end_date=None, date_format="%m/%d/%Y", test_n
 
 class InputGeneratorException(Exception):
     pass
-
-if __name__ == '__main__':
-    log.info("Starting!")
-    form_data = {"name": "First Name",
-                 "min": 4,
-                 "max": 10,
-                 "required": False}
-    try:
-        field = {"name": "Birth Month", "min": 3, "max": 2}
-        print generate_integer(2, 1, field=field)
-        #===================================================================
-        #--- Generate a whole bunch of junk
-        #===================================================================
-        for i in range(100):
-            log.info(generate_string(test_number=i, field=form_data))
-
-        #===================================================================
-        #--- Generate a "form"
-        #===================================================================
-        # drop_index = generate_drop_down()
-        # form_data = {
-        #     "first_name": generate_string(11, 11),
-        #     "last_name": generate_string(4, 6),
-        #     "date": generate_date(date_format="%m-%d-%y"),
-        #     "phone": generate_phone(),
-        #     "zipcode": generate_zip_code(),
-        #     "birth_month": generate_integer(10, 10, padding=2)
-        # }
-    except InputGeneratorException as e:
-        log.error(e)
-
-    log.info(form_data)
