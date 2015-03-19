@@ -9,10 +9,7 @@ class PicardClient(object):
     def __init__(self):
         """
         Contains methods used to query Epsilon.
-        :return:
         """
-        #TODO: Does this class do any logging, or does the PicardException handle all of it?
-        self.log = logging.getLogger(self.__class__.__name__)
 
     def send_to_picard(self, schema_url, form_data, headers=None):
         r = None
@@ -30,7 +27,7 @@ class PicardClient(object):
             raise PicardClientException("Unable to Post to Picard")
 
         #- Received a valid response from Picard. Return the data received.
-        return json.dumps(r.text)
+        return json.loads(r.text)
 
     def create_headers(self, referer="localhost"):
         #TODO: Change the default value here to the "QA" referer.
