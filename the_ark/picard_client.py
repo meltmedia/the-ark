@@ -2,7 +2,6 @@ import logging
 import json
 import requests
 
-#TODO: Possibly create a "build picard object" method that takes a site url and test environment and sets the Schema_url and Referer
 
 class PicardClient(object):
 
@@ -29,8 +28,7 @@ class PicardClient(object):
         #- Received a valid response from Picard. Return the data received.
         return json.loads(r.text)
 
-    def create_headers(self, referer="localhost"):
-        #TODO: Change the default value here to the "QA" referer.
+    def create_headers(self, referer="qa.picardclient.com"):
         return {"Referer": referer}
 
 
