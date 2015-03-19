@@ -79,6 +79,13 @@ def generate_string(min_length=1, max_length=10, test_number=None, field=None):
 
         return random_string
 
+    except KeyError as key:
+        message = "Error while generating a String"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_string method".format(key)
+        raise InputGeneratorException(message)
+
     except Exception as e_text:
         message = "Error while generating a String"
         if field and "name" in field.keys():
@@ -322,7 +329,7 @@ def _generate_index(num_of_options=2, test_number=None, field=None):
     :returns
         -   integer:        The randomly generated, or blank index to select from the field's options
     """
-    #TODO: Consider using this code block when filling out this field type:
+    #TODO: Consider using code similar to this block when filling out these index field types:
     # selected_option = driver.find_elements_by_css_selector("{0} options:nth-child({1})".format(field_config["css_selector"], (test_number % len(field_config["enums"])) + 1))
     try:
         #--- Reset min and max lengths with the field object values
@@ -362,6 +369,14 @@ def _generate_index(num_of_options=2, test_number=None, field=None):
                 input_index = test_number % num_of_options - 1
 
         return input_index
+
+    except KeyError as key:
+        message = "Error while generating an input index"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the _generate_index method".format(key)
+        raise InputGeneratorException(message)
+
 
     except InputGeneratorException:
         print "yeah"
@@ -491,6 +506,13 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
 
         return input_indexes
 
+    except KeyError as key:
+        message = "Error while generating a Check Box input index list"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_check_box method".format(key)
+        raise InputGeneratorException(message)
+
     except Exception as e_text:
         raise InputGeneratorException("Check Box Field input index generator error: {0}".format(e_text))
 
@@ -542,6 +564,13 @@ def generate_date(start_date=None, end_date=None, date_format="%m/%d/%Y", test_n
         random_time = start_time + random.random() * (end_time - start_time)
 
         return time.strftime(date_format, time.localtime(random_time))
+
+    except KeyError as key:
+        message = "Error while generating a Date"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_date method".format(key)
+        raise InputGeneratorException(message)
 
     except Exception as e_text:
         raise InputGeneratorException("Date generation error: {0}".format(e_text))
