@@ -1,8 +1,5 @@
-__author__ = 'alow'
-
 import logging
 import mimetypes
-
 from StringIO import StringIO
 from boto.s3.key import Key
 import boto.s3.connection
