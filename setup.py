@@ -22,7 +22,8 @@ setup(
     long_description=readme(),
         install_requires=[
         "boto >= 2.29.1",
-        "requests >= 2.3.0"
+        "requests >= 2.3.0",
+        "selenium >= 2.45.0"
     ],
     classifiers=[
         "Development Status :: 1 - Planning",
