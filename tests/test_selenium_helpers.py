@@ -226,3 +226,25 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.seleniumHelpers(self.driver)
         self.assertRaises(exceptions.WebDriverException, sh.element_scroll_position_at_bottom, ".not-scrollable")
+
+    def test_hide_element_valid(self):
+        self.driver.get(SELENIUM_TEST_HTML)
+        sh = selenium_helpers.seleniumHelpers(self.driver)
+        valid_css_selector = ".valid"
+        sh.hide_element(valid_css_selector)
+
+    def test_hide_element_invalid(self):
+        self.driver.get(SELENIUM_TEST_HTML)
+        sh = selenium_helpers.seleniumHelpers(self.driver)
+        self.assertRaises(exceptions.NoSuchElementException, sh.hide_element, ".invalid")
+
+    def test_show_element_valid(self):
+        self.driver.get(SELENIUM_TEST_HTML)
+        sh = selenium_helpers.seleniumHelpers(self.driver)
+        valid_css_selector = ".valid"
+        sh.show_element(valid_css_selector)
+
+    def test_show_element_invalid(self):
+        self.driver.get(SELENIUM_TEST_HTML)
+        sh = selenium_helpers.seleniumHelpers(self.driver)
+        self.assertRaises(exceptions.NoSuchElementException, sh.show_element, ".invalid")

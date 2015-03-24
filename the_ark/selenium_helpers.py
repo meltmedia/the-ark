@@ -313,10 +313,10 @@ class seleniumHelpers():
         try:
             self.ensure_element_visible(css_selector)
             self.driver.execute_script("document.querySelector(arguments[0]).style.display = 'none';", css_selector)
-        except common.exceptions.ElementNotVisibleException:
+        except common.exceptions.NoSuchElementException:
             message = "Unable to hide element '{0}' on page '{1}', it may already hidden."\
                 .format(css_selector, self.driver.current_url)
-            raise common.exceptions.ElementNotVisibleException(message)
+            raise common.exceptions.NoSuchElementException(message)
 
     def show_element(self, css_selector):
         """
