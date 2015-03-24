@@ -7,8 +7,12 @@ import time
 #TODO: Add a parameter to the SELECT Field that lets the code know whether the first option is selectable (if even possible/needed)
 #TODO: Add an underscore to the ZIP_CODE field type
 #TODO: Add "padding" option to the INTEGER Field type, for doing month as 04, etc.
+DEFAULT_STRING_MIN = 1
+DEFAULT_STRING_MAX = 10
+DEFAULT_INTEGER_MIN = 1
+DEFAULT_INTEGER_MAX = 9
 
-def _set_required_blank(test_number, field):
+def set_required_blank(test_number, field=None):
     """Sets a generation method's values for whether the field is currently required and if it is not, whether
         to leave it blank.
     :param
@@ -30,12 +34,12 @@ def _set_required_blank(test_number, field):
         #- Always fill in the field on the first test...
         if test_number != 1:
             # ... but give 25% chance to leave blank otherwise
-            leave_blank = True if random.random() < .25 == 1 else False
+            leave_blank = True if random.random() < .25 else False
 
     return required, leave_blank
 
 
-def _check_min_vs_max(min_length, max_length, field):
+def check_min_vs_max(min_length, max_length, field=None):
     if min_length > max_length:
         message = "The minimum cannot be greater than the maximum value"
         if field:
@@ -43,7 +47,7 @@ def _check_min_vs_max(min_length, max_length, field):
         raise InputGeneratorException(message)
 
 
-def generate_string(min_length=1, max_length=10, test_number=None, field=None):
+def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX, test_number=None, field=None):
     """ Creates a str object with a length greater than min_length and less than max_length, made up of randomly
         selected upper and lowercase letters.
     :param
@@ -64,11 +68,11 @@ def generate_string(min_length=1, max_length=10, test_number=None, field=None):
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
 
-        #- Ensure the minmium and maximum values create a valid range
-        _check_min_vs_max(min_length, max_length, field)
+        #- Ensure the minimum and maximum values create a valid range
+        check_min_vs_max(min_length, max_length, field)
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = _set_required_blank(test_number, field)
+        required, leave_blank = set_required_blank(test_number, field)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a string
         if leave_blank:
@@ -94,7 +98,7 @@ def generate_string(min_length=1, max_length=10, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_integer(min_int=1, max_int=9, padding=1, test_number=None, field=None):
+def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, padding=1, test_number=None, field=None):
     """ Generates an str object with an int character that is greater that min_int and less than max_int.
     :param
         -   min_int:        The minimum value that the generated integer can be. Defaults to 1
@@ -118,10 +122,10 @@ def generate_integer(min_int=1, max_int=9, padding=1, test_number=None, field=No
         test_number = 1 if not test_number else test_number
 
         # - Ensure the minimum and maximum values create a valid range
-        _check_min_vs_max(min_int, max_int, field)
+        check_min_vs_max(min_int, max_int, field)
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = _set_required_blank(test_number, field)
+        required, leave_blank = set_required_blank(test_number, field)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create an integer
         if leave_blank:
@@ -163,7 +167,7 @@ def generate_email(domain="meltmedia.com", test_number=None, field=None):
         test_number = 1 if not test_number else test_number
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = _set_required_blank(test_number, field)
+        required, leave_blank = set_required_blank(test_number, field)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create an email
         if leave_blank:
@@ -218,7 +222,7 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
         test_number = 1 if not test_number else test_number
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = _set_required_blank(test_number, field)
+        required, leave_blank = set_required_blank(test_number, field)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a phone number
         if leave_blank:
@@ -290,7 +294,7 @@ def generate_zip_code(test_number=None, field=None):
         test_number = 1 if not test_number else test_number
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = _set_required_blank(test_number, field)
+        required, leave_blank = set_required_blank(test_number, field)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a zip code
         if leave_blank:
