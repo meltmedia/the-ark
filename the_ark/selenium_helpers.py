@@ -216,7 +216,9 @@ class SeleniumHelpers():
                                            "element.scrollTop = 0;", css_selector)
             elif scroll_bottom:
                 element_max_height = self.driver.execute_script("var element = document.querySelector(arguments[0]); "
-                                                                "var maxHeight = element.scrollTopMax; "
+                                                                "var scrollHeight = element.scrollHeight; "
+                                                                "var clientHeight = element.clientHeight; "
+                                                                "var maxHeight = scrollHeight - clientHeight; "
                                                                 "return maxHeight;", css_selector)
                 self.driver.execute_script("var element = document.querySelector(arguments[0]); "
                                            "element.scrollTop = arguments[1];", css_selector, element_max_height)
@@ -267,10 +269,9 @@ class SeleniumHelpers():
                                                          "scrollPosition = element.scrollTop; "
                                                          "return scrollPosition;", css_selector)
             if scroll_position != 0:
-                at_top = False
+                return False
             else:
-                at_top = True
-            return at_top
+                return True
         except common.exceptions.WebDriverException:
             message = "Unable to determine if the scroll position of the element '{0}' on page '{1}' is at the top."\
                 .format(css_selector, self.driver.current_url)
@@ -287,17 +288,17 @@ class SeleniumHelpers():
         try:
             self.ensure_element_visible(css_selector)
             element_max_height = self.driver.execute_script("var element = document.querySelector(arguments[0]); "
-                                                            "var maxHeight = element.scrollTopMax; "
+                                                            "var scrollHeight = element.scrollHeight; "
+                                                            "var clientHeight = element.clientHeight; "
+                                                            "var maxHeight = scrollHeight - clientHeight;"
                                                             "return maxHeight;", css_selector)
             scroll_position = self.driver.execute_script("var element = document.querySelector(arguments[0]); "
                                                          "var scrollPosition = element.scrollTop; "
                                                          "return scrollPosition;", css_selector)
-            print element_max_height, scroll_position
             if scroll_position != element_max_height:
-                at_bottom = False
+                return False
             else:
-                at_bottom = True
-            return at_bottom
+                return True
         except common.exceptions.WebDriverException:
             message = "Unable to determine if the scroll position of the element '{0}' on page '{1}' is at the bottom."\
                 .format(css_selector, self.driver.current_url)
