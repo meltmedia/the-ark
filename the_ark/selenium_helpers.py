@@ -29,9 +29,9 @@ class seleniumHelpers():
         """
         try:
             self.driver.find_element_by_css_selector(css_selector)
-        except common.exceptions.ElementNotVisibleException:
+        except common.exceptions.NoSuchElementException:
             message = "Element '{0}' is not visible on page '{1}'.".format(css_selector, self.driver.current_url)
-            raise common.exceptions.ElementNotVisibleException(message)
+            raise common.exceptions.NoSuchElementException(message)
 
     def find_element(self, css_selector):
         """
@@ -59,10 +59,10 @@ class seleniumHelpers():
         try:
             WebDriverWait(self.driver, wait_time).until(expected_condition.presence_of_element_located((By.CSS_SELECTOR,
                                                                                                         css_selector)))
-        except common.exceptions.NoSuchElementException:
+        except common.exceptions.TimeoutException:
             message = "Element '{0}' does not exist on page '{1}' after waiting {2} seconds."\
                 .format(css_selector, self.driver.current_url, wait_time)
-            raise common.exceptions.NoSuchElementException(message)
+            raise common.exceptions.TimeoutException(message)
 
     def click_an_element(self, css_selector):
         """
@@ -73,9 +73,9 @@ class seleniumHelpers():
         try:
             self.ensure_element_visible(css_selector)
             self.find_element(css_selector).click()
-        except common.exceptions.ElementNotVisibleException:
+        except common.exceptions.NoSuchElementException:
             message = "Unable to click the element '{0}' on page '{1}'.".format(css_selector, self.driver.current_url)
-            raise common.exceptions.ElementNotVisibleException(message)
+            raise common.exceptions.NoSuchElementException(message)
 
     def click_location(self, css_selector="body", x_position=0, y_position=0):
         """
@@ -89,10 +89,10 @@ class seleniumHelpers():
             self.ensure_element_visible(css_selector)
             ActionChains(self.driver).move_to_element_with_offset(self.find_element(css_selector), x_position,
                                                                   y_position)
-        except common.exceptions.ElementNotVisibleException:
+        except common.exceptions.NoSuchElementException:
             message = "Unable to click at the position ({0}, {1}) of the element '{2}' on page '{3}'."\
                 .format(x_position, y_position, css_selector, self.driver.current_url)
-            raise common.exceptions.ElementNotVisibleException(message)
+            raise common.exceptions.NoSuchElementException(message)
 
     def double_click(self, css_selector):
         """
@@ -103,10 +103,10 @@ class seleniumHelpers():
         try:
             self.ensure_element_visible(css_selector)
             ActionChains(self.driver).double_click(self.find_element(css_selector))
-        except common.exceptions.ElementNotVisibleException:
+        except common.exceptions.NoSuchElementException:
             message = "Unable to double-click the element '{0}' on page '{1}'.".format(css_selector,
                                                                                        self.driver.current_url)
-            raise common.exceptions.ElementNotVisibleException(message)
+            raise common.exceptions.NoSuchElementException(message)
 
     def clear_an_element(self, css_selector):
         """
@@ -118,9 +118,9 @@ class seleniumHelpers():
             self.ensure_element_visible(css_selector)
             self.click_an_element(css_selector)
             self.find_element(css_selector).clear()
-        except common.exceptions.ElementNotVisibleException:
+        except common.exceptions.NoSuchElementException:
             message = "Unable to clear the element '{0}' on page '{1}'.".format(css_selector, self.driver.current_url)
-            raise common.exceptions.ElementNotVisibleException(message)
+            raise common.exceptions.NoSuchElementException(message)
 
     def fill_an_element(self, css_selector, fill_text):
         """
@@ -134,9 +134,9 @@ class seleniumHelpers():
             self.click_an_element(css_selector)
             self.clear_an_element(css_selector)
             self.find_element(css_selector).send_keys(fill_text)
-        except common.exceptions.ElementNotVisibleException:
+        except common.exceptions.NoSuchElementException:
             message = "Unable to fill the element '{0}' on page '{1}'.".format(css_selector, self.driver.current_url)
-            raise common.exceptions.ElementNotVisibleException(message)
+            raise common.exceptions.NoSuchElementException(message)
 
     def hover_on_element(self, css_selector):
         """
@@ -148,10 +148,10 @@ class seleniumHelpers():
             self.ensure_element_visible(css_selector)
             hover = ActionChains(self.driver).move_to_element(self.find_element(css_selector))
             hover.perform()
-        except common.exceptions.ElementNotVisibleException:
+        except common.exceptions.NoSuchElementException:
             message = "Unable to hover over the element '{0}' on page '{1}'.".format(css_selector,
                                                                                      self.driver.current_url)
-            raise common.exceptions.ElementNotVisibleException(message)
+            raise common.exceptions.NoSuchElementException(message)
 
     def scroll_to_element(self, css_selector, position_bottom=False, position_middle=False):
         """
@@ -178,10 +178,10 @@ class seleniumHelpers():
                 #--- Scroll the window so the top of the element will be at the top of the window.
                 self.driver.execute_script("var element = arguments[0]; element.scrollIntoView(true);", element)
 
-        except common.exceptions.ElementNotVisibleException:
+        except common.exceptions.NoSuchElementException:
             message = "Unable to scroll to the element '{0}' on page '{1}'.".format(css_selector,
                                                                                     self.driver.current_url)
-            raise common.exceptions.ElementNotVisibleException(message)
+            raise common.exceptions.NoSuchElementException(message)
 
     def scroll_to_position(self, y_position=0, x_position=0):
         """
@@ -190,11 +190,11 @@ class seleniumHelpers():
             -   y_position:     integer - The position the browser will scroll to vertically.
             -   x_position:     integer - The position the browser will scroll to horizontally.
         """
-        try:
+        if type(y_position) == int or type(x_position) == int:
             self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
-        except common.exceptions.WebDriverException:
+        else:
             message = "Unable to scroll to position ('{0}', '{1}') on page '{2}'.".format(x_position, y_position,
-                                                                                          self.driver.current_url)
+                                                                                      self.driver.current_url)
             raise common.exceptions.WebDriverException(message)
 
     def scroll_an_element(self, css_selector, scroll_position=None, scroll_padding=0, scroll_top=False,
@@ -213,24 +213,24 @@ class seleniumHelpers():
         try:
             self.ensure_element_visible(css_selector)
             if scroll_top:
-                self.driver.execute_script("var element = document.querySelector('{0}'); "
-                                           "element.scrollTop = 0;").format(css_selector)
+                self.driver.execute_script("var element = document.querySelector(arguments[0]); "
+                                           "element.scrollTop = 0;", css_selector)
             elif scroll_bottom:
-                element_max_height = self.driver.execute_script("var element = document.querySelector('{0}'); "
+                element_max_height = self.driver.execute_script("var element = document.querySelector(arguments[0]); "
                                                                 "var maxHeight = element.scrollTopMax; "
-                                                                "return maxHeight;").format(css_selector)
-                self.driver.execute_script("var element = document.querySelector('{0}'); "
-                                           "element.scrollTop = {1};").format(css_selector, element_max_height)
+                                                                "return maxHeight;", css_selector)
+                self.driver.execute_script("var element = document.querySelector(arguments[0]); "
+                                           "element.scrollTop = arguments[1];", css_selector, element_max_height)
             elif scroll_position:
-                self.driver.execute_script("var element = document.querySelector('{0}'); "
-                                           "element.scrollTop = {1};").format(css_selector, scroll_position)
+                self.driver.execute_script("var element = document.querySelector(arguments[0]); "
+                                           "element.scrollTop = arguments[1];", css_selector, scroll_position)
             else:
-                element_height = self.driver.execute_script("var element = document.querySelector('{0}'); "
+                element_height = self.driver.execute_script("var element = document.querySelector(arguments[0]); "
                                                             "var elementHeight = element.offsetHeight; "
-                                                            "return elementHeight;").format(css_selector)
-                self.driver.execute_script("var element = document.querySelector('{0}'); "
-                                           "element.scrollTop += ({1} + {2});").format(css_selector, element_height,
-                                                                                          scroll_padding)
+                                                            "return elementHeight;", css_selector)
+                self.driver.execute_script("var element = document.querySelector(arguments[0]); "
+                                           "element.scrollTop += (arguments[1] - arguments[2]);", css_selector,
+                                           element_height, scroll_padding)
         except common.exceptions.WebDriverException:
             message = "Unable to scroll the element '{0}' on page '{1}'.".format(css_selector, self.driver.current_url)
             raise common.exceptions.WebDriverException(message)
@@ -245,9 +245,9 @@ class seleniumHelpers():
         """
         try:
             self.ensure_element_visible(css_selector)
-            scroll_position = self.driver.execute_script("var element = document.querySelector('{0}'); "
+            scroll_position = self.driver.execute_script("var element = document.querySelector(arguments[0]); "
                                                          "scrollPosition = element.scrollTop; "
-                                                         "return scrollPosition;").format(css_selector)
+                                                         "return scrollPosition;", css_selector)
             return scroll_position
         except common.exceptions.WebDriverException:
             message = "Unable to determine the scroll position of the element '{0}' on page '{1}'."\
@@ -264,9 +264,9 @@ class seleniumHelpers():
         """
         try:
             self.ensure_element_visible(css_selector)
-            scroll_position = self.driver.execute_script("var element = document.querySelector('{0}'); "
+            scroll_position = self.driver.execute_script("var element = document.querySelector(arguments[0]); "
                                                          "scrollPosition = element.scrollTop; "
-                                                         "return scrollPosition;").format(css_selector)
+                                                         "return scrollPosition;", css_selector)
             if scroll_position != 0:
                 at_top = False
             else:
@@ -287,12 +287,13 @@ class seleniumHelpers():
         """
         try:
             self.ensure_element_visible(css_selector)
-            element_max_height = self.driver.execute_script("var element = document.querySelector('{0}'); "
+            element_max_height = self.driver.execute_script("var element = document.querySelector(arguments[0]); "
                                                             "var maxHeight = element.scrollTopMax; "
-                                                            "return maxHeight;").format(css_selector)
-            scroll_position = self.driver.execute_script("var element = document.querySelector('{0}'); "
-                                                         "scrollPosition = element.scrollTop; "
-                                                         "return scrollPosition;").format(css_selector)
+                                                            "return maxHeight;", css_selector)
+            scroll_position = self.driver.execute_script("var element = document.querySelector(arguments[0]); "
+                                                         "var scrollPosition = element.scrollTop; "
+                                                         "return scrollPosition;", css_selector)
+            print element_max_height, scroll_position
             if scroll_position != element_max_height:
                 at_bottom = False
             else:
@@ -311,8 +312,7 @@ class seleniumHelpers():
         """
         try:
             self.ensure_element_visible(css_selector)
-            self.driver.execute_script("document.querySelector('{0}').style.display = 'none';")\
-                .format(css_selector)
+            self.driver.execute_script("document.querySelector(arguments[0]).style.display = 'none';", css_selector)
         except common.exceptions.ElementNotVisibleException:
             message = "Unable to hide element '{0}' on page '{1}', it may already hidden."\
                 .format(css_selector, self.driver.current_url)
@@ -326,8 +326,7 @@ class seleniumHelpers():
         """
         try:
             self.ensure_element_visible(css_selector)
-            self.driver.execute_script("document.querySelector('{0}').style.display = 'block';")\
-                .format(css_selector)
+            self.driver.execute_script("document.querySelector(arguments[0]).style.display = 'block';", css_selector)
         except common.exceptions.NoSuchElementException:
             message = "Unable to show element '{0}' on page '{1}', that element may not exist."\
                 .format(css_selector, self.driver.current_url)
