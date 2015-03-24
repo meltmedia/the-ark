@@ -1,7 +1,6 @@
 __author__ = 'alow'
 
 import logging
-import selenium
 
 from selenium import common
 from selenium.webdriver.common.action_chains import ActionChains
@@ -10,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as expected_condition
 
 
-class seleniumHelpers():
+class SeleniumHelpers():
 
     def __init__(self, driver):
         """
@@ -194,7 +193,7 @@ class seleniumHelpers():
             self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
         else:
             message = "Unable to scroll to position ('{0}', '{1}') on page '{2}'.".format(x_position, y_position,
-                                                                                      self.driver.current_url)
+                                                                                          self.driver.current_url)
             raise common.exceptions.WebDriverException(message)
 
     def scroll_an_element(self, css_selector, scroll_position=None, scroll_padding=0, scroll_top=False,
