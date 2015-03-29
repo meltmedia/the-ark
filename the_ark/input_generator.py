@@ -3,14 +3,19 @@ import random
 import string
 import time
 
+#TODO: Add a button field
 #TODO: Add a "Random" option to the SELECT Field type, for things like State and year, etc.
 #TODO: Add a parameter to the SELECT Field that lets the code know whether the first option is selectable (if even possible/needed)
 #TODO: Add an underscore to the ZIP_CODE field type
 #TODO: Add "padding" option to the INTEGER Field type, for doing month as 04, etc.
+#TODO: Add "domain" option to the EMAIL Field type
 DEFAULT_STRING_MIN = 1
 DEFAULT_STRING_MAX = 10
 DEFAULT_INTEGER_MIN = 1
 DEFAULT_INTEGER_MAX = 9
+DEFAULT_INDEX_OPTIONS = 2
+DEFAULT_DOMAIN = "meltmedia.com"
+DEFAULT_DATE_FORMAT = "%m/%d/%Y"
 
 def set_required_blank(test_number, field=None):
     """Sets a generation method's values for whether the field is currently required and if it is not, whether
@@ -151,7 +156,7 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, p
         raise InputGeneratorException(message)
 
 
-def generate_email(domain="meltmedia.com", test_number=None, field=None):
+def generate_email(domain=DEFAULT_DOMAIN, test_number=None, field=None):
     """ Generates a random email address in the firstname.lastname@domain format
     :param
         -   domain:         The domain address the email will be from ie. @domain. This defaults to "meltmedia.com"
@@ -163,6 +168,9 @@ def generate_email(domain="meltmedia.com", test_number=None, field=None):
         -   string:         The randomly generated, or blank email string
     """
     try:
+        if field and "domain" in field.keys():
+            domain = field["domain"]
+
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
 
@@ -180,13 +188,6 @@ def generate_email(domain="meltmedia.com", test_number=None, field=None):
             email = "{0}.{1}@{2}".format(first_name, last_name, domain)
 
         return email
-
-    except KeyError as key:
-        message = "Error while generating an Email"
-        if "name" in field.keys():
-            message += " for the {0} field".format(field["name"])
-        message += ". The {0} key is required when passing a field object into the generate_email method".format(key)
-        raise InputGeneratorException(message)
 
     except Exception as e_text:
         message = "Error while generating an Email"
@@ -308,18 +309,15 @@ def generate_zip_code(test_number=None, field=None):
 
         return zip_code
 
-    except KeyError as key:
-        message = "Error while generating a Zip Code"
-        if "name" in field.keys():
-            message += " for the {0} field".format(field["name"])
-        message += ". The {0} key is required when passing a field object into the generate_zip_code method".format(key)
+    except Exception as e_text:
+        message = "Error while generating an Zip code"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"].upper())
+        message += ": {0}".format(e_text)
         raise InputGeneratorException(message)
 
-    except Exception as e_text:
-        raise InputGeneratorException("Zip Code generation error: {0}".format(e_text))
 
-
-def _generate_index(num_of_options=2, test_number=None, field=None):
+def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field=None):
     """ Calculates which option should be selected from the given field based on test number. The index is randomly
         selected after all options have been used at least once.
     :param
@@ -375,15 +373,9 @@ def _generate_index(num_of_options=2, test_number=None, field=None):
         return input_index
 
     except KeyError as key:
-        message = "Error while generating an input index"
-        if "name" in field.keys():
-            message += " for the {0} field".format(field["name"])
-        message += ". The {0} key is required when passing a field object into the _generate_index method".format(key)
+        message = ". The {0} key is required when passing a field object into the _generate_index method".format(key)
         raise InputGeneratorException(message)
 
-
-    except InputGeneratorException:
-        print "yeah"
     except Exception as e_text:
         raise InputGeneratorException(e_text)
 
@@ -403,9 +395,13 @@ def generate_select(num_of_options=2, test_number=None, field=None):
         -   integer:        The randomly generated, or blank index to select from the field's options
     """
     try:
-        return _generate_index(num_of_options, test_number, field)
+        return generate_index(num_of_options, test_number, field)
     except InputGeneratorException as e_text:
-        raise InputGeneratorException("Select Field input index generator error: {0}".format(e_text))
+        message = "Error while generating a Select Field input index"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". Error: {0}".format(e_text)
+        raise InputGeneratorException(message)
 
 
 def generate_drop_down(num_of_options=2, test_number=None, field=None):
@@ -423,11 +419,13 @@ def generate_drop_down(num_of_options=2, test_number=None, field=None):
         -   integer:        The randomly generated, or blank index to select from the field's options
     """
     try:
-        return _generate_index(num_of_options, test_number, field)
-
+        return generate_index(num_of_options, test_number, field)
     except InputGeneratorException as e_text:
-        raise InputGeneratorException("Drop Down Field input index generator error: {0}".format(e_text))
-
+        message = "Error while generating a Drop Down input index"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". Error: {0}".format(e_text)
+        raise InputGeneratorException(message)
 
 def generate_radio(num_of_options=2, test_number=None, field=None):
     """ Calculates which radio button from the list of buttons should be selected based on test number. The index is
@@ -444,11 +442,14 @@ def generate_radio(num_of_options=2, test_number=None, field=None):
         -   integer:        The randomly generated, or blank index to select from the field's options
     """
     try:
-        return _generate_index(num_of_options, test_number, field)
+        return generate_index(num_of_options, test_number, field)
 
     except Exception as e_text:
-        raise InputGeneratorException("Radio Field input index generator error: {0}".format(e_text))
-
+        message = "Error while generating a Radio Button input index"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". Error: {0}".format(e_text)
+        raise InputGeneratorException(message)
 
 def generate_check_box(num_of_options=1, test_number=None, field=None):
     """ Calculates which check box from the list of boxes should be selected based on test number. The index is
@@ -490,12 +491,12 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
 
         if leave_blank:
             pass
-        elif random_choice:
+        elif random_choice and num_of_options > 1:
             #--- Add at least one item to the input list
             index = random.randint(0, num_of_options - 1)
             input_indexes.append(index)
             #--- 50/50 chance of adding another input index to the list
-            while random.randint(0, 1) == 1 and len(input_indexes) <= num_of_options:
+            while random.random() <= .5 and len(input_indexes) < num_of_options:
                 #- Cycle through indexes until finding one that is not already being used
                 while index in input_indexes:
                     index = random.randint(0, num_of_options - 1)
@@ -512,16 +513,19 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
 
     except KeyError as key:
         message = "Error while generating a Check Box input index list"
-        if "name" in field.keys():
+        if field and "name" in field.keys():
             message += " for the {0} field".format(field["name"])
         message += ". The {0} key is required when passing a field object into the generate_check_box method".format(key)
         raise InputGeneratorException(message)
 
     except Exception as e_text:
-        raise InputGeneratorException("Check Box Field input index generator error: {0}".format(e_text))
+        message = "Error while generating a Check Box input indexes"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". Error: {0}".format(e_text)
+        raise InputGeneratorException(message)
 
-
-def generate_date(start_date=None, end_date=None, date_format="%m/%d/%Y", test_number=None, field=None):
+def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMAT, test_number=None, field=None):
     """ Generates a date in the given date format. By default this date will be -18 to -100 years ago in order to keep
         the user over the age of 18 when filling out birthdays. However these dates can be passed through if need be.
     :param
@@ -549,35 +553,38 @@ def generate_date(start_date=None, end_date=None, date_format="%m/%d/%Y", test_n
         -   string:         A string formatted to look like a date
     """
     try:
-        start_date = start_date if not field or "start_date" not in field.keys() else field["start_date"]
-        end_date = end_date if not field or "end_date" not in field.keys() else field["end_date"]
+        required, leave_blank = set_required_blank(test_number, field)
 
-        if start_date and isinstance(start_date, int):
-            start_date = str((datetime.now() - timedelta(days=start_date)).date())
-        if end_date and isinstance(end_date, int):
-            end_date = str((datetime.now() - timedelta(days=end_date)).date())
+        if leave_blank:
+            return ""
+        else:
+            start_date = start_date if not field or "start_date" not in field.keys() else field["start_date"]
+            end_date = end_date if not field or "end_date" not in field.keys() else field["end_date"]
+            date_format = date_format if not field or "date_format" not in field.keys() else field["date_format"]
 
-        if not start_date:
-            start_date = start_date if start_date else str((datetime.now() - timedelta(weeks=52 * 18)).date())
-        if not end_date:
-            end_date = end_date if end_date else str((datetime.now() - timedelta(weeks=52 * 100)).date())
+            if start_date and isinstance(start_date, int):
+                start_date = str((datetime.now() - timedelta(days=start_date)).date())
+            if end_date and isinstance(end_date, int):
+                end_date = str((datetime.now() - timedelta(days=end_date)).date())
 
-        start_time = time.mktime(time.strptime(start_date, "%Y-%m-%d"))
-        end_time = time.mktime(time.strptime(end_date, "%Y-%m-%d"))
+            if not start_date:
+                start_date = start_date if start_date else str((datetime.now() - timedelta(weeks=52 * 20)).date())
+            if not end_date:
+                end_date = end_date if end_date else str((datetime.now() - timedelta(weeks=52 * 100)).date())
 
-        random_time = start_time + random.random() * (end_time - start_time)
+            start_time = time.mktime(time.strptime(start_date, "%Y-%m-%d"))
+            end_time = time.mktime(time.strptime(end_date, "%Y-%m-%d"))
 
-        return time.strftime(date_format, time.localtime(random_time))
+            random_time = start_time + random.random() * (end_time - start_time)
 
-    except KeyError as key:
-        message = "Error while generating a Date"
-        if "name" in field.keys():
-            message += " for the {0} field".format(field["name"])
-        message += ". The {0} key is required when passing a field object into the generate_date method".format(key)
-        raise InputGeneratorException(message)
+            return time.strftime(date_format, time.localtime(random_time))
 
     except Exception as e_text:
-        raise InputGeneratorException("Date generation error: {0}".format(e_text))
+        message = "Error while generating a Date"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". Error: {0}".format(e_text)
+        raise InputGeneratorException(message)
 
 
 class InputGeneratorException(Exception):
