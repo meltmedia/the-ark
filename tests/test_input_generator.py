@@ -257,7 +257,6 @@ class UtilsTestCase(unittest.TestCase):
         field_data = {"name": "Phone Field"}
         self.assertRaises(ig.InputGeneratorException, ig.generate_phone, field=field_data)
 
-
     @patch("the_ark.input_generator.set_required_blank")
     def test_generate_zip(self, required_blank):
         #--- Test default values

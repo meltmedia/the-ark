@@ -3,13 +3,6 @@ import random
 import string
 import time
 
-#TODO: Add a button field
-#TODO: Add a "Random" option to the SELECT Field type, for things like State and year, etc.
-#TODO: Add a parameter to the SELECT Field that lets the code know whether the first option is selectable (if even possible/needed)
-#TODO: Add an underscore to the ZIP_CODE field type
-#TODO: Add "padding" option to the INTEGER Field type, for doing month as 04, etc.
-#TODO: Add "domain" option to the EMAIL Field type
-#TODO: Add the "decimals", "parenthesis", "dash", "space" attributes as optional to the phone field type
 DEFAULT_STRING_MIN = 1
 DEFAULT_STRING_MAX = 10
 DEFAULT_INTEGER_MIN = 1
@@ -219,8 +212,6 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
     :returns
         -   string:         The randomly generated, or blank phone number
     """
-
-    #TODO: Other formats to add: (###)### #### no space after parenth
     try:
         #- Use values from field data if available
         decimals = decimals if not field or "decimals" not in field.keys() else field["decimals"]
@@ -335,8 +326,6 @@ def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field
     :returns
         -   integer:        The randomly generated, or blank index to select from the field's options
     """
-    #TODO: Consider using code similar to this block when filling out these index field types:
-    # selected_option = driver.find_elements_by_css_selector("{0} options:nth-child({1})".format(field_config["css_selector"], (test_number % len(field_config["enums"])) + 1))
     try:
         #--- Reset min and max lengths with the field object values
         num_of_options = num_of_options if not field else len(field["enum"])
@@ -362,7 +351,6 @@ def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field
         #--- Generate the input index to use when filling out this field
         if leave_blank:
             #- Set the return to a blank string if leave_blank is true.
-            #TODO: Decide how best to handle the blank selection, can't interact with it as an integer if it's ""
             input_index = ""
         elif random_choice or always_random:
             #- Select a random index if the field is "random" or if all options have already been selected previously
