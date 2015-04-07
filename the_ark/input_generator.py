@@ -9,6 +9,7 @@ import time
 #TODO: Add an underscore to the ZIP_CODE field type
 #TODO: Add "padding" option to the INTEGER Field type, for doing month as 04, etc.
 #TODO: Add "domain" option to the EMAIL Field type
+#TODO: Add the "decimals", "parenthesis", "dash", "space" attributes as optional to the phone field type
 DEFAULT_STRING_MIN = 1
 DEFAULT_STRING_MAX = 10
 DEFAULT_INTEGER_MIN = 1
@@ -212,13 +213,20 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
         -   test_number:    An int that specifies which submission number this generation is being used for. This will
                             help determine whether the field has been populated previously and whether to leave it blank
         -   field:          The field object. Should include a key:value for all pertinent information to its field
-                            type. Only the "required" key is used while generating an phone field input.
+                            type. If field data is passed in then the object must contain a "required" key. The
+                            "decimals, "parenthesis", "dash" and "space" keys are optional and will override any value,
+                            either passed in or default, for the corresponding parameter.
     :returns
-        -   integer:        The randomly generated, or blank phone number
+        -   string:         The randomly generated, or blank phone number
     """
 
-    #TODO: Other formats to add: ###-###-#### all dashes, (###)### #### no space after parenth
+    #TODO: Other formats to add: (###)### #### no space after parenth
     try:
+        #- Use values from field data if available
+        decimals = decimals if not field or "decimals" not in field.keys() else field["decimals"]
+        parenthesis = parenthesis if not field or "parenthesis" not in field.keys() else field["parenthesis"]
+        dash = dash if not field or "dash" not in field.keys() else field["dash"]
+        space = space if not field or "space" not in field.keys() else field["space"]
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
 
@@ -249,28 +257,24 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
                 #- Format the "number" portion of the phone number
                 #  Dash takes precedence over space
                 if dash:
-                    #- Add the dash between the start and finish of the number if dash parameter is True
-                    number = "{0}-{1}".format(start, finish)
+                    if not space and not parenthesis:
+                        number = "-{0}-{1}".format(start, finish)
+                    else:
+                        #- Add the dash between the start and finish of the number if dash parameter is True
+                        number = "{0}-{1}".format(start, finish)
                 elif space:
                     #- Add a space if space parameter is True, but dash is False
                     number = "{0} {1}".format(start, finish)
                 else:
                     number = "{0}{1}".format(start, finish)
 
-                #- Plug the area code and number together
+                #- Stitch the area code and number together
                 if space:
                     phone_number = "{0} {1}".format(area_code, number)
                 else:
                     phone_number = area_code + number
 
         return phone_number
-
-    except KeyError as key:
-        message = "Error while generating a Phone Number"
-        if "name" in field.keys():
-            message += " for the {0} field".format(field["name"])
-        message += ". The {0} key is required when passing a field object into the generate_phone method".format(key)
-        raise InputGeneratorException(message)
 
     except Exception as e_text:
         message = "Error while generating a Phone Number"
@@ -427,6 +431,7 @@ def generate_drop_down(num_of_options=2, test_number=None, field=None):
         message += ". Error: {0}".format(e_text)
         raise InputGeneratorException(message)
 
+
 def generate_radio(num_of_options=2, test_number=None, field=None):
     """ Calculates which radio button from the list of buttons should be selected based on test number. The index is
         randomly selected after all options have been used at least once.
@@ -450,6 +455,7 @@ def generate_radio(num_of_options=2, test_number=None, field=None):
             message += " for the {0} field".format(field["name"])
         message += ". Error: {0}".format(e_text)
         raise InputGeneratorException(message)
+
 
 def generate_check_box(num_of_options=1, test_number=None, field=None):
     """ Calculates which check box from the list of boxes should be selected based on test number. The index is
@@ -524,6 +530,7 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
             message += " for the {0} field".format(field["name"])
         message += ". Error: {0}".format(e_text)
         raise InputGeneratorException(message)
+
 
 def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMAT, test_number=None, field=None):
     """ Generates a date in the given date format. By default this date will be -18 to -100 years ago in order to keep

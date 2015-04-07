@@ -2,16 +2,10 @@ import re
 import unittest
 from datetime import datetime, timedelta
 from the_ark import input_generator as ig
-from mock import patch, Mock
+from mock import patch
 
-#TODO: Determine how to test the random generation chances
 
 class UtilsTestCase(unittest.TestCase):
-
-    def setUp(self):
-        #TODO: Might need his later, i dont know
-        pass
-
     @patch("random.random")
     def test_set_required_blank(self, random_value):
         #--- Tests without field date
@@ -168,25 +162,101 @@ class UtilsTestCase(unittest.TestCase):
                           .format(test_domain, returned_email))
 
         #--- Test the General Exception catch
+        #- Without field data
         required_blank.side_effect = Exception('Boom!')
-
         self.assertRaises(ig.InputGeneratorException, ig.generate_email)
-
+        #- With field data
         field_data = {"name": "Email Field"}
         self.assertRaises(ig.InputGeneratorException, ig.generate_email, field=field_data)
 
-    # #TODO: Finish this phone sutff last
-    # @patch("the_ark.input_generator.set_required_blank")
-    # def test_generate_phone(self, required_blank):
-    #     #--- Test default values
-    #     required_blank.return_value = True, False
-    #     returned_phone = ig.generate_phone()
-    #     if ig.DEFAULT_DOMAIN not in returned_phone:
-    #         self.assertIn(ig.DEFAULT_DOMAIN, returned_phone,
-    #                       "The generated email did not include the default domain when the default parameters were "
-    #                       "used. It should contain '{0}' but the returned email was: '{1}'".format(ig.DEFAULT_DOMAIN))
-    #
-    #     # self.assertRegexpMatches()
+    @patch("the_ark.input_generator.set_required_blank")
+    def test_generate_phone(self, required_blank):
+        #--- Test default values ########## ^\d{10}
+        required_blank.return_value = True, False
+        returned_phone = ig.generate_phone()
+        self.assertRegexpMatches(returned_phone, "^\d{10}")
+
+        #--- Test Blank
+        required_blank.return_value = False, True
+        returned_phone = ig.generate_phone()
+        self.assertEqual(returned_phone, "")
+
+        #--- Check for ###-###-#### ^[2-9]\d{2}-\d{3}-\d{4}
+        #- Parameters passed in
+        required_blank.return_value = True, False
+        returned_phone = ig.generate_phone(dash=True)
+        self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}-\d{3}-\d{4}")
+        #- Parameters from field
+        field_data = {"name": "phone field", "dash": True}
+        returned_phone = ig.generate_phone(field=field_data)
+        self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}-\d{3}-\d{4}")
+
+        #--- Check for ### ### #### ^[2-9]\d{2}\s\d{3}\s\d{4}
+        #- Parameters passed in
+        required_blank.return_value = True, False
+        returned_phone = ig.generate_phone(space=True)
+        self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\s\d{3}\s\d{4}")
+        #- Parameters from field
+        field_data = {"name": "phone field", "space": True}
+        returned_phone = ig.generate_phone(field=field_data)
+        self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\s\d{3}\s\d{4}")
+
+        #--- Check for (###)###-#### ^\(\d{3}\)\d{3}-\d{4}
+        #- Parameters passed in
+        required_blank.return_value = True, False
+        returned_phone = ig.generate_phone(parenthesis=True, dash=True)
+        self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{3}-\d{4}")
+        #- Parameters from field
+        field_data = {"name": "phone field", "parenthesis": True, "dash": True}
+        returned_phone = ig.generate_phone(field=field_data)
+        self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{3}-\d{4}")
+
+        #--- Check for (###)####### ^\(\d{3}\)\d{7}
+        #- Parameters passed in
+        required_blank.return_value = True, False
+        returned_phone = ig.generate_phone(parenthesis=True)
+        self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{7}")
+        #- Parameters from field
+        field_data = {"name": "phone field", "parenthesis": True}
+        returned_phone = ig.generate_phone(field=field_data)
+        self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{7}")
+
+        #--- Check for (###) ###-#### ^\(\d{3}\)\s\d{3}-\d{4}
+        #- Parameters passed in
+        returned_phone = ig.generate_phone(parenthesis=True, dash=True, space=True)
+        self.assertRegexpMatches(returned_phone, "\(\d{3}\)\s\d{3}-\d{4}")
+        #- Parameters from field
+        field_data = {"name": "phone field", "parenthesis": True, "dash": True, "space": True}
+        returned_phone = ig.generate_phone(field=field_data)
+        self.assertRegexpMatches(returned_phone, "\(\d{3}\)\s\d{3}-\d{4}")
+
+        #--- Check for ###.###.#### ^[2-9]\d{2}\.\d{3}\.\d{4}
+        #-- Just Decimals
+        #- Parameters passed in
+        returned_phone = ig.generate_phone(decimals=True)
+        self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\.\d{3}\.\d{4}")
+        #- Parameters from field
+        field_data = {"name": "phone field", "decimals": True}
+        returned_phone = ig.generate_phone(field=field_data)
+        self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\.\d{3}\.\d{4}")
+
+        #--- Decimals override everything
+        #- Parameters passed in
+        returned_phone = ig.generate_phone(decimals=True, parenthesis=True, dash=True, space=True)
+        self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\.\d{3}\.\d{4}")
+        #- Parameters from field
+        field_data = {"name": "phone field", "decimals": True, "parenthesis": True, "dash": True, "space": True}
+        returned_phone = ig.generate_phone(field=field_data)
+        self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\.\d{3}\.\d{4}")
+
+        #--- Test the General Exception catch
+        #- Without field
+        required_blank.return_value = "Duck", "Duck", "Goose!"
+        self.assertRaises(ig.InputGeneratorException, ig.generate_phone)
+        #- With field data
+        field_data = {"name": "Phone Field"}
+        self.assertRaises(ig.InputGeneratorException, ig.generate_phone, field=field_data)
+
 
     @patch("the_ark.input_generator.set_required_blank")
     def test_generate_zip(self, required_blank):
@@ -209,8 +279,7 @@ class UtilsTestCase(unittest.TestCase):
         self.assertRaises(ig.InputGeneratorException, ig.generate_zip_code, field=field_data)
 
     @patch("random.random")
-    @patch("the_ark.input_generator.set_required_blank")
-    def test_generate_index(self, required_blank, random_result):
+    def test_generate_index(self, random_result):
         #--- Test default values
         returned_index = ig.generate_index()
         if returned_index not in range(0, 2):
@@ -292,7 +361,7 @@ class UtilsTestCase(unittest.TestCase):
             ig.generate_drop_down("apples")
 
     def test_generate_radio(self):
-        # --- General Exception
+        #--- General Exception
         field_data = {"name": "Select Generator"}
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_radio("apples", field=field_data)
@@ -301,8 +370,7 @@ class UtilsTestCase(unittest.TestCase):
             ig.generate_radio("apples")
 
     @patch("random.random")
-    @patch("the_ark.input_generator.set_required_blank")
-    def test_generate_check_box(self, required_blank, random_result):
+    def test_generate_check_box(self, random_result):
         #--- Test default values
         returned_index = ig.generate_check_box()
         if not isinstance(returned_index, list):
@@ -364,9 +432,9 @@ class UtilsTestCase(unittest.TestCase):
         #- Format Check
         try:
             datetime.strptime(returned_date, ig.DEFAULT_DATE_FORMAT)
-        except:
+        except Exception as e:
             self.fail("The default settings for generate_date() did not return a date in the default format "
-                      "of {0}. The date returned was: {1}".format(ig.DEFAULT_DATE_FORMAT, returned_date))
+                      "of {0}. The date returned was '{1}': {2}".format(ig.DEFAULT_DATE_FORMAT, returned_date, e))
 
         #--- Blank Date
         required_blank.return_value = False, True
@@ -411,7 +479,6 @@ class UtilsTestCase(unittest.TestCase):
         #- Returned Date older than end date
         self.assertGreater(end_date, formatted_date,
                            "When using dates, in the past, the returned date was not older than the end date")
-
 
         #--- Date Range Checks (in the FUTURE!!! *cue sci-fi sound effects)
         required_blank.return_value = True, False
@@ -460,4 +527,3 @@ class UtilsTestCase(unittest.TestCase):
         #- Without field
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_date("apples")
-
