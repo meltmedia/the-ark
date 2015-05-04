@@ -46,7 +46,7 @@ class UtilsTestCase(unittest.TestCase):
     @patch("the_ark.input_generator.set_required_blank")
     def test_generate_string(self, required_blank):
         #--- Test default values
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_string = ig.generate_string()
         if not ig.DEFAULT_STRING_MIN <= len(returned_string) <= ig.DEFAULT_STRING_MAX:
             self.fail("The string length returned using the method defaults was incorrect. "
@@ -55,10 +55,10 @@ class UtilsTestCase(unittest.TestCase):
                                                                             len(returned_string)))
 
         #--- Test blank field return
-        required_blank.return_value = False, True
+        required_blank.return_value = True
         self.assertEqual("", ig.generate_string())
 
-        required_blank.return_value = False, False
+        required_blank.return_value = False
         #--- Test string length ranges
         returned_string = ig.generate_string(15, 15)
         self.assertEqual(len(returned_string), 15)
@@ -85,7 +85,7 @@ class UtilsTestCase(unittest.TestCase):
     @patch("the_ark.input_generator.set_required_blank")
     def test_generate_integer(self, required_blank):
         #--- Test default values
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_integer = ig.generate_integer()
         if not ig.DEFAULT_INTEGER_MIN <= len(returned_integer) <= ig.DEFAULT_INTEGER_MAX:
             self.fail("The integer length returned using the method defaults was incorrect. "
@@ -94,11 +94,11 @@ class UtilsTestCase(unittest.TestCase):
                                                                             len(returned_integer)))
 
         #--- Test blank field return
-        required_blank.return_value = False, True
+        required_blank.return_value = True
         self.assertEqual("", ig.generate_integer())
 
         #--- Test integer ranges
-        required_blank.return_value = False, False
+        required_blank.return_value = False
         returned_integer = ig.generate_integer(15, 15)
         self.assertEqual(returned_integer, "15")
 
@@ -122,14 +122,14 @@ class UtilsTestCase(unittest.TestCase):
             ig.generate_integer("apples", "oranges")
 
         #--- Test padding
-        required_blank.return_value = False, False
+        required_blank.return_value = False
         returned_integer = ig.generate_integer(3, 8, 4)
         self.assertEqual(len(returned_integer), 4)
 
     @patch("the_ark.input_generator.set_required_blank")
     def test_generate_email(self, required_blank):
         #--- Test default values
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_email = ig.generate_email()
         if ig.DEFAULT_DOMAIN not in returned_email:
             self.assertIn(ig.DEFAULT_DOMAIN, returned_email,
@@ -137,7 +137,7 @@ class UtilsTestCase(unittest.TestCase):
                           "used. It should contain '{0}' but the returned email was: '{1}'".format(ig.DEFAULT_DOMAIN,
                                                                                                    returned_email))
         #--- Test custom domain
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         test_domain = "vincentrocks.com"
         returned_email = ig.generate_email(test_domain)
         if ig.DEFAULT_DOMAIN not in returned_email:
@@ -147,12 +147,12 @@ class UtilsTestCase(unittest.TestCase):
                                                                                              returned_email))
 
         #--- Blank email
-        required_blank.return_value = False, True
+        required_blank.return_value = True
         returned_email = ig.generate_email(test_domain)
         self.assertEqual("", returned_email)
 
         #--- Passing in a field object
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         field_data = {"domain": test_domain}
         returned_email = ig.generate_email(field=field_data)
         if ig.DEFAULT_DOMAIN not in returned_email:
@@ -172,18 +172,18 @@ class UtilsTestCase(unittest.TestCase):
     @patch("the_ark.input_generator.set_required_blank")
     def test_generate_phone(self, required_blank):
         #--- Test default values ########## ^\d{10}
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_phone = ig.generate_phone()
         self.assertRegexpMatches(returned_phone, "^\d{10}")
 
         #--- Test Blank
-        required_blank.return_value = False, True
+        required_blank.return_value = True
         returned_phone = ig.generate_phone()
         self.assertEqual(returned_phone, "")
 
         #--- Check for ###-###-#### ^[2-9]\d{2}-\d{3}-\d{4}
         #- Parameters passed in
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_phone = ig.generate_phone(dash=True)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}-\d{3}-\d{4}")
         #- Parameters from field
@@ -193,7 +193,7 @@ class UtilsTestCase(unittest.TestCase):
 
         #--- Check for ### ### #### ^[2-9]\d{2}\s\d{3}\s\d{4}
         #- Parameters passed in
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_phone = ig.generate_phone(space=True)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\s\d{3}\s\d{4}")
         #- Parameters from field
@@ -203,7 +203,7 @@ class UtilsTestCase(unittest.TestCase):
 
         #--- Check for (###)###-#### ^\(\d{3}\)\d{3}-\d{4}
         #- Parameters passed in
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_phone = ig.generate_phone(parenthesis=True, dash=True)
         self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{3}-\d{4}")
         #- Parameters from field
@@ -213,7 +213,7 @@ class UtilsTestCase(unittest.TestCase):
 
         #--- Check for (###)####### ^\(\d{3}\)\d{7}
         #- Parameters passed in
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_phone = ig.generate_phone(parenthesis=True)
         self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{7}")
         #- Parameters from field
@@ -260,12 +260,12 @@ class UtilsTestCase(unittest.TestCase):
     @patch("the_ark.input_generator.set_required_blank")
     def test_generate_zip(self, required_blank):
         #--- Test default values
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_zip = ig.generate_zip_code()
         self.assertEqual(len(returned_zip), 5)
 
         #--- Blank Zip
-        required_blank.return_value = False, True
+        required_blank.return_value = True
         returned_zip = ig.generate_zip_code()
         self.assertEqual("", returned_zip)
 
@@ -426,7 +426,7 @@ class UtilsTestCase(unittest.TestCase):
     @patch("the_ark.input_generator.set_required_blank")
     def test_generate_date(self, required_blank):
         #--- Test Defaults
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         returned_date = ig.generate_date()
         #- Format Check
         try:
@@ -436,12 +436,12 @@ class UtilsTestCase(unittest.TestCase):
                       "of {0}. The date returned was '{1}': {2}".format(ig.DEFAULT_DATE_FORMAT, returned_date, e))
 
         #--- Blank Date
-        required_blank.return_value = False, True
+        required_blank.return_value = True
         returned_date = ig.generate_date()
         self.assertEqual("", returned_date, "The check for blank dates did not return a blank string")
 
         #--- Date Range Checks (in the past)
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         #-- Past in days (int)
         start_date = 4
         end_date = 2
@@ -480,7 +480,7 @@ class UtilsTestCase(unittest.TestCase):
                            "When using dates, in the past, the returned date was not older than the end date")
 
         #--- Date Range Checks (in the FUTURE!!! *cue sci-fi sound effects)
-        required_blank.return_value = True, False
+        required_blank.return_value = False
         #-- Future in days (int)
         start_date = -4
         end_date = -20
