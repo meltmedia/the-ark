@@ -4,7 +4,6 @@ import os
 import unittest
 
 from the_ark import selenium_helpers
-from selenium.common import exceptions
 from selenium.webdriver import PhantomJS
 
 rhino_client_ojb = None
@@ -18,27 +17,33 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def setUp(self):
         self.driver = PhantomJS()
 
-    def test_ensure_valid(self):
+    def test_exist_valid(self):
+        self.driver.get(SELENIUM_TEST_HTML)
+        sh = selenium_helpers.SeleniumHelpers(self.driver)
+        valid_css_selector = ".valid"
+        sh.ensure_element_exists(valid_css_selector)
+
+    def test_exist_invalid(self):
+        self.driver.get(SELENIUM_TEST_HTML)
+        sh = selenium_helpers.SeleniumHelpers(self.driver)
+        self.assertRaises(selenium_helpers.ElementError, sh.ensure_element_exists, ".invalid")
+
+    def test_visible_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".valid"
         sh.ensure_element_visible(valid_css_selector)
 
-    def test_ensure_invalid(self):
+    def test_visible_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.ensure_element_visible, ".invalid")
+        self.assertRaises(selenium_helpers.ElementNotVisibleError, sh.ensure_element_visible, ".hidden")
 
-    def test_find_valid(self):
+    def test_get_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".valid"
-        sh.find_element(valid_css_selector)
-
-    def test_find_invalid(self):
-        self.driver.get(SELENIUM_TEST_HTML)
-        sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.find_element, ".invalid")
+        sh.get_element(valid_css_selector)
 
     def test_wait_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -49,7 +54,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_wait_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.TimeoutException, sh.wait_for_element, ".invalid", 1)
+        self.assertRaises(selenium_helpers.TimeoutError, sh.wait_for_element, ".invalid", 1)
 
     def test_click_element_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -60,7 +65,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_click_element_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.click_an_element, ".invalid a")
+        self.assertRaises(selenium_helpers.ElementError, sh.click_an_element, ".invalid a")
 
     def test_click_location_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -71,7 +76,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_click_location_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.click_location, ".invalid a")
+        self.assertRaises(selenium_helpers.ClickPositionError, sh.click_location(".valid a", -1000, -1000))
 
     def test_double_click_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -82,7 +87,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_double_click_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.double_click, ".invalid a")
+        self.assertRaises(selenium_helpers.ElementError, sh.double_click, ".invalid a")
 
     def test_clear_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -93,7 +98,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_clear_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.clear_an_element, ".invalid input")
+        self.assertRaises(selenium_helpers.ElementError, sh.clear_an_element, ".invalid input")
 
     def test_fill_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -104,7 +109,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_fill_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.fill_an_element, ".invalid input", "test text")
+        self.assertRaises(selenium_helpers.ElementError, sh.fill_an_element, ".invalid input", "test text")
 
     def test_hover_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -115,7 +120,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_hover_invali(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.hover_on_element, ".invalid a")
+        self.assertRaises(selenium_helpers.ElementError, sh.hover_on_element, ".invalid a")
 
     def test_scroll_to_element_bottom_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -138,7 +143,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_scroll_to_element_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.scroll_to_element, ".invalid a")
+        self.assertRaises(selenium_helpers.ElementError, sh.scroll_to_element, ".invalid a")
 
     def test_scroll_to_position_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -148,7 +153,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_scroll_to_position_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.WebDriverException, sh.scroll_to_position, None, None)
+        self.assertRaises(selenium_helpers.ScrollPositionError, sh.scroll_to_position, None, None)
 
     def test_scroll_element_top_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -177,7 +182,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_scroll_element_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.WebDriverException, sh.scroll_an_element, ".not-scrollable")
+        self.assertRaises(selenium_helpers.ElementError, sh.scroll_an_element, ".not-scrollable")
 
     def test_element_current_scroll_position_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -188,7 +193,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_element_current_scroll_position_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.WebDriverException, sh.element_current_scroll_position, ".not-scrollable")
+        self.assertRaises(selenium_helpers.ElementError, sh.element_current_scroll_position, ".not-scrollable")
 
     def test_element_scroll_position_at_top_true_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -206,7 +211,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_element_scroll_position_at_top_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.WebDriverException, sh.element_scroll_position_at_top, ".not-scrollable")
+        self.assertRaises(selenium_helpers.ElementError, sh.element_scroll_position_at_top, ".not-scrollable")
 
     def test_element_scroll_position_at_bottom_true_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -224,7 +229,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_element_scroll_position_at_bottm_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.WebDriverException, sh.element_scroll_position_at_bottom, ".not-scrollable")
+        self.assertRaises(selenium_helpers.ElementError, sh.element_scroll_position_at_bottom, ".not-scrollable")
 
     def test_hide_element_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -235,7 +240,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_hide_element_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.hide_element, ".invalid")
+        self.assertRaises(selenium_helpers.ElementError, sh.hide_element, ".invalid")
 
     def test_show_element_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -246,4 +251,4 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_show_element_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
-        self.assertRaises(exceptions.NoSuchElementException, sh.show_element, ".invalid")
+        self.assertRaises(selenium_helpers.ElementError, sh.show_element, ".invalid")

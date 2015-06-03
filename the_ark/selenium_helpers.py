@@ -31,7 +31,7 @@ class SeleniumHelpers():
             self.driver.find_element_by_css_selector(css_selector)
         except common.exceptions.NoSuchElementException as no_such:
             message = "Element '{0}' does not exist on page '{1}'.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<Selenium {2}>".format(css_selector, self.driver.current_url, no_such)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -72,7 +72,7 @@ class SeleniumHelpers():
                                                                                                         css_selector)))
         except common.exceptions.TimeoutException as timeout:
             message = "Element '{0}' does not exist on page '{1}' after waiting {2} seconds.\n" \
-                      "<Selenium Message: {3}>".format(css_selector, self.driver.current_url, wait_time, timeout)
+                      "<Selenium {3}>".format(css_selector, self.driver.current_url, wait_time, timeout)
             raise TimeoutError(msg=message, stacktrace=traceback.format_exc(), current_url=self.driver.current_url,
                                css_selector=css_selector, wait_time=wait_time)
 
@@ -87,7 +87,7 @@ class SeleniumHelpers():
             self.get_element(css_selector).click()
         except common.exceptions.NoSuchElementException as no_such:
             message = "Unable to click the element '{0}' on page '{1}'.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<Selenium {2}>".format(css_selector, self.driver.current_url, no_such)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -105,7 +105,7 @@ class SeleniumHelpers():
                                                                   y_position)
         except common.exceptions.NoSuchElementException as no_such:
             message = "Unable to click at the position ({0}, {1}) of the element '{2}' on page '{3}'.\n" \
-                      "<Selenium Message: {4}>".format(x_position, y_position, css_selector,
+                      "<Selenium {4}>".format(x_position, y_position, css_selector,
                                                        self.driver.current_url, no_such)
             raise ClickPositionError(msg=message, stacktrace=traceback.format_exc(),
                                      current_url=self.driver.current_url, css_selector=css_selector,
