@@ -31,7 +31,7 @@ class SeleniumHelpers():
             self.driver.find_element_by_css_selector(css_selector)
         except common.exceptions.NoSuchElementException as no_such:
             message = "Element '{0}' does not exist on page '{1}'.\n" \
-                      "<Selenium {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<{2}>".format(css_selector, self.driver.current_url, no_such)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -72,7 +72,7 @@ class SeleniumHelpers():
                                                                                                         css_selector)))
         except common.exceptions.TimeoutException as timeout:
             message = "Element '{0}' does not exist on page '{1}' after waiting {2} seconds.\n" \
-                      "<Selenium {3}>".format(css_selector, self.driver.current_url, wait_time, timeout)
+                      "<{3}>".format(css_selector, self.driver.current_url, wait_time, timeout)
             raise TimeoutError(msg=message, stacktrace=traceback.format_exc(), current_url=self.driver.current_url,
                                css_selector=css_selector, wait_time=wait_time)
 
@@ -87,7 +87,7 @@ class SeleniumHelpers():
             self.get_element(css_selector).click()
         except SeleniumHelperExceptions as click_error:
             click_error.msg = "Unable to click element. | " + click_error.msg
-            raise click_error 
+            raise click_error
         except Exception as unexpected_error:
             message = "Unexpected error occurred attempting to click the element '{0}' on page '{1}'.\n" \
                       "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
