@@ -85,9 +85,12 @@ class SeleniumHelpers():
         try:
             self.ensure_element_visible(css_selector)
             self.get_element(css_selector).click()
-        except common.exceptions.NoSuchElementException as no_such:
-            message = "Unable to click the element '{0}' on page '{1}'.\n" \
-                      "<Selenium {2}>".format(css_selector, self.driver.current_url, no_such)
+        except SeleniumHelperExceptions as click_error:
+            click_error.msg = "Unable to click element. | " + click_error.msg
+            raise click_error 
+        except Exception as unexpected_error:
+            message = "Unexpected error occurred attempting to click the element '{0}' on page '{1}'.\n" \
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -103,10 +106,14 @@ class SeleniumHelpers():
             self.ensure_element_visible(css_selector)
             ActionChains(self.driver).move_to_element_with_offset(self.get_element(css_selector), x_position,
                                                                   y_position)
-        except common.exceptions.NoSuchElementException as no_such:
+        except SeleniumHelperExceptions as click_location_error:
+            click_location_error.msg = "Unable to click the position ({0}, {1}). | ".format(x_position, y_position) + \
+                                       click_location_error.msg
+            raise click_location_error
+        except Exception as unexpected_error:
             message = "Unable to click at the position ({0}, {1}) of the element '{2}' on page '{3}'.\n" \
-                      "<Selenium {4}>".format(x_position, y_position, css_selector,
-                                                       self.driver.current_url, no_such)
+                      "<{4}>".format(x_position, y_position, css_selector,
+                                                       self.driver.current_url, unexpected_error)
             raise ClickPositionError(msg=message, stacktrace=traceback.format_exc(),
                                      current_url=self.driver.current_url, css_selector=css_selector,
                                      y_position=y_position, x_position=x_position)
@@ -120,9 +127,12 @@ class SeleniumHelpers():
         try:
             self.ensure_element_visible(css_selector)
             ActionChains(self.driver).double_click(self.get_element(css_selector))
-        except common.exceptions.NoSuchElementException as no_such:
+        except SeleniumHelperExceptions as double_click_error:
+            double_click_error.msg = "Unable to double click element. | " + double_click_error.msg
+            raise double_click_error
+        except Exception as unexpected_error:
             message = "Unable to double-click the element '{0}' on page '{1}'.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -136,9 +146,12 @@ class SeleniumHelpers():
             self.ensure_element_visible(css_selector)
             self.click_an_element(css_selector)
             self.get_element(css_selector).clear()
-        except common.exceptions.NoSuchElementException as no_such:
+        except SeleniumHelperExceptions as clear_error:
+            clear_error.msg = "Unable to clear element. | " + clear_error.msg
+            raise clear_error
+        except Exception as unexpected_error:
             message = "Unable to clear the element '{0}' on page '{1}'.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -154,9 +167,12 @@ class SeleniumHelpers():
             self.click_an_element(css_selector)
             self.clear_an_element(css_selector)
             self.get_element(css_selector).send_keys(fill_text)
-        except common.exceptions.NoSuchElementException as no_such:
+        except SeleniumHelperExceptions as fill_error:
+            fill_error.msg = "Unable to fill element. | " + fill_error.msg
+            raise fill_error
+        except Exception as unexpected_error:
             message = "Unable to fill the element '{0}' on page '{1}'.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -170,9 +186,12 @@ class SeleniumHelpers():
             self.ensure_element_visible(css_selector)
             hover = ActionChains(self.driver).move_to_element(self.get_element(css_selector))
             hover.perform()
-        except common.exceptions.NoSuchElementException as no_such:
+        except SeleniumHelperExceptions as hover_error:
+            hover_error.msg = "Unable to hover over element. | " + hover_error.msg
+            raise hover_error
+        except Exception as unexpected_error:
             message = "Unable to hover over the element '{0}' on page '{1}'.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -201,9 +220,12 @@ class SeleniumHelpers():
                 #--- Scroll the window so the top of the element will be at the top of the window.
                 self.driver.execute_script("var element = arguments[0]; element.scrollIntoView(true);", element)
 
-        except common.exceptions.NoSuchElementException as no_such:
+        except SeleniumHelperExceptions as scroll_to_element_error:
+            scroll_to_element_error.msg = "Unable to scroll to element. | " + scroll_to_element_error.msg
+            raise scroll_to_element_error
+        except Exception as unexpected_error:
             message = "Unable to scroll to the element '{0}' on page '{1}'.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -219,8 +241,8 @@ class SeleniumHelpers():
         else:
             message = "Unable to scroll to position ('{0}', '{1}') on page '{2}'.".format(x_position, y_position,
                                                                                           self.driver.current_url)
-            raise ScrollPositionError(msg=message, stacktrace=traceback.format_exc(), current_url=self.driver.current_url,
-                                 y_position=y_position, x_position=x_position)
+            raise ScrollPositionError(msg=message, stacktrace=traceback.format_exc(),
+                                      current_url=self.driver.current_url, y_position=y_position, x_position=x_position)
 
     def scroll_an_element(self, css_selector, scroll_position=None, scroll_padding=0, scroll_top=False,
                           scroll_bottom=False):
@@ -258,9 +280,12 @@ class SeleniumHelpers():
                 self.driver.execute_script("var element = document.querySelector(arguments[0]); "
                                            "element.scrollTop += (arguments[1] - arguments[2]);", css_selector,
                                            element_height, scroll_padding)
-        except common.exceptions.WebDriverException as web_driver_exception:
+        except SeleniumHelperExceptions as scroll_element_error:
+            scroll_element_error.msg = "Unable to scroll element. | " + scroll_element_error.msg
+            raise scroll_element_error
+        except Exception as unexpected_error:
             message = "Unable to scroll the element '{0}' on page '{1}'.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, web_driver_exception)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -278,9 +303,13 @@ class SeleniumHelpers():
                                                          "scrollPosition = element.scrollTop; "
                                                          "return scrollPosition;", css_selector)
             return scroll_position
-        except common.exceptions.WebDriverException as web_driver_exception:
+        except SeleniumHelperExceptions as current_scroll_error:
+            current_scroll_error.msg = "Unable to determine the element's scroll position. | " + \
+                                       current_scroll_error.msg
+            raise current_scroll_error
+        except Exception as unexpected_error:
             message = "Unable to determine the scroll position of the element '{0}' on page '{1}'.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, web_driver_exception)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -301,9 +330,13 @@ class SeleniumHelpers():
                 return False
             else:
                 return True
-        except common.exceptions.WebDriverException as web_driver_exception:
+        except SeleniumHelperExceptions as scroll_at_top_error:
+            scroll_at_top_error.msg = "Unable to determine if element is scrolled to the top. | " + \
+                                      scroll_at_top_error.msg
+            raise scroll_at_top_error
+        except Exception as unexpected_error:
             message = "Unable to determine if the scroll position of the element '{0}' on page '{1}' is at the top.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, web_driver_exception)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -329,9 +362,13 @@ class SeleniumHelpers():
                 return False
             else:
                 return True
-        except common.exceptions.WebDriverException as web_driver_exception:
+        except SeleniumHelperExceptions as scroll_at_bottom_error:
+            scroll_at_bottom_error.msg = "Unable to determine if element is scrolled to the bottom. | " + \
+                                         scroll_at_bottom_error.msg
+            raise scroll_at_bottom_error
+        except Exception as unexpected_error:
             message = "Unable to determine if the scroll position of the element '{0}' on page '{1}' is at the bottom."\
-                      "\n<Selenium Message: {2}>".format(css_selector, self.driver.current_url, web_driver_exception)
+                      "\n<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -344,9 +381,12 @@ class SeleniumHelpers():
         try:
             self.ensure_element_visible(css_selector)
             self.driver.execute_script("document.querySelector(arguments[0]).style.display = 'none';", css_selector)
-        except common.exceptions.NoSuchElementException as no_such:
+        except SeleniumHelperExceptions as hide_error:
+            hide_error.msg = "Unable to hide element. | " + hide_error.msg
+            raise hide_error
+        except Exception as unexpected_error:
             message = "Unable to hide element '{0}' on page '{1}', it may already hidden.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -359,9 +399,12 @@ class SeleniumHelpers():
         try:
             self.ensure_element_visible(css_selector)
             self.driver.execute_script("document.querySelector(arguments[0]).style.display = 'block';", css_selector)
-        except common.exceptions.NoSuchElementException as no_such:
+        except SeleniumHelperExceptions as show_error:
+            show_error.msg = "Unable to show element. | " + show_error.msg
+            raise show_error
+        except Exception as unexpected_error:
             message = "Unable to show element '{0}' on page '{1}', that element may not exist.\n" \
-                      "<Selenium Message: {2}>".format(css_selector, self.driver.current_url, no_such)
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
