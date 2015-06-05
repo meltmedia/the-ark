@@ -10,7 +10,7 @@ from selenium.webdriver.support import expected_conditions as expected_condition
 import traceback
 
 
-class SeleniumHelpers():
+class SeleniumHelpers:
 
     def __init__(self, driver):
         """
@@ -112,8 +112,7 @@ class SeleniumHelpers():
             raise click_location_error
         except Exception as unexpected_error:
             message = "Unable to click at the position ({0}, {1}) of the element '{2}' on page '{3}'.\n" \
-                      "<{4}>".format(x_position, y_position, css_selector,
-                                                       self.driver.current_url, unexpected_error)
+                      "<{4}>".format(x_position, y_position, css_selector, self.driver.current_url, unexpected_error)
             raise ClickPositionError(msg=message, stacktrace=traceback.format_exc(),
                                      current_url=self.driver.current_url, css_selector=css_selector,
                                      y_position=y_position, x_position=x_position)
@@ -210,14 +209,14 @@ class SeleniumHelpers():
             element = self.get_element(css_selector)
 
             if position_bottom or position_middle:
-                #--- Scroll the window so the bottom of the element will be at the bottom of the window.
+                # Scroll the window so the bottom of the element will be at the bottom of the window.
                 self.driver.execute_script("var element = arguments[0]; element.scrollIntoView(false);", element)
                 if position_middle:
-                    #--- Scroll the window so the element is in the middle of the window.
+                    # Scroll the window so the element is in the middle of the window.
                     scroll_position = (self.driver.get_window_size()["height"] / 2)
                     self.driver.execute_script("window.scrollBy(0, arguments[0]);", scroll_position)
             else:
-                #--- Scroll the window so the top of the element will be at the top of the window.
+                # Scroll the window so the top of the element will be at the top of the window.
                 self.driver.execute_script("var element = arguments[0]; element.scrollIntoView(true);", element)
 
         except SeleniumHelperExceptions as scroll_to_element_error:
