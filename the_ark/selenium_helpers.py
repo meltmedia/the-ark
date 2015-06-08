@@ -411,7 +411,7 @@ class SeleniumHelpers:
 class SeleniumHelperExceptions(common.exceptions.WebDriverException):
     def __init__(self, msg, stacktrace, current_url):
         self.current_url = current_url
-        self.details = {}
+        self.details = {"current_url": self.current_url}
         super(SeleniumHelperExceptions, self).__init__(msg=msg, stacktrace=stacktrace)
 
 
