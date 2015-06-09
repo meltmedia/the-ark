@@ -3,8 +3,10 @@ __author__ = 'alow'
 import os
 import unittest
 
-from the_ark import selenium_helpers
+from mock import create_autospec
 from selenium.webdriver import PhantomJS
+from the_ark import selenium_helpers
+
 
 rhino_client_ojb = None
 ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -21,7 +23,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".valid"
-        sh.ensure_element_exists(valid_css_selector)
+        ensure_function = create_autospec(sh.ensure_element_exists)
+        ensure_function(valid_css_selector)
+        ensure_function.assert_called_once_with(valid_css_selector)
 
     def test_exist_invalid(self):
         self.driver.get(SELENIUM_TEST_HTML)
@@ -43,7 +47,8 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.driver.get(SELENIUM_TEST_HTML)
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".valid"
-        sh.get_element(valid_css_selector)
+        element = sh.get_element(valid_css_selector)
+        self.assertAlmostEquals(element.location, {'y': 21, 'x': 48})
 
     def test_wait_valid(self):
         self.driver.get(SELENIUM_TEST_HTML)
