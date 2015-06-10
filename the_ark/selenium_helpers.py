@@ -47,6 +47,8 @@ class SeleniumHelpers:
             message = "Element '{0}' is not visible on page '{1}'.".format(css_selector, self.driver.current_url)
             raise ElementNotVisibleError(msg=message, stacktrace=traceback.format_exc(),
                                          current_url=self.driver.current_url, css_selector=css_selector)
+        else:
+            return element_visible
 
     def get_element(self, css_selector):
         """
