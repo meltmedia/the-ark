@@ -51,6 +51,11 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         valid_css_selector = ".valid"
         self.assertEqual(sh.get_element(valid_css_selector).location, {'y': 21, 'x': 48})
 
+    def test_get_list_of_elements_valid(self):
+        sh = selenium_helpers.SeleniumHelpers(self.driver)
+        valid_css_selector = ".valid-list li"
+        self.assertEqual(len(sh.get_list_of_elements(valid_css_selector)), 3)
+
     @patch("selenium.webdriver.support.ui.WebDriverWait.until")
     def test_wait_valid(self, mock_wait):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
