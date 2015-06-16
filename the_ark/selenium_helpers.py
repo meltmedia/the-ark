@@ -62,6 +62,18 @@ class SeleniumHelpers:
         web_element = self.driver.find_element_by_css_selector(css_selector)
         return web_element
 
+    def get_list_of_elements(self, css_selector):
+        """
+        Return a full list of elements from a drop down menu, checkboxes, radio buttons, etc.
+        :param
+            -   css_selector:     string - The specific element that will be interacted with.
+        :return
+            -   list_of_elements: list - The full list of web elements from a parent selector (e.g. drop down menus)
+        """
+        self.ensure_element_visible(css_selector)
+        list_of_elements = self.driver.find_elements_by_css_selector(css_selector)
+        return list_of_elements
+
     def wait_for_element(self, css_selector, wait_time=15):
         """
         This will wait for a specific element to be present on the page within a specified amount of time, in seconds.
