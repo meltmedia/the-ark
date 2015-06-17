@@ -11,7 +11,8 @@ DEFAULT_INDEX_OPTIONS = 2
 DEFAULT_DOMAIN = "meltmedia.com"
 DEFAULT_DATE_FORMAT = "%m/%d/%Y"
 
-def set_required_blank(test_number, required):
+
+def set_leave_blank(test_number, required):
     """Sets a generation method's values for whether the field is currently required and if it is not, whether
         to leave it blank.
     :param
@@ -67,7 +68,7 @@ def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
         required = False if not field else field["required"]
-        leave_blank = set_required_blank(test_number, required)
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a string
         if leave_blank:
@@ -112,7 +113,7 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, p
         #- Reset min, max and padding variables with the field object values
         min_int = min_int if not field else field["min"]
         max_int = max_int if not field else field["max"]
-        padding = padding if not field else field["padding"]
+        padding = padding if not field or "padding" not in field else field["padding"]
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
 
@@ -121,7 +122,7 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, p
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
         required = False if not field else field["required"]
-        leave_blank = set_required_blank(test_number, required)
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create an integer
         if leave_blank:
@@ -167,7 +168,7 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=None, field=None):
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
         required = False if not field else field["required"]
-        leave_blank = set_required_blank(test_number, required)
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create an email
         if leave_blank:
@@ -228,7 +229,7 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
         required = False if not field else field["required"]
-        leave_blank = set_required_blank(test_number, required)
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a phone number
         if leave_blank:
@@ -305,7 +306,7 @@ def generate_zip_code(test_number=None, field=None):
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
         required = False if not field else field["required"]
-        leave_blank = set_required_blank(test_number, required)
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a zip code
         if leave_blank:
@@ -353,7 +354,7 @@ def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field
         #--- Reset min and max lengths with the field object values
         num_of_options = num_of_options if not field else len(field["enum"])
         required = False if not field else field["required"]
-        leave_blank = set_required_blank(test_number, required)
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set whether the form should always select a random value or not.
         #  The field must have a "random" key set to override this value (Radio and Drop Down field also pass in here)
@@ -570,7 +571,7 @@ def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMA
     """
     try:
         required = False if not field else field["required"]
-        leave_blank = set_required_blank(test_number, required)
+        leave_blank = set_leave_blank(test_number, required)
 
         if leave_blank:
             return ""

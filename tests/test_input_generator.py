@@ -7,30 +7,23 @@ from mock import patch
 
 class UtilsTestCase(unittest.TestCase):
     @patch("random.random")
-    def test_set_required_blank(self, random_value):
-        #--- Tests without field date
-        fake_required, fake_blank = ig.set_required_blank(1)
-        self.assertEqual(fake_required, None)
+    def test_set_leave_blank(self, random_value):
+        #--- Tests without field data
+        fake_blank = ig.set_leave_blank(1, True)
         self.assertEqual(fake_blank, False)
 
         #--- Tests with field data
         #-- Not Required
         #- Blank
         random_value.return_value = 0.20
-        field_data = {"required": False}
-        fake_required, fake_blank = ig.set_required_blank(5, field_data)
-        self.assertEqual(fake_required, False)
+        fake_blank = ig.set_leave_blank(5, False)
         self.assertEqual(fake_blank, True)
         #- Not Blank
         random_value.return_value = 0.20
-        field_data = {"required": False}
-        fake_required, fake_blank = ig.set_required_blank(1, field_data)
-        self.assertEqual(fake_required, False)
+        fake_blank = ig.set_leave_blank(1, False)
         self.assertEqual(fake_blank, False)
         #-- Required
-        field_data = {"required": True}
-        fake_required, fake_blank = ig.set_required_blank(5, field_data)
-        self.assertEqual(fake_required, True)
+        fake_blank = ig.set_leave_blank(5, True)
         self.assertEqual(fake_blank, False)
 
     def test_check_min_vs_max(self):
@@ -43,10 +36,10 @@ class UtilsTestCase(unittest.TestCase):
         with self.assertRaises(ig.InputGeneratorException):
             ig.check_min_vs_max(13, 12, field_data)
 
-    @patch("the_ark.input_generator.set_required_blank")
-    def test_generate_string(self, required_blank):
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_string(self, leave_blank):
         #--- Test default values
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_string = ig.generate_string()
         if not ig.DEFAULT_STRING_MIN <= len(returned_string) <= ig.DEFAULT_STRING_MAX:
             self.fail("The string length returned using the method defaults was incorrect. "
@@ -55,10 +48,10 @@ class UtilsTestCase(unittest.TestCase):
                                                                             len(returned_string)))
 
         #--- Test blank field return
-        required_blank.return_value = True
+        leave_blank.return_value = True
         self.assertEqual("", ig.generate_string())
 
-        required_blank.return_value = False
+        leave_blank.return_value = False
         #--- Test string length ranges
         returned_string = ig.generate_string(15, 15)
         self.assertEqual(len(returned_string), 15)
@@ -75,17 +68,17 @@ class UtilsTestCase(unittest.TestCase):
 
         #--- General Exception
         #- With field
-        field_data = {"name": "String Generator", "min": "Apples", "max": "Oranges"}
+        field_data = {"name": "String Generator", "min": "Apples", "max": "Oranges", "required": True}
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_string(field=field_data)
         #- Without field
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_string("apples", "oranges")
 
-    @patch("the_ark.input_generator.set_required_blank")
-    def test_generate_integer(self, required_blank):
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_integer(self, leave_blank):
         #--- Test default values
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_integer = ig.generate_integer()
         if not ig.DEFAULT_INTEGER_MIN <= len(returned_integer) <= ig.DEFAULT_INTEGER_MAX:
             self.fail("The integer length returned using the method defaults was incorrect. "
@@ -94,11 +87,11 @@ class UtilsTestCase(unittest.TestCase):
                                                                             len(returned_integer)))
 
         #--- Test blank field return
-        required_blank.return_value = True
+        leave_blank.return_value = True
         self.assertEqual("", ig.generate_integer())
 
         #--- Test integer ranges
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_integer = ig.generate_integer(15, 15)
         self.assertEqual(returned_integer, "15")
 
@@ -114,7 +107,7 @@ class UtilsTestCase(unittest.TestCase):
 
         #--- General Exception
         #- With field
-        field_data = {"name": "Vincent", "min": "Apples", "max": "Oranges", "padding": 1}
+        field_data = {"name": "Vincent", "min": "Apples", "max": "Oranges", "padding": 1, "required": True}
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_integer(field=field_data)
         #- Without field
@@ -122,14 +115,14 @@ class UtilsTestCase(unittest.TestCase):
             ig.generate_integer("apples", "oranges")
 
         #--- Test padding
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_integer = ig.generate_integer(3, 8, 4)
         self.assertEqual(len(returned_integer), 4)
 
-    @patch("the_ark.input_generator.set_required_blank")
-    def test_generate_email(self, required_blank):
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_email(self, leave_blank):
         #--- Test default values
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_email = ig.generate_email()
         if ig.DEFAULT_DOMAIN not in returned_email:
             self.assertIn(ig.DEFAULT_DOMAIN, returned_email,
@@ -137,7 +130,7 @@ class UtilsTestCase(unittest.TestCase):
                           "used. It should contain '{0}' but the returned email was: '{1}'".format(ig.DEFAULT_DOMAIN,
                                                                                                    returned_email))
         #--- Test custom domain
-        required_blank.return_value = False
+        leave_blank.return_value = False
         test_domain = "vincentrocks.com"
         returned_email = ig.generate_email(test_domain)
         if ig.DEFAULT_DOMAIN not in returned_email:
@@ -147,13 +140,13 @@ class UtilsTestCase(unittest.TestCase):
                                                                                              returned_email))
 
         #--- Blank email
-        required_blank.return_value = True
+        leave_blank.return_value = True
         returned_email = ig.generate_email(test_domain)
         self.assertEqual("", returned_email)
 
         #--- Passing in a field object
-        required_blank.return_value = False
-        field_data = {"domain": test_domain}
+        leave_blank.return_value = False
+        field_data = {"domain": test_domain, "required": True}
         returned_email = ig.generate_email(field=field_data)
         if ig.DEFAULT_DOMAIN not in returned_email:
             self.assertIn(test_domain, returned_email,
@@ -161,63 +154,73 @@ class UtilsTestCase(unittest.TestCase):
                           "a domain was passed in. It should contain '{0}' but the returned email was: '{1}'"
                           .format(test_domain, returned_email))
 
+        #--- Key Errors
+        #- no name
+        field_data = {"type": "STRING"}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_email(field=field_data)
+        #- field name
+        field_data = {"name": "String Generator"}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_email(field=field_data)
+
         #--- Test the General Exception catch
         #- Without field data
-        required_blank.side_effect = Exception('Boom!')
+        leave_blank.side_effect = Exception('Boom!')
         self.assertRaises(ig.InputGeneratorException, ig.generate_email)
         #- With field data
-        field_data = {"name": "Email Field"}
+        field_data = {"name": "Email Field", "required": True}
         self.assertRaises(ig.InputGeneratorException, ig.generate_email, field=field_data)
 
-    @patch("the_ark.input_generator.set_required_blank")
-    def test_generate_phone(self, required_blank):
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_phone(self, leave_blank):
         #--- Test default values ########## ^\d{10}
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_phone = ig.generate_phone()
         self.assertRegexpMatches(returned_phone, "^\d{10}")
 
         #--- Test Blank
-        required_blank.return_value = True
+        leave_blank.return_value = True
         returned_phone = ig.generate_phone()
         self.assertEqual(returned_phone, "")
 
         #--- Check for ###-###-#### ^[2-9]\d{2}-\d{3}-\d{4}
         #- Parameters passed in
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_phone = ig.generate_phone(dash=True)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}-\d{3}-\d{4}")
         #- Parameters from field
-        field_data = {"name": "phone field", "dash": True}
+        field_data = {"name": "phone field", "dash": True, "required": True}
         returned_phone = ig.generate_phone(field=field_data)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}-\d{3}-\d{4}")
 
         #--- Check for ### ### #### ^[2-9]\d{2}\s\d{3}\s\d{4}
         #- Parameters passed in
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_phone = ig.generate_phone(space=True)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\s\d{3}\s\d{4}")
         #- Parameters from field
-        field_data = {"name": "phone field", "space": True}
+        field_data = {"name": "phone field", "space": True, "required": True}
         returned_phone = ig.generate_phone(field=field_data)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\s\d{3}\s\d{4}")
 
         #--- Check for (###)###-#### ^\(\d{3}\)\d{3}-\d{4}
         #- Parameters passed in
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_phone = ig.generate_phone(parenthesis=True, dash=True)
         self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{3}-\d{4}")
         #- Parameters from field
-        field_data = {"name": "phone field", "parenthesis": True, "dash": True}
+        field_data = {"name": "phone field", "parenthesis": True, "dash": True, "required": True}
         returned_phone = ig.generate_phone(field=field_data)
         self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{3}-\d{4}")
 
         #--- Check for (###)####### ^\(\d{3}\)\d{7}
         #- Parameters passed in
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_phone = ig.generate_phone(parenthesis=True)
         self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{7}")
         #- Parameters from field
-        field_data = {"name": "phone field", "parenthesis": True}
+        field_data = {"name": "phone field", "parenthesis": True, "required": True}
         returned_phone = ig.generate_phone(field=field_data)
         self.assertRegexpMatches(returned_phone, "^\(\d{3}\)\d{7}")
 
@@ -226,7 +229,7 @@ class UtilsTestCase(unittest.TestCase):
         returned_phone = ig.generate_phone(parenthesis=True, dash=True, space=True)
         self.assertRegexpMatches(returned_phone, "\(\d{3}\)\s\d{3}-\d{4}")
         #- Parameters from field
-        field_data = {"name": "phone field", "parenthesis": True, "dash": True, "space": True}
+        field_data = {"name": "phone field", "parenthesis": True, "dash": True, "space": True, "required": True}
         returned_phone = ig.generate_phone(field=field_data)
         self.assertRegexpMatches(returned_phone, "\(\d{3}\)\s\d{3}-\d{4}")
 
@@ -236,7 +239,7 @@ class UtilsTestCase(unittest.TestCase):
         returned_phone = ig.generate_phone(decimals=True)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\.\d{3}\.\d{4}")
         #- Parameters from field
-        field_data = {"name": "phone field", "decimals": True}
+        field_data = {"name": "phone field", "decimals": True, "required": True}
         returned_phone = ig.generate_phone(field=field_data)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\.\d{3}\.\d{4}")
 
@@ -245,37 +248,64 @@ class UtilsTestCase(unittest.TestCase):
         returned_phone = ig.generate_phone(decimals=True, parenthesis=True, dash=True, space=True)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\.\d{3}\.\d{4}")
         #- Parameters from field
-        field_data = {"name": "phone field", "decimals": True, "parenthesis": True, "dash": True, "space": True}
+        field_data = {"name": "phone field", "decimals": True, "parenthesis": True,
+                      "dash": True, "space": True, "required": True}
         returned_phone = ig.generate_phone(field=field_data)
         self.assertRegexpMatches(returned_phone, "^[2-9]\d{2}\.\d{3}\.\d{4}")
 
+        #--- Key Errors
+        #- no name
+        field_data = {"type": "STRING"}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_phone(field=field_data)
+        #- field name
+        field_data = {"name": "String Generator"}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_phone(field=field_data)
+
         #--- Test the General Exception catch
         #- Without field
-        required_blank.return_value = "Duck", "Duck", "Goose!"
-        self.assertRaises(ig.InputGeneratorException, ig.generate_phone)
+        leave_blank.side_effect = Exception('Boom!')
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_phone(1)
         #- With field data
-        field_data = {"name": "Phone Field"}
-        self.assertRaises(ig.InputGeneratorException, ig.generate_phone, field=field_data)
+        leave_blank.return_value = False
+        field_data = {"name": "Phone Field", "required": True, "min": "apples", "max": 30}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_phone(field=field_data)
 
-    @patch("the_ark.input_generator.set_required_blank")
-    def test_generate_zip(self, required_blank):
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_zip(self, leave_blank):
         #--- Test default values
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_zip = ig.generate_zip_code()
         self.assertEqual(len(returned_zip), 5)
 
         #--- Blank Zip
-        required_blank.return_value = True
+        leave_blank.return_value = True
         returned_zip = ig.generate_zip_code()
         self.assertEqual("", returned_zip)
 
+        #--- Key Errors
+        #- no name
+        field_data = {"type": "STRING"}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_zip_code(field=field_data)
+        #- field name
+        field_data = {"name": "String Generator"}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_zip_code(field=field_data)
+
+
         #--- Test the General Exception catch
-        required_blank.side_effect = Exception('Boom!')
+        leave_blank.side_effect = Exception('Boom!')
         #- Without field
-        self.assertRaises(ig.InputGeneratorException, ig.generate_zip_code)
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_zip_code()
         #- With field
-        field_data = {"name": "Email Field"}
-        self.assertRaises(ig.InputGeneratorException, ig.generate_zip_code, field=field_data)
+        field_data = {"name": "Zip Code Field", "required": True}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_zip_code(field=field_data)
 
     @patch("random.random")
     def test_generate_index(self, random_result):
@@ -338,10 +368,13 @@ class UtilsTestCase(unittest.TestCase):
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_index("apples", field=field_data)
         #- Without field
+        random_result.return_value = 0.5
         with self.assertRaises(ig.InputGeneratorException):
-            ig.generate_index("apples")
+            ig.generate_index(["apples", "pickles"], 500)
 
-    def test_generate_select(self):
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_select(self, leave_blank):
+        leave_blank.return_value = False
         #--- General Exception
         field_data = {"name": "Select Generator"}
         with self.assertRaises(ig.InputGeneratorException):
@@ -350,7 +383,9 @@ class UtilsTestCase(unittest.TestCase):
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_select("apples")
 
-    def test_generate_drop_down(self):
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_drop_down(self, leave_blank):
+        leave_blank.return_value = False
         #--- General Exception
         field_data = {"name": "Select Generator"}
         with self.assertRaises(ig.InputGeneratorException):
@@ -359,7 +394,9 @@ class UtilsTestCase(unittest.TestCase):
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_drop_down("apples")
 
-    def test_generate_radio(self):
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_radio(self, leave_blank):
+        leave_blank.return_value = False
         #--- General Exception
         field_data = {"name": "Select Generator"}
         with self.assertRaises(ig.InputGeneratorException):
@@ -423,10 +460,10 @@ class UtilsTestCase(unittest.TestCase):
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_check_box("apples")
 
-    @patch("the_ark.input_generator.set_required_blank")
-    def test_generate_date(self, required_blank):
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_date(self, leave_blank):
         #--- Test Defaults
-        required_blank.return_value = False
+        leave_blank.return_value = False
         returned_date = ig.generate_date()
         #- Format Check
         try:
@@ -436,12 +473,12 @@ class UtilsTestCase(unittest.TestCase):
                       "of {0}. The date returned was '{1}': {2}".format(ig.DEFAULT_DATE_FORMAT, returned_date, e))
 
         #--- Blank Date
-        required_blank.return_value = True
+        leave_blank.return_value = True
         returned_date = ig.generate_date()
         self.assertEqual("", returned_date, "The check for blank dates did not return a blank string")
 
         #--- Date Range Checks (in the past)
-        required_blank.return_value = False
+        leave_blank.return_value = False
         #-- Past in days (int)
         start_date = 4
         end_date = 2
@@ -480,7 +517,7 @@ class UtilsTestCase(unittest.TestCase):
                            "When using dates, in the past, the returned date was not older than the end date")
 
         #--- Date Range Checks (in the FUTURE!!! *cue sci-fi sound effects)
-        required_blank.return_value = False
+        leave_blank.return_value = False
         #-- Future in days (int)
         start_date = -4
         end_date = -20
@@ -502,7 +539,10 @@ class UtilsTestCase(unittest.TestCase):
         expected_future_format = "%m-%d-%y"
         start_date = datetime.strptime("20250404", "%Y%m%d").date()
         end_date = datetime.strptime("20300325", "%Y%m%d").date()
-        field_data = {"start_date": str(start_date), "end_date": str(end_date), "date_format": expected_future_format}
+        field_data = {"start_date": str(start_date),
+                      "end_date": str(end_date),
+                      "date_format": expected_future_format,
+                      "required": True}
         returned_date = ig.generate_date(field=field_data)
         #- Check returned date format
         try:
@@ -518,9 +558,20 @@ class UtilsTestCase(unittest.TestCase):
         self.assertGreater(end_date, formatted_date,
                            "When using dates, in the future, the returned date was not older than the end date")
 
+        #--- Key Errors
+        #- no name
+        field_data = {"type": "STRING"}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_date(field=field_data)
+        #- field name
+        field_data = {"name": "String Generator"}
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_date(field=field_data)
+
+
         #--- General Exception
         #- With field
-        field_data = {"name": "Date Generator"}
+        field_data = {"name": "Date Generator", "required": True}
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_date("apples", field=field_data)
         #- Without field
