@@ -613,12 +613,3 @@ def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMA
 
 class InputGeneratorException(Exception):
     pass
-
-
-if __name__ == '__main__':
-    for i in range(0, 100):
-        index = generate_index()
-        if index not in range(0, 2):
-            print "Failed: " + str(index)
-        else:
-            print index
