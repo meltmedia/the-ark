@@ -42,7 +42,7 @@ def check_min_vs_max(min_length, max_length, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX, test_number=None, field=None):
+def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX, test_number=1, field=None):
     """ Creates a str object with a length greater than min_length and less than max_length, made up of randomly
         selected upper and lowercase letters.
     :param
@@ -94,7 +94,7 @@ def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX
         raise InputGeneratorException(message)
 
 
-def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, padding=1, test_number=None, field=None):
+def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, padding=1, test_number=1, field=None):
     """ Generates an str object with an int character that is greater that min_int and less than max_int.
     :param
         -   min_int:        The minimum value that the generated integer can be. Defaults to 1
@@ -148,7 +148,7 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, p
         raise InputGeneratorException(message)
 
 
-def generate_email(domain=DEFAULT_DOMAIN, test_number=None, field=None):
+def generate_email(domain=DEFAULT_DOMAIN, test_number=1, field=None):
     """ Generates a random email address in the firstname.lastname@domain format
     :param
         -   domain:         The domain address the email will be from ie. @domain. This defaults to "meltmedia.com"
@@ -197,7 +197,7 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, test_number=None, field=None):
+def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, test_number=1, field=None):
     """ Generates a random phone number
     :param
         -   decimals:       Bool used to determine whether to put a decimals between each of the portions of the phone
@@ -289,7 +289,7 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
         raise InputGeneratorException(message)
 
 
-def generate_zip_code(test_number=None, field=None):
+def generate_zip_code(test_number=1, field=None):
     """ Generates a random 5 digit string to act as a ZIP code
     :param
         -   test_number:    An int that specifies which submission number this generation is being used for. This will
@@ -334,7 +334,7 @@ def generate_zip_code(test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field=None):
+def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=1, field=None):
     """ Calculates which option should be selected from the given field based on test number. The index is randomly
         selected after all options have been used at least once.
     :param
@@ -392,7 +392,7 @@ def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field
         raise InputGeneratorException(e_text)
 
 
-def generate_select(num_of_options=2, test_number=None, field=None):
+def generate_select(num_of_options=2, test_number=1, field=None):
     """ Calculates which option should be selected from the select list based on test number. The index is randomly
         selected after all options have been used at least once.
     :param
@@ -416,7 +416,7 @@ def generate_select(num_of_options=2, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_drop_down(num_of_options=2, test_number=None, field=None):
+def generate_drop_down(num_of_options=2, test_number=1, field=None):
     """ Calculates which option should be selected from the drop down list based on test number. The index is randomly
         selected after all options have been used at least once.
     :param
@@ -440,7 +440,7 @@ def generate_drop_down(num_of_options=2, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_radio(num_of_options=2, test_number=None, field=None):
+def generate_radio(num_of_options=2, test_number=1, field=None):
     """ Calculates which radio button from the list of buttons should be selected based on test number. The index is
         randomly selected after all options have been used at least once.
     :param
@@ -465,7 +465,7 @@ def generate_radio(num_of_options=2, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_check_box(num_of_options=1, test_number=None, field=None):
+def generate_check_box(num_of_options=1, test_number=1, field=None):
     """ Calculates which check box from the list of boxes should be selected based on test number. The index is
         randomly selected after all options have been used at least once. When randomly selecting there is a chance
         that more than one of the checkboxes will be selected.
@@ -540,7 +540,7 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMAT, test_number=None, field=None):
+def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMAT, test_number=1, field=None):
     """ Generates a date in the given date format. By default this date will be -18 to -100 years ago in order to keep
         the user over the age of 18 when filling out birthdays. However these dates can be passed through if need be.
     :param
@@ -613,3 +613,12 @@ def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMA
 
 class InputGeneratorException(Exception):
     pass
+
+
+if __name__ == '__main__':
+    for i in range(0, 100):
+        index = generate_index()
+        if index not in range(0, 2):
+            print "Failed: " + str(index)
+        else:
+            print index
