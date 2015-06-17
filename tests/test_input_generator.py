@@ -296,7 +296,6 @@ class UtilsTestCase(unittest.TestCase):
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_zip_code(field=field_data)
 
-
         #--- Test the General Exception catch
         leave_blank.side_effect = Exception('Boom!')
         #- Without field
@@ -567,7 +566,6 @@ class UtilsTestCase(unittest.TestCase):
         field_data = {"name": "String Generator"}
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_date(field=field_data)
-
 
         #--- General Exception
         #- With field

@@ -281,7 +281,6 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
         message += ". The {0} key is required when passing a field object into the generate_integer method".format(key)
         raise InputGeneratorException(message)
 
-
     except Exception as e_text:
         message = "Error while generating a Phone Number"
         if field and "name" in field.keys():
@@ -326,7 +325,6 @@ def generate_zip_code(test_number=None, field=None):
             message += " for the {0} field".format(field["name"])
         message += ". The {0} key is required when passing a field object into the generate_integer method".format(key)
         raise InputGeneratorException(message)
-
 
     except Exception as e_text:
         message = "Error while generating an Zip code"
