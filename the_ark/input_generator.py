@@ -11,7 +11,8 @@ DEFAULT_INDEX_OPTIONS = 2
 DEFAULT_DOMAIN = "meltmedia.com"
 DEFAULT_DATE_FORMAT = "%m/%d/%Y"
 
-def set_required_blank(test_number, field=None):
+
+def set_leave_blank(test_number, required):
     """Sets a generation method's values for whether the field is currently required and if it is not, whether
         to leave it blank.
     :param
@@ -21,12 +22,7 @@ def set_required_blank(test_number, field=None):
         bool, bool:         Both the required and leave_blank values generated
     """
     #- Instantiate the variables to their defaults
-    required = None
     leave_blank = False
-
-    #- Set "required" to the value of the corresponding key in the field object
-    if field:
-        required = field["required"]
 
     #- If the field is not required, do logic to determine whether to leave it blank upon fill
     if required is False:
@@ -35,7 +31,7 @@ def set_required_blank(test_number, field=None):
             # ... but give 25% chance to leave blank otherwise
             leave_blank = True if random.random() < .25 else False
 
-    return required, leave_blank
+    return leave_blank
 
 
 def check_min_vs_max(min_length, max_length, field=None):
@@ -46,7 +42,7 @@ def check_min_vs_max(min_length, max_length, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX, test_number=None, field=None):
+def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX, test_number=1, field=None):
     """ Creates a str object with a length greater than min_length and less than max_length, made up of randomly
         selected upper and lowercase letters.
     :param
@@ -71,7 +67,8 @@ def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX
         check_min_vs_max(min_length, max_length, field)
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = set_required_blank(test_number, field)
+        required = False if not field else field["required"]
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a string
         if leave_blank:
@@ -97,7 +94,7 @@ def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX
         raise InputGeneratorException(message)
 
 
-def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, padding=1, test_number=None, field=None):
+def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, padding=1, test_number=1, field=None):
     """ Generates an str object with an int character that is greater that min_int and less than max_int.
     :param
         -   min_int:        The minimum value that the generated integer can be. Defaults to 1
@@ -116,7 +113,7 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, p
         #- Reset min, max and padding variables with the field object values
         min_int = min_int if not field else field["min"]
         max_int = max_int if not field else field["max"]
-        padding = padding if not field else field["padding"]
+        padding = padding if not field or "padding" not in field else field["padding"]
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
 
@@ -124,7 +121,8 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, p
         check_min_vs_max(min_int, max_int, field)
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = set_required_blank(test_number, field)
+        required = False if not field else field["required"]
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create an integer
         if leave_blank:
@@ -150,7 +148,7 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, p
         raise InputGeneratorException(message)
 
 
-def generate_email(domain=DEFAULT_DOMAIN, test_number=None, field=None):
+def generate_email(domain=DEFAULT_DOMAIN, test_number=1, field=None):
     """ Generates a random email address in the firstname.lastname@domain format
     :param
         -   domain:         The domain address the email will be from ie. @domain. This defaults to "meltmedia.com"
@@ -169,7 +167,8 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=None, field=None):
         test_number = 1 if not test_number else test_number
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = set_required_blank(test_number, field)
+        required = False if not field else field["required"]
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create an email
         if leave_blank:
@@ -183,6 +182,13 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=None, field=None):
 
         return email
 
+    except KeyError as key:
+        message = "Error while generating an Integer"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_integer method".format(key)
+        raise InputGeneratorException(message)
+
     except Exception as e_text:
         message = "Error while generating an Email"
         if field and "name" in field.keys():
@@ -191,7 +197,7 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, test_number=None, field=None):
+def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, test_number=1, field=None):
     """ Generates a random phone number
     :param
         -   decimals:       Bool used to determine whether to put a decimals between each of the portions of the phone
@@ -222,7 +228,8 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
         test_number = 1 if not test_number else test_number
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = set_required_blank(test_number, field)
+        required = False if not field else field["required"]
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a phone number
         if leave_blank:
@@ -267,6 +274,13 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
 
         return phone_number
 
+    except KeyError as key:
+        message = "Error while generating an Integer"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_integer method".format(key)
+        raise InputGeneratorException(message)
+
     except Exception as e_text:
         message = "Error while generating a Phone Number"
         if field and "name" in field.keys():
@@ -275,7 +289,7 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
         raise InputGeneratorException(message)
 
 
-def generate_zip_code(test_number=None, field=None):
+def generate_zip_code(test_number=1, field=None):
     """ Generates a random 5 digit string to act as a ZIP code
     :param
         -   test_number:    An int that specifies which submission number this generation is being used for. This will
@@ -290,7 +304,8 @@ def generate_zip_code(test_number=None, field=None):
         test_number = 1 if not test_number else test_number
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required, leave_blank = set_required_blank(test_number, field)
+        required = False if not field else field["required"]
+        leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a zip code
         if leave_blank:
@@ -304,6 +319,13 @@ def generate_zip_code(test_number=None, field=None):
 
         return zip_code
 
+    except KeyError as key:
+        message = "Error while generating an Integer"
+        if "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_integer method".format(key)
+        raise InputGeneratorException(message)
+
     except Exception as e_text:
         message = "Error while generating an Zip code"
         if field and "name" in field.keys():
@@ -312,7 +334,7 @@ def generate_zip_code(test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field=None):
+def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=1, field=None):
     """ Calculates which option should be selected from the given field based on test number. The index is randomly
         selected after all options have been used at least once.
     :param
@@ -329,7 +351,9 @@ def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field
     try:
         #--- Reset min and max lengths with the field object values
         num_of_options = num_of_options if not field else len(field["enum"])
-        required = None if not field else field["required"]
+        required = False if not field else field["required"]
+        leave_blank = set_leave_blank(test_number, required)
+
         #- Set whether the form should always select a random value or not.
         #  The field must have a "random" key set to override this value (Radio and Drop Down field also pass in here)
         always_random = None if not field or "random" not in field.keys() else field["random"]
@@ -337,16 +361,12 @@ def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
 
-        leave_blank = False
         random_choice = None
         all_options_used = True if test_number > num_of_options else False
 
         #--- Always choose a random index if all options have already been sent once
         if all_options_used:
             random_choice = True
-            #- But give a 25% chance of leaving the field blank too
-            if not required and random.random() < .25:
-                leave_blank = True
 
         #--- Generate the input index to use when filling out this field
         if leave_blank:
@@ -372,7 +392,7 @@ def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=None, field
         raise InputGeneratorException(e_text)
 
 
-def generate_select(num_of_options=2, test_number=None, field=None):
+def generate_select(num_of_options=2, test_number=1, field=None):
     """ Calculates which option should be selected from the select list based on test number. The index is randomly
         selected after all options have been used at least once.
     :param
@@ -396,7 +416,7 @@ def generate_select(num_of_options=2, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_drop_down(num_of_options=2, test_number=None, field=None):
+def generate_drop_down(num_of_options=2, test_number=1, field=None):
     """ Calculates which option should be selected from the drop down list based on test number. The index is randomly
         selected after all options have been used at least once.
     :param
@@ -420,7 +440,7 @@ def generate_drop_down(num_of_options=2, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_radio(num_of_options=2, test_number=None, field=None):
+def generate_radio(num_of_options=2, test_number=1, field=None):
     """ Calculates which radio button from the list of buttons should be selected based on test number. The index is
         randomly selected after all options have been used at least once.
     :param
@@ -445,7 +465,7 @@ def generate_radio(num_of_options=2, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_check_box(num_of_options=1, test_number=None, field=None):
+def generate_check_box(num_of_options=1, test_number=1, field=None):
     """ Calculates which check box from the list of boxes should be selected based on test number. The index is
         randomly selected after all options have been used at least once. When randomly selecting there is a chance
         that more than one of the checkboxes will be selected.
@@ -463,7 +483,7 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
     try:
         #- Reset min and max lengths with the field object values
         num_of_options = num_of_options if not field else len(field["enum"])
-        required = None if not field else field["required"]
+        required = False if not field else field["required"]
 
         #- Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
@@ -520,7 +540,7 @@ def generate_check_box(num_of_options=1, test_number=None, field=None):
         raise InputGeneratorException(message)
 
 
-def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMAT, test_number=None, field=None):
+def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMAT, test_number=1, field=None):
     """ Generates a date in the given date format. By default this date will be -18 to -100 years ago in order to keep
         the user over the age of 18 when filling out birthdays. However these dates can be passed through if need be.
     :param
@@ -548,7 +568,8 @@ def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMA
         -   string:         A string formatted to look like a date
     """
     try:
-        required, leave_blank = set_required_blank(test_number, field)
+        required = False if not field else field["required"]
+        leave_blank = set_leave_blank(test_number, required)
 
         if leave_blank:
             return ""
@@ -573,6 +594,14 @@ def generate_date(start_date=None, end_date=None, date_format=DEFAULT_DATE_FORMA
             random_time = start_time + random.random() * (end_time - start_time)
 
             return time.strftime(date_format, time.localtime(random_time))
+
+    except KeyError as key:
+        message = "Error while generating a Check Box input index list"
+        if field and "name" in field.keys():
+            message += " for the {0} field".format(field["name"])
+        message += ". The {0} key is required when passing a field object into the generate_check_box method".format(
+            key)
+        raise InputGeneratorException(message)
 
     except Exception as e_text:
         message = "Error while generating a Date"
