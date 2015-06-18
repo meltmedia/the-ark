@@ -1,219 +1,181 @@
 import logging
 
-from selenium import common
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as expected_condition
 import selenium_helpers
-
-#TODO: Remove These after debugging
-from selenium import webdriver, common
-import time
-
+import traceback
 
 class FieldHandler():
+
+    TEXT_FIELD_TYPES = ["string", "phone", "zip_code"]
 
     def __init__(self, driver):
         """
         Methods that contain logic of how to handle each of the field types.
-        :param
-            -   driver:     The current browser window that is being interacted with.
+        :param driver:  The current browser window that is being interacted with.
         """
         self.log = logging.getLogger(self.__class__.__name__)
         self.sh = selenium_helpers.SeleniumHelpers(driver)
 
-    def handle_text_field(self, css_selector="", input_text="", field=None):
+    def dispatch_field(self, field):
+        try:
+            if field["type"].lower() in self.TEXT_FIELD_TYPES:
+                confirm_css_selector = None if "confirm_css_selector" not in field else field["confirm_css_selector"]
+                self.handle_text_field(field["css_selector"], field["input"], confirm_css_selector)
+            if field["type"] == "select":
+                first_valid = False if "first_valid" not in field else field["first_valid"]
+                self.handle_select(field["css_selector"], field["input"], first_valid)
+            if field["type"].lower() == "check_box":
+                self.handle_check_box(field["enum"], field["input"])
+            if field["type"].lower() == "drop_down":
+                self.handle_drop_down(field["css_selector"], field["enum"], field["input"])
+
+        except FieldHandlerException as fhe:
+            fhe.message = "Encountered an error while handling the '{0}' field | {1}".format(field["name"], fhe.msg)
+            raise fhe
+
+        except KeyError as key:
+            #TODO: Flesh out the messaging here. Mention to check the code as there may be a typo in the code
+            raise MissingKey
+
+        except Exception as e_text:
+            message = "Encountered an error while handling the '{0}' field | {1}".format(field["name"], e_text)
+            raise FieldHandlerException(message, stacktrace=traceback.format_exc())
+
+    def handle_text_field(self, css_selector="", input_text="", confirm_css_selector=None):
         """
 
         :param css_selector:
         :param input_text:
-        :param field:
+        :param confirm_css_selector:
         :return:
         """
         try:
-            #--- Set up variables, overwriting them if a field was passed in
-            css_selector = css_selector if not field else field["css_selector"]
-            input_text = input_text if not field else field["input"]
-
             #--- Handle the field
             self.sh.fill_an_element(css_selector, input_text)
+            #- Fill in the confirm field as well, if provided
+            if confirm_css_selector:
+                self.sh.fill_an_element(confirm_css_selector, input_text)
 
-        except KeyError as key:
-            message = ". The '{0}' key is required when filling a text entry type field.".format(key)
-            raise FieldHandlerException(message)
+        except selenium_helpers.SeleniumHelperExceptions as selenium_error:
+            message = "An issue arose while filling in the field."
+            error = SeleniumError(message, selenium_error)
+            raise error
 
-        except selenium_helpers as e_text:
-            raise FieldHandlerException(e_text)
-
-    def handle_integer(self, css_selector="", input_integer="", field=None):
-        """
-
-        :param css_selector:
-        :param input_integer:
-        :param field:
-        :return:
-        """
-
-        try:
-            self.handle_text_field(css_selector, input_integer, field)
-
-        except KeyError as key:
-            message = "Error while filling an Integer field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ". The {0} key is required when passing a field object into the handle_integer method".format(
-                key)
-            raise FieldHandlerException(message)
-
-        except Exception as e_text:
-            message = "Error while filling an Integer field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ": {0}".format(e_text)
-            raise FieldHandlerException(message)
-
-    def handle_email(self, css_selector="", email="", field=None):
-        """
-
-        :param css_selector:
-        :param email:
-        :param field:
-        :return:
-        """
-        try:
-            #--- Set up variables, overwriting them if a field was passed in
-            css_selector = css_selector if not field else field["css_selector"]
-            email = email if not field else field["input"]
-
-            #--- Handle the field
-            self.sh.clear_an_element(css_selector)
-            self.sh.click_an_element(css_selector)
-            self.sh.fill_an_element(css_selector, email)
-
-        except KeyError as key:
-            message = "Error while filling an Email field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ". The {0} key is required when passing a field object into the handle_email method".format(
-                key)
-            raise FieldHandlerException(message)
-
-        except Exception as e_text:
-            message = "Error while filling an Email field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ": {0}".format(e_text)
-            raise FieldHandlerException(message)
-
-    def handle_phone(self, css_selector="", phone="", field=None):
-        """
-
-        :param css_selector:
-        :param phone:
-        :param field:
-        :return:
-        """
-        try:
-            #--- Set up variables, overwriting them if a field was passed in
-            css_selector = css_selector if not field else field["css_selector"]
-            phone = phone if not field else field["input"]
-
-            #--- Handle the field
-            self.sh.clear_an_element(css_selector)
-            self.sh.click_an_element(css_selector)
-            self.sh.fill_an_element(css_selector, phone)
-
-        except KeyError as key:
-            message = "Error while filling a Phone field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ". The {0} key is required when passing a field object into the handle_phone method".format(
-                key)
-            raise FieldHandlerException(message)
-
-        except Exception as e_text:
-            message = "Error while filling a Phone field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ": {0}".format(e_text)
-            raise FieldHandlerException(message)
-
-    def handle_check_box(self, enum="", input_indexes="", field=None):
+    def handle_check_box(self, enum, input_indexes):
         """
 
         :param enum:
         :param input_indexes:
-        :param field:
         :return:
         """
         try:
-            #--- Set up variables, overwriting them if a field was passed in
-            enum = enum if not field else field["enum"]
-            input_indexes = input_indexes if not field else field["input"]
-
-            if enum == "":
-                enum = [{}]
-            if input_indexes == "":
-                input_indexes = [1]
-
+            current_test_index = "N/A"
             #--- Handle the field
             for index in input_indexes:
+                current_test_index = index
                 self.sh.click_an_element(enum[index]["css_selector"])
 
         except KeyError as key:
-            message = "Error while filling a Check Box field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ". The {0} key is required when passing a field object into the handle_check_box method".format(
-                key)
-            raise FieldHandlerException(message)
+            #TODO:
+            message = "Key '{0}' is missing from the dictionary at " \
+                      "index {1} in the enum list: {2}".format(key, current_test_index, enum[current_test_index])
+            raise MissingKey(message, key, stacktrace=traceback.format_exc())
+
+        except selenium_helpers.SeleniumHelperExceptions as selenium_error:
+            message = "An issue arose while attempting to click the given checkbox element."
+            error = SeleniumError(message, selenium_error)
+            raise error
 
         except Exception as e_text:
-            message = "Error while filling a Check Box field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ": {0}".format(e_text)
+            message = "Error while filling a Check Box field: {0}".format(e_text)
             raise FieldHandlerException(message)
 
-    def handle_drop_down(self, enum="", input_index="", field=None):
+    def handle_select(self, css_selector, input_index, first_valid=False):
         """
 
         :param enum:
         :param input_index:
         :param field:
-        :return:
         """
         try:
-            # --- Set up variables, overwriting them if a field was passed in
-            enum = enum if not field else field["enum"]
-            input_index = input_index if not field else field["input"]
+            #- Create an index offset to manage the difference in Zero Base numbering between lists and :nth-child()
+            index_offset = 2
+            if first_valid:
+                index_offset = 1
 
-            if enum == "":
-                enum = [{}]
-            if input_index == "":
-                input_index = 1
+            self.sh.click_an_element("{0} option:nth-child({1})".format(
+                css_selector, input_index + index_offset))
 
+        except selenium_helpers.SeleniumHelperExceptions as selenium_error:
+            message = "An issue arose while attempting to select the given select option element."
+            error = SeleniumError(message, selenium_error)
+            raise error
+
+    def handle_drop_down(self, css_selector, enum, input_index):
+        """
+
+        :param enum:
+        :param input_index:
+        :param field:
+        """
+        try:
             #--- Handle the field
-            #TODO: Verify drop down schema for clicking the parent
-            self.sh.click_an_element(field["css_selector"])
+            #- Click the parent element to reveal the options
+            self.sh.click_an_element(css_selector)
+            #- Click the option that corresponds with the css_selector in the given index of the enum
             self.sh.click_an_element(enum[input_index]["css_selector"])
 
         except KeyError as key:
-            message = "Error while filling a Drop Down field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ". The {0} key is required when passing a field object into the handle_drop_down method".format(
-                key)
-            raise FieldHandlerException(message)
+            # TODO:
+            message = "Key '{0}' is missing from the dictionary at " \
+                      "index {1} in the enum list: {2}".format(key, enum[input_index])
+            raise MissingKey(message, key)
+
+        except selenium_helpers.SeleniumHelperExceptions as selenium_error:
+            # TODO: Raise field handler error
+            raise selenium_error
 
         except Exception as e_text:
-            message = "Error while filling a Drop Down field"
-            if "name" in field.keys():
-                message += " named '{0}'".format(field["name"])
-            message += ": {0}".format(e_text)
+            message = "Error while filling a Check Box field: {0}".format(e_text)
             raise FieldHandlerException(message)
 
-
+#TODO: See how this exception looks printed out
 class FieldHandlerException(Exception):
-    pass
+    def __init__(self, msg, stacktrace=None, details=None):
+        self.msg = msg
+        self.details = {} if details is None else details
+        self.stacktrace = stacktrace
+        super(FieldHandlerException, self).__init__()
+
+    def __str__(self):
+        exception_msg = "Message: %s\n" % self.msg
+        if self.details:
+            detail_string = "Exception Details:\n"
+            for key, value in self.details.items():
+                detail_string += "{0}: {1}\n".format(key, value)
+            exception_msg += detail_string
+        if self.stacktrace is not None:
+            stacktrace = "\n".join(self.stacktrace)
+            exception_msg += "Stacktrace:\n%s" % stacktrace
+        return exception_msg
+
+class MissingKey(FieldHandlerException):
+    def __init__(self, message, key, stacktrace=None):
+        super(MissingKey, self).__init__(msg=message, stacktrace=stacktrace)
+        self.key = key
+        self.details["missing_key"] = key
+
+class SeleniumError(FieldHandlerException):
+    def __init__(self, message, selenium_helper_exception):
+        new_message = "{0} | {1}".format(message, selenium_helper_exception.msg)
+        super(SeleniumError, self).__init__(msg=message,
+                                            stacktrace=selenium_helper_exception.stacktrace,
+                                            details=selenium_helper_exception.details)
+
+
+if __name__ == '__main__':
+    from selenium import webdriver
+    driver = webdriver.Firefox()
+    fh = FieldHandler(driver)
+    driver.get("https://braf.cd.meltqa.com/patient/resources/register")
+    fh.handle_select("#currently-taking", 1, True)
+    print "Yay"
