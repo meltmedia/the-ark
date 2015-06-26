@@ -2,6 +2,7 @@ import logging
 import selenium_helpers
 import traceback
 
+
 class FieldHandler():
 
     TEXT_FIELD_TYPES = ["string", "phone", "zip_code", "date", "integer", "email"]
@@ -41,18 +42,25 @@ class FieldHandler():
         try:
             if field["type"].lower() in self.TEXT_FIELD_TYPES:
                 confirm_css_selector = None if "confirm_css_selector" not in field else field["confirm_css_selector"]
-                self.handle_text_field(field["css_selector"], field["input"], confirm_css_selector)
+                self.handle_text(field["css_selector"], field["input"], confirm_css_selector)
+
             elif field["type"].lower() == "check_box":
                 self.handle_check_box(field["enum"], field["input"])
+
             elif field["type"].lower() == "radio":
                 self.handle_radio_button(field["enum"], field["input"])
-            elif field["type"] == "select":
+
+            elif field["type"].lower() == "select":
+                #- Default first_valid to False as it is the default.
                 first_valid = False if "first_valid" not in field else field["first_valid"]
                 self.handle_select(field["css_selector"], field["input"], first_valid)
+
             elif field["type"].lower() == "drop_down":
                 self.handle_drop_down(field["css_selector"], field["enum"], field["input"])
+
             elif field["type"].lower() == "button":
                 self.handle_button(field["css_selector"])
+
             else:
                 raise FieldHandlerException("An unknown field type of '{0}' was passed through to the field handler "
                                             "dispatcher. Please review the field's configuration and look for typos or "
@@ -70,16 +78,17 @@ class FieldHandler():
             if "name" in field:
                 message += " for the field named '{0}'".format(field["name"])
             message += " and so the Field Handler was unable to dispatch the field."
-            raise FieldHandlerException(message,
-                                        stacktrace=traceback.format_exc(),
-                                        details={"missing_key": key, "field": field})
+            raise MissingKey(message, key, stacktrace=traceback.format_exc(),
+                             details={"missing_key": str(key), "field_data": field})
 
         except Exception as e_text:
-            message = "An Unhandled Exception emerged while handling the '{0}' field | {1}".format(field["name"],
-                                                                                                   e_text)
+            message = "An Unhandled Exception emerged while handling the field"
+            if "name" in field:
+                message += " named '{0}'".format(field["name"])
+            message += " | {0}".format(e_text)
             raise FieldHandlerException(message, stacktrace=traceback.format_exc())
 
-    def handle_text_field(self, css_selector="", input_text="", confirm_css_selector=None):
+    def handle_text(self, css_selector="", input_text="", confirm_css_selector=None):
         """
         Logic used to fill in a text field. This method uses the selenium helpers class to interact with the field.
 
@@ -105,7 +114,7 @@ class FieldHandler():
             message = "An Unhandled Exception emerged while filling a Text field: {0}".format(e_text)
             raise FieldHandlerException(message)
 
-    def handle_check_box(self, enum, input_indexes):
+    def handle_check_box(self, enums, input_indexes):
         """
         Logic used to fill in a check box button field. This method uses the selenium helpers class to interact with
         the field.
@@ -119,16 +128,16 @@ class FieldHandler():
                                        Because you can select multiple check boxes in a field you can have multiple
                                        input indexes in the list.
         """
+        current_test_index = "N/A"
         try:
             #--- Handle the field
-            current_test_index = "N/A"
             for index in input_indexes:
                 current_test_index = index
-                self.sh.click_an_element(enum[index]["css_selector"])
+                self.sh.click_an_element(enums[index]["css_selector"])
 
         except KeyError as key:
             message = "Key {0} is missing from the dictionary at " \
-                      "index {1} in the enum list: {2}".format(key, current_test_index, enum[current_test_index])
+                      "index {1} in the enum list: {2}".format(key, current_test_index, enums[current_test_index])
             raise MissingKey(message, key, stacktrace=traceback.format_exc())
 
         except selenium_helpers.SeleniumHelperExceptions as selenium_error:
@@ -140,7 +149,7 @@ class FieldHandler():
             message = "An Unhandled Exception emerged while filling a Check Box field: {0}".format(e_text)
             raise FieldHandlerException(message)
 
-    def handle_radio_button(self, enum, input_index):
+    def handle_radio_button(self, enums, input_index):
         """
         Logic used to fill in a radio button field. This method uses the selenium helpers class to interact with the
         field.
@@ -154,11 +163,11 @@ class FieldHandler():
         """
         try:
             #--- Handle the field
-            self.sh.click_an_element(enum[input_index]["css_selector"])
+            self.sh.click_an_element(enums[input_index]["css_selector"])
 
         except KeyError as key:
             message = "Key {0} is missing from the dictionary at " \
-                      "index {1} in the enum list: {2}".format(key, input_index, enum[input_index])
+                      "index {1} in the enum list: {2}".format(key, input_index, enums[input_index])
             raise MissingKey(message, key, stacktrace=traceback.format_exc())
 
         except selenium_helpers.SeleniumHelperExceptions as selenium_error:
@@ -200,7 +209,7 @@ class FieldHandler():
             message = "An Unhandled Exception emerged while filling a Select field: {0}".format(e_text)
             raise FieldHandlerException(message)
 
-    def handle_drop_down(self, css_selector, enum, input_index):
+    def handle_drop_down(self, css_selector, enums, input_index):
         """
         Logic used to fill in a drop down field. This method is used when the 'parent' element of drop down is
         separated from the options list element. The parent is clicked in order to make the option list elements
@@ -219,12 +228,12 @@ class FieldHandler():
             #- Click the parent element to reveal the options
             self.sh.click_an_element(css_selector)
             #- Click the option that corresponds with the css_selector in the given index of the enum
-            self.sh.click_an_element(enum[input_index]["css_selector"])
+            self.sh.click_an_element(enums[input_index]["css_selector"])
 
         except KeyError as key:
             # TODO:
             message = "Key {0} is missing from the dictionary at " \
-                      "index {1} in the enum list: {2}".format(key, enum[input_index])
+                      "index {1} in the enum list: {2}".format(key, input_index, enums[input_index])
             raise MissingKey(message, key)
 
         except selenium_helpers.SeleniumHelperExceptions as selenium_error:
@@ -279,10 +288,10 @@ class FieldHandlerException(Exception):
 
 
 class MissingKey(FieldHandlerException):
-    def __init__(self, message, key, stacktrace=None):
+    def __init__(self, message, key, stacktrace=None, details=None):
         super(MissingKey, self).__init__(msg=message, stacktrace=stacktrace)
-        self.key = key
-        self.details["missing_key"] = key
+        self.key = "{0}".format(key)
+        self.details["missing_key"] = key if details is None or "missing_key" not in details else details["missing_key"]
 
 
 class SeleniumError(FieldHandlerException):
