@@ -50,7 +50,7 @@ class FieldHandler():
                                         first. This is typically most relevant to e-mail and password fields.
         """
         if "type" in field and field["type"].lower() not in All_FIELD_TYPES:
-            raise UnknownFieldTypeException(field["type"], stacktrace=traceback.format_exc())
+            raise UnknownFieldType(field["type"], stacktrace=traceback.format_exc())
 
         try:
             if field["type"].lower() in TEXT_FIELD_TYPES:
@@ -309,12 +309,12 @@ class SeleniumError(FieldHandlerException):
                                             stacktrace=selenium_helper_exception.stacktrace,
                                             details=selenium_helper_exception.details)
 
-class UnknownFieldTypeException(FieldHandlerException):
+class UnknownFieldType(FieldHandlerException):
     def __init__(self, field_type, stacktrace=None):
         message = "An unknown field type of '{0}' was passed through to the field handler dispatch method. " \
                   "Please review the field's configuration and look for typos or field types that should " \
                   "potentially be added.".format(field_type)
-        super(UnknownFieldTypeException, self).__init__(msg=message, stacktrace=stacktrace)
+        super(UnknownFieldType, self).__init__(msg=message, stacktrace=stacktrace)
         self.field_type = "{0}".format(field_type)
         self.details["unknown_field_type"] = field_type
 

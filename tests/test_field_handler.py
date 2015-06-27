@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime, timedelta
-from the_ark.field_handlers import FieldHandler, FieldHandlerException, SeleniumError, MissingKey
+from the_ark.field_handlers import FieldHandler, FieldHandlerException, SeleniumError, MissingKey, UnknownFieldType
 from the_ark import selenium_helpers
 from mock import patch, Mock
 
@@ -138,10 +138,9 @@ class FieldHandlerTestCase(unittest.TestCase):
         field_data = {
             "type": "Unavailable",
         }
-        with self.assertRaises(FieldHandlerException) as error_message:
+        with self.assertRaises(UnknownFieldType) as error_message:
             self.fh.dispatch_field(field_data)
         #- Check that the else statement is called by verifying the exception text contains the word "unknown"
-        self.assertIn("unknown", error_message.exception.msg)
         self.assertIn(field_data["type"], error_message.exception.msg)
 
     #- FieldHandlerException()
