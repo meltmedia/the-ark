@@ -1,4 +1,3 @@
-import logging
 import selenium_helpers
 import traceback
 
@@ -16,6 +15,7 @@ BUTTON_FIELD = "button"
 TEXT_FIELD_TYPES = [STRING_FIELD, PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD]
 All_FIELD_TYPES = [DROP_DOWN_FIELD, CHECK_BOX_FIELD, RADIO_FIELD, SELECT_FIELD, BUTTON_FIELD] + TEXT_FIELD_TYPES
 
+
 class FieldHandler():
 
     def __init__(self, selenium_driver):
@@ -24,7 +24,6 @@ class FieldHandler():
         :param
             - selenium_driver:  selenium webdriver - The current browser driver that is being interacted with.
         """
-        self.log = logging.getLogger(self.__class__.__name__)
         self.sh = selenium_helpers.SeleniumHelpers(selenium_driver)
 
     def dispatch_field(self, field):
@@ -239,7 +238,6 @@ class FieldHandler():
             self.sh.click_an_element(enums[input_index]["css_selector"])
 
         except KeyError as key:
-            # TODO:
             message = "Key {0} is missing from the dictionary at " \
                       "index {1} in the enum list: {2}".format(key, input_index, enums[input_index])
             raise MissingKey(message, key)
@@ -309,13 +307,12 @@ class SeleniumError(FieldHandlerException):
                                             stacktrace=selenium_helper_exception.stacktrace,
                                             details=selenium_helper_exception.details)
 
+
 class UnknownFieldType(FieldHandlerException):
     def __init__(self, field_type, stacktrace=None):
-        message = "An unknown field type of '{0}' was passed through to the field handler dispatch method. " \
-                  "Please review the field's configuration and look for typos or field types that should " \
-                  "potentially be added.".format(field_type)
+        message = """An unknown field type of '{0}' was passed through to the field handler dispatch method.
+                  Please review the field's configuration and look for typos or field types that should
+                  potentially be added.""".format(field_type)
         super(UnknownFieldType, self).__init__(msg=message, stacktrace=stacktrace)
         self.field_type = "{0}".format(field_type)
         self.details["unknown_field_type"] = field_type
-
-

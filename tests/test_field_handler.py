@@ -1,8 +1,7 @@
 import unittest
-from datetime import datetime, timedelta
 from the_ark.field_handlers import FieldHandler, FieldHandlerException, SeleniumError, MissingKey, UnknownFieldType
 from the_ark import selenium_helpers
-from mock import patch, Mock
+from mock import patch
 
 
 class FieldHandlerTestCase(unittest.TestCase):
@@ -93,7 +92,9 @@ class FieldHandlerTestCase(unittest.TestCase):
         }
         select_method.return_value = "text"
         self.fh.dispatch_field(field_data)
-        select_method.assert_called_once_with(field_data["css_selector"], field_data["input"], field_data["first_valid"])
+        select_method.assert_called_once_with(field_data["css_selector"],
+                                              field_data["input"],
+                                              field_data["first_valid"])
 
     @patch("the_ark.field_handlers.FieldHandler.handle_select")
     def test_dispatch_select_field_with_first_valid_as_false(self, select_method):
@@ -106,7 +107,9 @@ class FieldHandlerTestCase(unittest.TestCase):
         }
         select_method.return_value = "text"
         self.fh.dispatch_field(field_data)
-        select_method.assert_called_once_with(field_data["css_selector"], field_data["input"], field_data["first_valid"])
+        select_method.assert_called_once_with(field_data["css_selector"],
+                                              field_data["input"],
+                                              field_data["first_valid"])
 
     #--- Drop Down Field
     @patch("the_ark.field_handlers.FieldHandler.handle_drop_down")
@@ -170,20 +173,17 @@ class FieldHandlerTestCase(unittest.TestCase):
         self.assertIn(field_data["name"], error_message.exception.msg)
 
     #- KeyError()
-    @patch("the_ark.field_handlers.FieldHandler.handle_text")
-    def test_dispatch_key_error_without_name(self, text_method):
+    def test_dispatch_key_error_without_name(self):
         field_data = {
             "css_selector": "#field",
             "input": "text",
         }
-        text_method.side_effect = MissingKey("Boo!", "type")
         with self.assertRaises(FieldHandlerException) as error_message:
             self.fh.dispatch_field(field_data)
         self.assertEquals("'type'", error_message.exception.details["missing_key"])
         self.assertNotIn("named", error_message.exception.msg)
 
-    @patch("the_ark.field_handlers.FieldHandler.handle_text")
-    def test_dispatch_key_error_with_name(self, text_method):
+    def test_dispatch_key_error_with_name(self):
         field_data = {
             "css_selector": "#field",
             "input": "text",
@@ -387,4 +387,3 @@ class FieldHandlerTestCase(unittest.TestCase):
         error_string = field_handler.__str__()
         self.assertIn("css_selector", error_string)
         self.assertIn("stacktrace", error_string)
-
