@@ -10,9 +10,9 @@ class FieldHandlerTestCase(unittest.TestCase):
         self.instantiate_field_handler()
 
     @patch("the_ark.selenium_helpers.SeleniumHelpers")
-    def instantiate_field_handler(self, sh):
+    def instantiate_field_handler(self, selenium_helper):
         fake_driver = "driver"
-        self.sh = sh(fake_driver)
+        self.sh = selenium_helper(fake_driver)
         self.fh = FieldHandler(self.sh)
 
     #===================================================================

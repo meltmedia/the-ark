@@ -2,10 +2,21 @@ import logging
 import selenium_helpers
 import traceback
 
+STRING_FIELD = "string"
+PHONE_FIELD = "phone"
+ZIP_CODE_FIELD = "zip_code"
+DATE_FIELD = "date"
+INTEGER_FIELD = "integer"
+EMAIL_FIELD = "email"
+DROP_DOWN_FIELD = "drop_down"
+CHECK_BOX_FIELD = "check_box"
+RADIO_FIELD = "radio"
+SELECT_FIELD = "select"
+BUTTON_FIELD = "button"
+TEXT_FIELD_TYPES = [STRING_FIELD, PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD]
+All_FIELD_TYPES = [DROP_DOWN_FIELD, CHECK_BOX_FIELD, RADIO_FIELD, SELECT_FIELD, BUTTON_FIELD] + TEXT_FIELD_TYPES
 
 class FieldHandler():
-
-    TEXT_FIELD_TYPES = ["string", "phone", "zip_code", "date", "integer", "email"]
 
     def __init__(self, selenium_driver):
         """
@@ -38,33 +49,30 @@ class FieldHandler():
             - confirm_css_selector:     bool - True if there is a repeated field used to confirm the entry into the
                                         first. This is typically most relevant to e-mail and password fields.
         """
+        if "type" in field and field["type"].lower() not in All_FIELD_TYPES:
+            raise UnknownFieldTypeException(field["type"], stacktrace=traceback.format_exc())
 
         try:
-            if field["type"].lower() in self.TEXT_FIELD_TYPES:
+            if field["type"].lower() in TEXT_FIELD_TYPES:
                 confirm_css_selector = None if "confirm_css_selector" not in field else field["confirm_css_selector"]
                 self.handle_text(field["css_selector"], field["input"], confirm_css_selector)
 
-            elif field["type"].lower() == "check_box":
+            if field["type"].lower() == CHECK_BOX_FIELD:
                 self.handle_check_box(field["enum"], field["input"])
 
-            elif field["type"].lower() == "radio":
+            if field["type"].lower() == RADIO_FIELD:
                 self.handle_radio_button(field["enum"], field["input"])
 
-            elif field["type"].lower() == "select":
+            if field["type"].lower() == SELECT_FIELD:
                 #- Default first_valid to False as it is the default.
                 first_valid = False if "first_valid" not in field else field["first_valid"]
                 self.handle_select(field["css_selector"], field["input"], first_valid)
 
-            elif field["type"].lower() == "drop_down":
+            if field["type"].lower() == DROP_DOWN_FIELD:
                 self.handle_drop_down(field["css_selector"], field["enum"], field["input"])
 
-            elif field["type"].lower() == "button":
+            if field["type"].lower() == BUTTON_FIELD:
                 self.handle_button(field["css_selector"])
-
-            else:
-                raise FieldHandlerException("An unknown field type of '{0}' was passed through to the field handler "
-                                            "dispatcher. Please review the field's configuration and look for typos or "
-                                            "field types that should potentially be added.".format(field["type"]))
 
         except FieldHandlerException as fhe:
             message = "Encountered an error dispatching the field"
@@ -289,7 +297,7 @@ class FieldHandlerException(Exception):
 
 class MissingKey(FieldHandlerException):
     def __init__(self, message, key, stacktrace=None, details=None):
-        super(MissingKey, self).__init__(msg=message, stacktrace=stacktrace)
+        super(MissingKey, self).__init__(msg=message, stacktrace=stacktrace, details=details)
         self.key = "{0}".format(key)
         self.details["missing_key"] = key if details is None or "missing_key" not in details else details["missing_key"]
 
@@ -300,4 +308,14 @@ class SeleniumError(FieldHandlerException):
         super(SeleniumError, self).__init__(msg=new_message,
                                             stacktrace=selenium_helper_exception.stacktrace,
                                             details=selenium_helper_exception.details)
+
+class UnknownFieldTypeException(FieldHandlerException):
+    def __init__(self, field_type, stacktrace=None):
+        message = "An unknown field type of '{0}' was passed through to the field handler dispatch method. " \
+                  "Please review the field's configuration and look for typos or field types that should " \
+                  "potentially be added.".format(field_type)
+        super(UnknownFieldTypeException, self).__init__(msg=message, stacktrace=stacktrace)
+        self.field_type = "{0}".format(field_type)
+        self.details["unknown_field_type"] = field_type
+
 
