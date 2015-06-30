@@ -3,7 +3,6 @@ __author__ = 'alow'
 import os
 import unittest
 
-from mock import create_autospec
 from mock import patch
 from selenium.webdriver import PhantomJS
 from the_ark import selenium_helpers
@@ -26,12 +25,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def setUp(self):
         self.driver.get(SELENIUM_TEST_HTML)
 
-    def test_exist_valid(self):
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.find_element_by_css_selector")
+    def test_exist_valid(self, mock_find):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".valid"
-        ensure_function = create_autospec(sh.ensure_element_exists)
-        ensure_function(valid_css_selector)
-        ensure_function.assert_called_once_with(valid_css_selector)
+        sh.ensure_element_exists(valid_css_selector)
+        self.assertTrue(mock_find.called)
 
     def test_exist_invalid(self):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
@@ -40,7 +39,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_visible_valid(self):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".valid"
-        self.assertEqual(sh.ensure_element_visible(valid_css_selector), True)
+        self.assertTrue(sh.ensure_element_visible(valid_css_selector))
 
     def test_visible_invalid(self):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
@@ -249,13 +248,13 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_element_scroll_position_at_top_true_valid(self):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".scrollable"
-        self.assertEqual(sh.element_scroll_position_at_top(valid_css_selector), True)
+        self.assertTrue(sh.element_scroll_position_at_top(valid_css_selector))
 
     def test_element_scroll_position_at_top_false_valid(self):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".scrollable"
         sh.scroll_an_element(valid_css_selector)
-        self.assertEqual(sh.element_scroll_position_at_top(valid_css_selector), False)
+        self.assertFalse(sh.element_scroll_position_at_top(valid_css_selector))
 
     def test_element_scroll_position_at_top_invalid(self):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
@@ -270,12 +269,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".scrollable"
         sh.scroll_an_element(valid_css_selector, scroll_bottom=True)
-        self.assertEqual(sh.element_scroll_position_at_bottom(valid_css_selector), True)
+        self.assertTrue(sh.element_scroll_position_at_bottom(valid_css_selector))
 
     def test_element_scroll_position_at_bottom_false_valid(self):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".scrollable"
-        self.assertEqual(sh.element_scroll_position_at_bottom(valid_css_selector), False)
+        self.assertFalse(sh.element_scroll_position_at_bottom(valid_css_selector))
 
     def test_element_scroll_position_at_bottom_invalid(self):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
