@@ -28,7 +28,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
         valid_css_selector = ".valid"
         sh.ensure_element_exists(valid_css_selector)
-        self.assertTrue(mock_find.called)
+        mock_find.assert_called_with(valid_css_selector)
 
     def test_exist_invalid(self):
         sh = selenium_helpers.SeleniumHelpers(self.driver)
