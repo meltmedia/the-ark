@@ -31,14 +31,12 @@ class UtilsTestCase(unittest.TestCase):
         with self.assertRaises(ig.InputGeneratorException):
             ig.check_min_vs_max(13, 12)
 
-        #- Test with field
-        field_data = {"name": "Check Min Field"}
-        with self.assertRaises(ig.InputGeneratorException):
-            ig.check_min_vs_max(13, 12, field_data)
-
+    #===================================================================
+    #--- Generate String
+    #===================================================================
+    #- Defaults
     @patch("the_ark.input_generator.set_leave_blank")
-    def test_generate_string(self, leave_blank):
-        #--- Test default values
+    def test_generate_string_default_values(self, leave_blank):
         leave_blank.return_value = False
         returned_string = ig.generate_string()
         if not ig.DEFAULT_STRING_MIN <= len(returned_string) <= ig.DEFAULT_STRING_MAX:
@@ -47,34 +45,30 @@ class UtilsTestCase(unittest.TestCase):
                                                                             ig.DEFAULT_STRING_MAX,
                                                                             len(returned_string)))
 
-        #--- Test blank field return
+    #- Blank
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_string_blank_return(self, leave_blank):
         leave_blank.return_value = True
         self.assertEqual("", ig.generate_string())
 
+    #- Specific Length
+    @patch("the_ark.input_generator.set_leave_blank")
+    def test_generate_string_specific_length(self, leave_blank):
         leave_blank.return_value = False
         #--- Test string length ranges
         returned_string = ig.generate_string(15, 15)
         self.assertEqual(len(returned_string), 15)
 
-        #--- Key Errors
-        #- no name
-        field_data = {"type": "STRING"}
+    #- General Exception
+    @patch("the_ark.input_generator.check_min_vs_max")
+    def test_generate_string_general_exception(self, min_max):
+        min_max.side_effect = Exception("Boo!")
         with self.assertRaises(ig.InputGeneratorException):
-            ig.generate_string(field=field_data)
-        #- field name
-        field_data = {"name": "String Generator"}
-        with self.assertRaises(ig.InputGeneratorException):
-            ig.generate_string(field=field_data)
+            ig.generate_string()
 
-        #--- General Exception
-        #- With field
-        field_data = {"name": "String Generator", "min": "Apples", "max": "Oranges", "required": True}
-        with self.assertRaises(ig.InputGeneratorException):
-            ig.generate_string(field=field_data)
-        #- Without field
-        with self.assertRaises(ig.InputGeneratorException):
-            ig.generate_string("apples", "oranges")
-
+    #===================================================================
+    #--- Integer Field
+    #===================================================================
     @patch("the_ark.input_generator.set_leave_blank")
     def test_generate_integer(self, leave_blank):
         #--- Test default values
@@ -95,21 +89,7 @@ class UtilsTestCase(unittest.TestCase):
         returned_integer = ig.generate_integer(15, 15)
         self.assertEqual(returned_integer, "15")
 
-        #--- Key Errors
-        #- no name
-        field_data = {"type": "INTEGER"}
-        with self.assertRaises(ig.InputGeneratorException):
-            ig.generate_integer(field=field_data)
-        #- name in field object
-        field_data = {"name": "Vincent"}
-        with self.assertRaises(ig.InputGeneratorException):
-            ig.generate_integer(field=field_data)
-
         #--- General Exception
-        #- With field
-        field_data = {"name": "Vincent", "min": "Apples", "max": "Oranges", "padding": 1, "required": True}
-        with self.assertRaises(ig.InputGeneratorException):
-            ig.generate_integer(field=field_data)
         #- Without field
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_integer("apples", "oranges")

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime, timedelta
 import random
 import string
@@ -10,6 +11,55 @@ DEFAULT_INTEGER_MAX = 9
 DEFAULT_INDEX_OPTIONS = 2
 DEFAULT_DOMAIN = "meltmedia.com"
 DEFAULT_DATE_FORMAT = "%m/%d/%Y"
+
+global_test_number = 1
+
+
+def dispatch_form(form_fields, test_number):
+    global global_test_number
+    global_test_number = test_number
+    edited_fields = []
+    for i, field in enumerate(form_fields):
+        edited_fields.append(deepcopy(form_fields[i]))
+        edited_fields[i]["input"] = dispatch_field(field)
+        #TODO: Determine best way top recursively add inoput to related fields
+        if "related" in field.keys():
+            for y, related_field in enumerate(field["related"]):
+                r_type = related_field["type"].lower()
+                #dispatch field
+    return edited_fields
+
+
+def dispatch_field(field_data):
+    try:
+        required = False if "required" not in field_data else field_data["required"]
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+        if field_data["type"].lower() == "string":
+            return generate_string(field_data["min"], field_data["max"], required)
+    except:
+        pass
+    #TODO: Add logic to append the field name
+    #TODO: Create a Min/Max Exception
+    #TODO: Create a MissingKey Exception?
 
 
 def set_leave_blank(test_number, required):
@@ -34,15 +84,14 @@ def set_leave_blank(test_number, required):
     return leave_blank
 
 
-def check_min_vs_max(min_length, max_length, field=None):
+def check_min_vs_max(min_length, max_length):
     if min_length > max_length:
         message = "The minimum cannot be greater than the maximum value"
-        if field:
-            message += ". Please review the 'min' and 'max' values for the field"
         raise InputGeneratorException(message)
 
 
-def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX, test_number=1, field=None):
+def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX,
+                    test_number=global_test_number, required=True):
     """ Creates a str object with a length greater than min_length and less than max_length, made up of randomly
         selected upper and lowercase letters.
     :param
@@ -57,44 +106,28 @@ def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX
         -   string:         The randomly generated or blank string
     """
     try:
-        #- Reset min and max lengths with the field object values
-        min_length = min_length if not field else field["min"]
-        max_length = max_length if not field else field["max"]
-        #- Set test_number to a default of 1 unless a value was passed in.
-        test_number = 1 if not test_number else test_number
-
         #- Ensure the minimum and maximum values create a valid range
-        check_min_vs_max(min_length, max_length, field)
+        check_min_vs_max(min_length, max_length)
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required = False if not field else field["required"]
         leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create a string
         if leave_blank:
             random_string = ""
         else:
-            random_string = "".join(random.choice(string.ascii_letters) for f in range(random.randint(min_length,
-                                                                                                      max_length)))
+            random_string = "".join(random.choice(string.ascii_letters) for num in range(random.randint(min_length,
+                                                                                                        max_length)))
 
         return random_string
 
-    except KeyError as key:
-        message = "Error while generating a String"
-        if "name" in field.keys():
-            message += " for the {0} field".format(field["name"])
-        message += ". The {0} key is required when passing a field object into the generate_string method".format(key)
-        raise InputGeneratorException(message)
-
     except Exception as e_text:
-        message = "Error while generating a String"
-        if field and "name" in field.keys():
-            message += " for the {0} field".format(field["name"].upper())
-        message += ": {0}".format(e_text)
+        message = "Error while generating a String: {0}".format(e_text)
         raise InputGeneratorException(message)
 
 
-def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, padding=1, test_number=1, field=None):
+def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX,
+                     padding=1, test_number=global_test_number, required=True):
     """ Generates an str object with an int character that is greater that min_int and less than max_int.
     :param
         -   min_int:        The minimum value that the generated integer can be. Defaults to 1
@@ -110,18 +143,10 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, p
         -   integer:        The randomly generated, or blank integer
     """
     try:
-        #- Reset min, max and padding variables with the field object values
-        min_int = min_int if not field else field["min"]
-        max_int = max_int if not field else field["max"]
-        padding = padding if not field or "padding" not in field else field["padding"]
-        #- Set test_number to a default of 1 unless a value was passed in.
-        test_number = 1 if not test_number else test_number
-
         # - Ensure the minimum and maximum values create a valid range
-        check_min_vs_max(min_int, max_int, field)
+        check_min_vs_max(min_int, max_int)
 
         #- Instantiate the required and leave_blank variables based on the field object and test number
-        required = False if not field else field["required"]
         leave_blank = set_leave_blank(test_number, required)
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create an integer
@@ -133,18 +158,8 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX, p
 
         return integer
 
-    except KeyError as key:
-        message = "Error while generating an Integer"
-        if "name" in field.keys():
-            message += " for the {0} field".format(field["name"])
-        message += ". The {0} key is required when passing a field object into the generate_integer method".format(key)
-        raise InputGeneratorException(message)
-
     except Exception as e_text:
-        message = "Error while generating an Integer"
-        if field and "name" in field.keys():
-            message += " for the {0} field".format(field["name"].upper())
-        message += ": {0}".format(e_text)
+        message = "Error while generating an Integer: {0}".format(e_text)
         raise InputGeneratorException(message)
 
 
