@@ -1,5 +1,3 @@
-__author__ = 'alow'
-
 import logging
 
 from selenium import common
