@@ -1,6 +1,7 @@
 import logging
 
 from selenium import common
+from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -10,14 +11,77 @@ import traceback
 
 class SeleniumHelpers:
 
-    def __init__(self, driver):
+    def __init__(self):
         """
         Methods to do various and repeatable selenium tasks.
-        :param
-            -   driver:     The current browser window that is being interacted with.
         """
         self.log = logging.getLogger(self.__class__.__name__)
-        self.driver = driver
+        self.driver = None
+
+    def create_driver(self, **desired_capabilities):
+        """
+        Creating a driver with the desired settings.
+        :param desired_capabilities:
+        :return:
+        """
+        if desired_capabilities.get("username") and desired_capabilities.get("access_key"):
+            sauce_url = "http://{0}:{1}@ondemand.saucelabs.com:80/wd/hub".format(desired_capabilities["username"],
+                                                                                 desired_capabilities["access_key"])
+            self.driver = webdriver.Remote(desired_capabilities=desired_capabilities, command_executor=sauce_url)
+        elif desired_capabilities.get("browserName").lower() == "chrome":
+            self.driver = webdriver.Chrome()
+        elif desired_capabilities.get("browserName").lower() == "firefox":
+            self.driver = webdriver.Firefox()
+        elif desired_capabilities.get("browserName").lower() == "phantomjs":
+            self.driver = webdriver.PhantomJS()
+        elif desired_capabilities.get("browserName").lower() == "safari":
+            self.driver = webdriver.Safari
+        elif desired_capabilities.get("mobile"):
+            self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
+
+    def resize_browser(self, width=None, height=None):
+        """
+
+        :param width:
+        :param height:
+        :return:
+        """
+        #TODO: Have this change the width and/or height of the browser.
+        print height, width
+
+    def get_url(self, url):
+        """
+
+        :param url:
+        :return:
+        """
+        #TODO: Check the url to see if it's a valid URL and then go to that URL.
+        print url
+
+    def swith_window_or_tab(self, specific_handle=None):
+        """
+
+        :param specific_handle:
+        :return:
+        """
+        if specific_handle:
+            print specific_handle
+        else:
+            print "Go to latest"
+
+    def close_window(self):
+        """
+
+        :return:
+        """
+        self.driver.close()
+
+    def quit_driver(self):
+        """
+
+        :return:
+        """
+        self.driver.quit()
 
     def ensure_element_exists(self, css_selector):
         """
@@ -468,3 +532,6 @@ class ScrollPositionError(SeleniumHelperExceptions):
         self.x_position = x_position
         self.details["y_position"] = self.y_position
         self.details["x_position"] = self.x_position
+
+sh = SeleniumHelpers()
+sh.create_driver(browserName="FIREFOX")
