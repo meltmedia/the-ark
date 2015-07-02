@@ -1,4 +1,3 @@
-import selenium_helpers
 import traceback
 
 STRING_FIELD = "string"
@@ -18,13 +17,13 @@ All_FIELD_TYPES = [DROP_DOWN_FIELD, CHECK_BOX_FIELD, RADIO_FIELD, SELECT_FIELD, 
 
 class FieldHandler():
 
-    def __init__(self, selenium_driver):
+    def __init__(self, selenium_helper):
         """
         This class contains methods which can be used to handle each field type.
         :param
-            - selenium_driver:  selenium webdriver - The current browser driver that is being interacted with.
+            - selenium_helper:  SeleniumHelpers() - The current browser driver wrapper that is being interacted with.
         """
-        self.sh = selenium_helpers.SeleniumHelpers(selenium_driver)
+        self.sh = selenium_helper
 
     def dispatch_field(self, field):
         """
