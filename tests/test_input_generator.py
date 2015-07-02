@@ -1,11 +1,10 @@
-import re
 import unittest
 from datetime import datetime, timedelta
 from the_ark import input_generator as ig
 from mock import patch
 
 
-class UtilsTestCase(unittest.TestCase):
+class InputGeneratorTestCase(unittest.TestCase):
     @patch("random.random")
     def test_set_leave_blank(self, random_value):
         #--- Tests without field data
