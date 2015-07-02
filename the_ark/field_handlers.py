@@ -1,3 +1,4 @@
+import selenium_helpers
 import traceback
 
 STRING_FIELD = "string"
