@@ -69,30 +69,49 @@ class SeleniumHelpers:
             if url_request.status_code == requests.codes.ok:
                 self.driver.get(url)
 
-    def swith_window_or_tab(self, specific_handle=None):
+    def get_window_handles(self, get_current=None):
         """
+        This will get and return a list of windows or tabs currently open.
+        :return
+            -   current_handle:  unicode - The current window handle of the driver.
+            -   window_handles:    list - A list of the current windows or tabs open in the driver.
+        """
+        if get_current:
+            current_handle = self.driver.current_window_handle
+            return current_handle
+        else:
+            window_handles = self.driver.window_handles
+            return window_handles
 
-        :param specific_handle:
-        :return:
+    def switch_window_handle(self, specific_handle=None):
+        """
+        This will either switch to a specified window handle or the latest window handle.
+        :param
+            -   specific_handle:    unicode - The specific window handle to switch to in the driver.
         """
         if specific_handle:
-            print specific_handle
+            self.driver.switch_to.window(specific_handle)
         else:
-            print "Go to latest"
+            window_handles = self.get_window_handles()
+            self.driver.switch_to.window(window_handles[-1])
 
     def close_window(self):
         """
-
-        :return:
+        This will close the active window of the driver.
         """
-        self.driver.close()
+        try:
+            self.driver.close()
+        except AttributeError as close_error:
+            raise close_error
 
     def quit_driver(self):
         """
-
-        :return:
+        This will quit the driver.
         """
-        self.driver.quit()
+        try:
+            self.driver.quit()
+        except AttributeError as quit_error:
+            raise quit_error
 
     def ensure_element_exists(self, css_selector):
         """
