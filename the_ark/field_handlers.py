@@ -1,6 +1,7 @@
 import selenium_helpers
 import traceback
 
+FIELD_IDENTIFIER = "type"
 STRING_FIELD = "string"
 PHONE_FIELD = "phone"
 ZIP_CODE_FIELD = "zip_code"
@@ -48,29 +49,29 @@ class FieldHandler():
             - confirm_css_selector:     bool - True if there is a repeated field used to confirm the entry into the
                                         first. This is typically most relevant to e-mail and password fields.
         """
-        if "type" in field and field["type"].lower() not in All_FIELD_TYPES:
-            raise UnknownFieldType(field["type"], stacktrace=traceback.format_exc())
+        if FIELD_IDENTIFIER in field and field[FIELD_IDENTIFIER].lower() not in All_FIELD_TYPES:
+            raise UnknownFieldType(field[FIELD_IDENTIFIER], stacktrace=traceback.format_exc())
 
         try:
-            if field["type"].lower() in TEXT_FIELD_TYPES:
-                confirm_css_selector = None if "confirm_css_selector" not in field else field["confirm_css_selector"]
+            if field[FIELD_IDENTIFIER].lower() in TEXT_FIELD_TYPES:
+                confirm_css_selector = field.get("confirm_css_selector") or None
                 self.handle_text(field["css_selector"], field["input"], confirm_css_selector)
 
-            if field["type"].lower() == CHECK_BOX_FIELD:
+            if field[FIELD_IDENTIFIER].lower() == CHECK_BOX_FIELD:
                 self.handle_check_box(field["enum"], field["input"])
 
-            if field["type"].lower() == RADIO_FIELD:
+            if field[FIELD_IDENTIFIER].lower() == RADIO_FIELD:
                 self.handle_radio_button(field["enum"], field["input"])
 
-            if field["type"].lower() == SELECT_FIELD:
+            if field[FIELD_IDENTIFIER].lower() == SELECT_FIELD:
                 #- Default first_valid to False as it is the default.
-                first_valid = False if "first_valid" not in field else field["first_valid"]
+                first_valid = field.get("first_valid") or False
                 self.handle_select(field["css_selector"], field["input"], first_valid)
 
-            if field["type"].lower() == DROP_DOWN_FIELD:
+            if field[FIELD_IDENTIFIER].lower() == DROP_DOWN_FIELD:
                 self.handle_drop_down(field["css_selector"], field["enum"], field["input"])
 
-            if field["type"].lower() == BUTTON_FIELD:
+            if field[FIELD_IDENTIFIER].lower() == BUTTON_FIELD:
                 self.handle_button(field["css_selector"])
 
         except FieldHandlerException as fhe:
@@ -297,7 +298,8 @@ class MissingKey(FieldHandlerException):
     def __init__(self, message, key, stacktrace=None, details=None):
         super(MissingKey, self).__init__(msg=message, stacktrace=stacktrace, details=details)
         self.key = "{0}".format(key)
-        self.details["missing_key"] = key if details is None or "missing_key" not in details else details["missing_key"]
+        if details:
+            self.details["missing_key"] = details.get("missing_key") or key
 
 
 class SeleniumError(FieldHandlerException):
