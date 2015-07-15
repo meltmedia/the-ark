@@ -461,8 +461,7 @@ class InputGeneratorTestCase(unittest.TestCase):
         random_result.return_value = .50
         self.assertEqual([1], ig.generate_check_box(2, 2))
 
-    @patch("the_ark.input_generator.set_leave_blank")
-    def test_generate_check_box_exception(self, random_result):
+    def test_generate_check_box_exception(self):
         with self.assertRaises(ig.InputGeneratorException):
             ig.generate_check_box("apples")
 
@@ -574,8 +573,8 @@ class InputGeneratorTestCase(unittest.TestCase):
 
     def test_field_handler_exception_to_string_with_details(self):
         input_exc = InputGeneratorException("message",
-                                                "stacktrace:\nLine 1\nLine 2",
-                                                {"css_selector": "selector.1"})
+                                            "stacktrace:\nLine 1\nLine 2",
+                                            {"css_selector": "selector.1"})
         error_string = input_exc.__str__()
         self.assertIn("css_selector", error_string)
         self.assertIn("stacktrace", error_string)

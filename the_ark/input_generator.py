@@ -522,10 +522,10 @@ class MissingKey(InputGeneratorException):
 
 
 class MinGreaterThanMax(InputGeneratorException):
-    def __init__(self, message, min, max, stacktrace=None, details=None):
+    def __init__(self, message, minimum, maximum, stacktrace=None, details=None):
         super(MinGreaterThanMax, self).__init__(msg=message, stacktrace=stacktrace, details=details)
-        self.details["min"] = min if details is None or "min" not in details else details["min"]
-        self.details["max"] = max if details is None or "max" not in details else details["max"]
+        self.details["min"] = minimum if details is None or "min" not in details else details["min"]
+        self.details["max"] = maximum if details is None or "max" not in details else details["max"]
 
 
 class UnknownFieldType(InputGeneratorException):
