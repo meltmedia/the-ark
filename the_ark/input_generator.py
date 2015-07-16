@@ -26,10 +26,10 @@ def dispatch_field(field_data, test_number=1):
     'type' key within the dict.
 
     :param
-        - css_selector:    string - The element's css selector in the webpage's DOM.
-        - input_text:      string - The text that is to be entered into the field.
-        - confirm_css_selector:     bool - True if there is a repeated field used to confirm the entry into the
-                                    first. This is typically most relevant to e-mail and password fields.
+        - field_data:   dict - An object contain key value pairs for each of the field's parameters
+        - test_number:  int - An number that specifies which submission number this generation is being used for. This
+                              will help determine whether the field has been populated previously and whether to leave
+                              it blank
     """
     if "type" in field_data and field_data["type"].lower() not in All_FIELD_TYPES:
         raise UnknownFieldType(field_data["type"], stacktrace=traceback.format_exc())
@@ -95,16 +95,15 @@ def dispatch_field(field_data, test_number=1):
 
 
 def set_leave_blank(test_number, required):
-    """Sets a generation method's values for whether the field is currently required and if it is not, whether
-        to leave it blank.
+    """Sets a generation method's values for whether to leave a field blank.
     :param
-        -   test_number:    Dict containing a site config
+        -   test_number:    An int that specifies which submission number this generation is being used for. This will
+                            help determine whether the field has been populated previously and whether to leave it blank
         -   required:       A bool specifying whether the field for which input if being generated is required on the
                             form on which the input will be input
     :returns
-        bool, bool:         Both the required and leave_blank values generated
+        -   bool:           Whether the input for the field should be left blank
     """
-    #- Instantiate the variables to their defaults
     leave_blank = False
 
     #- If the field is not required, do logic to determine whether to leave it blank upon fill
@@ -178,7 +177,7 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX,
         -   required:       A bool specifying whether the field for which input if being generated is required on the
                             form on which the input will be input
     :returns
-        -   integer:        The randomly generated, or blank integer
+        -   integer:        The randomly generated, or blank string
     """
     try:
         #- Ensure the minimum and maximum values create a valid range
@@ -213,8 +212,9 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=1, required=True):
         -   string:         The randomly generated, or blank email string
     """
     try:
-        #- Instantiate the required and leave_blank variables based on the field object and test number
+        #- Instantiate variables
         leave_blank = set_leave_blank(test_number, required)
+        email = ""
 
         #- Set the return to a blank string if leave_blank is true. Otherwise create an email
         if leave_blank:
@@ -224,7 +224,11 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=1, required=True):
             #-   The first and last names are generated using the generate_string method
             first_name = generate_string(6, 10)
             last_name = generate_string(6, 10)
-            email = "{0}.{1}@{2}".format(first_name, last_name, domain)
+
+            if domain == DEFAULT_DOMAIN:
+                email = "test+"
+
+            email += "{0}.{1}@{2}".format(first_name, last_name, domain)
 
             return email
 
@@ -244,7 +248,7 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
         -   dash:           Bool used to determine whether to put a dash between the first three and last 4 digits of
                             the phone number. The default value is False
         -   space:          Bool used to determine whether to put a space between the area code and number portions
-                             of the phone number. The default value is False
+                            of the phone number. The default value is False
         -   test_number:    An int that specifies which submission number this generation is being used for. This will
                             help determine whether the field has been populated previously and whether to leave it blank
         -   required:       A bool specifying whether the field for which input if being generated is required on the
