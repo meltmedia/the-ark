@@ -25,20 +25,29 @@ class SeleniumHelpers:
         :param
             -   desired_capabilities:   dictionary - Settings used to set up the desired browser.
         """
-        if desired_capabilities.get("username") and desired_capabilities.get("access_key"):
-            sauce_url = "http://{0}:{1}@ondemand.saucelabs.com:80/wd/hub".format(desired_capabilities["username"],
-                                                                                 desired_capabilities["access_key"])
-            self.driver = webdriver.Remote(desired_capabilities=desired_capabilities, command_executor=sauce_url)
-        elif desired_capabilities.get("browserName").lower() == "chrome":
-            self.driver = webdriver.Chrome()
-        elif desired_capabilities.get("browserName").lower() == "firefox":
-            self.driver = webdriver.Firefox()
-        elif desired_capabilities.get("browserName").lower() == "phantomjs":
-            self.driver = webdriver.PhantomJS()
-        # elif desired_capabilities.get("browserName").lower() == "safari":
-        #     self.driver = webdriver.Safari()
-        elif desired_capabilities.get("mobile"):
-            self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
+        try:
+            if desired_capabilities.get("username") and desired_capabilities.get("access_key"):
+                sauce_url = "http://{0}:{1}@ondemand.saucelabs.com:80/wd/hub".format(desired_capabilities["username"],
+                                                                                     desired_capabilities["access_key"])
+                self.driver = webdriver.Remote(desired_capabilities=desired_capabilities, command_executor=sauce_url)
+            elif desired_capabilities.get("browserName").lower() == "chrome":
+                self.driver = webdriver.Chrome()
+            elif desired_capabilities.get("browserName").lower() == "firefox":
+                self.driver = webdriver.Firefox()
+            elif desired_capabilities.get("browserName").lower() == "phantomjs":
+                self.driver = webdriver.PhantomJS()
+            elif desired_capabilities.get("browserName").lower() == "safari":
+                self.driver = webdriver.Safari()
+            elif desired_capabilities.get("mobile"):
+                self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
+            else:
+                message = "No driver has been created. Pass through the needed desired capabilities in order to " \
+                          "create a driver."
+                raise DriverAttributeError(msg=message)
+        except Exception as driver_creation_error:
+            message = "There was an issue creating a driver with the specified desited capabilities: {0}\n" \
+                      "<{1}>".format(desired_capabilities, driver_creation_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def resize_browser(self, width=None, height=None):
         """
@@ -47,12 +56,17 @@ class SeleniumHelpers:
             -   width:  integer - The number the width of the browser will be re-sized to.
             -   height: integer - The number the height of the browser will be re-sized to.
         """
-        if width and height:
-            self.driver.set_window_size(width, height)
-        elif width:
-            self.driver.set_window_size(width, self.driver.get_window_size()["height"])
-        elif height:
-            self.driver.set_window_size(self.driver.get_window_size()["width"], height)
+        try:
+            if width and height:
+                self.driver.set_window_size(width, height)
+            elif width:
+                self.driver.set_window_size(width, self.driver.get_window_size()["height"])
+            elif height:
+                self.driver.set_window_size(self.driver.get_window_size()["width"], height)
+        except Exception as resize_error:
+            message = "Unable to resize the browser with the give width ({0}) and/or height ({1}) value(s)\n" \
+                      "<{2}>".format(width, height, resize_error)
+            raise DriverSizeError(msg=message, stacktrace=traceback.format_exc(), width=width, height=height)
 
     def get_url(self, url, bypass_status_code_check=False):
         """
@@ -62,12 +76,17 @@ class SeleniumHelpers:
             -   url:    string - A valid URL (e.g. "http://www.google.com")
             -   bypass_status_code_check:   boolean - Navigate to the given URL without checking the status code or not.
         """
-        if bypass_status_code_check:
-            self.driver.get(url)
-        else:
-            url_request = requests.get(url)
-            if url_request.status_code == requests.codes.ok:
+        try:
+            if bypass_status_code_check:
                 self.driver.get(url)
+            else:
+                url_request = requests.get(url)
+                if url_request.status_code == requests.codes.ok:
+                    self.driver.get(url)
+        except Exception as get_url_error:
+            message = "Unable to navigate to the desired URL: {0}\n" \
+                      "<{1}>".format(url, get_url_error)
+            raise DriverURLError(msg=message, stacktrace=traceback.format_exc(), desired_url=url)
 
     def get_window_handles(self, get_current=None):
         """
@@ -76,12 +95,16 @@ class SeleniumHelpers:
             -   current_handle:  unicode - The current window handle of the driver.
             -   window_handles:    list - A list of the current windows or tabs open in the driver.
         """
-        if get_current:
-            current_handle = self.driver.current_window_handle
-            return current_handle
-        else:
-            window_handles = self.driver.window_handles
-            return window_handles
+        try:
+            if get_current:
+                current_handle = self.driver.current_window_handle
+                return current_handle
+            else:
+                window_handles = self.driver.window_handles
+                return window_handles
+        except AttributeError as get_handle_error:
+            message = "Unable to get window handle(s).\n<{0}>".format(get_handle_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def switch_window_handle(self, specific_handle=None):
         """
@@ -89,11 +112,15 @@ class SeleniumHelpers:
         :param
             -   specific_handle:    unicode - The specific window handle to switch to in the driver.
         """
-        if specific_handle:
-            self.driver.switch_to.window(specific_handle)
-        else:
-            window_handles = self.get_window_handles()
-            self.driver.switch_to.window(window_handles[-1])
+        try:
+            if specific_handle:
+                self.driver.switch_to.window(specific_handle)
+            else:
+                window_handles = self.get_window_handles()
+                self.driver.switch_to.window(window_handles[-1])
+        except AttributeError as window_handle_error:
+            message = "Unable to switch window handles.\n<{0}>".format(window_handle_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def close_window(self):
         """
@@ -102,7 +129,9 @@ class SeleniumHelpers:
         try:
             self.driver.close()
         except AttributeError as close_error:
-            raise close_error
+            message = "Unable to close the current window. Is it possible you already closed the window?\n" \
+                      "<{0}>".format(close_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def quit_driver(self):
         """
@@ -111,7 +140,9 @@ class SeleniumHelpers:
         try:
             self.driver.quit()
         except AttributeError as quit_error:
-            raise quit_error
+            message = "Unable to quit the driver. Is it possible you already quit the driver?\n" \
+                      "<{0}>".format(quit_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def ensure_element_exists(self, css_selector):
         """
@@ -562,3 +593,49 @@ class ScrollPositionError(SeleniumHelperExceptions):
         self.x_position = x_position
         self.details["y_position"] = self.y_position
         self.details["x_position"] = self.x_position
+
+
+class DriverExceptions(Exception):
+    def __init__(self, msg, stacktrace=None, details=None):
+        self.msg = msg
+        self.details = {} if details is None else details
+        self.stacktrace = stacktrace
+        super(DriverExceptions, self).__init__()
+
+    def __str__(self):
+        exception_msg = "Field Handler Exception: \n"
+        if self.stacktrace is not None:
+            exception_msg += "{0}".format(self.stacktrace)
+        if self.details:
+            detail_string = "\nException Details:\n"
+            for key, value in self.details.items():
+                detail_string += "{0}: {1}\n".format(key, value)
+            exception_msg += detail_string
+        exception_msg += "Message: {0}".format(self.msg)
+
+        return exception_msg
+
+
+class DriverAttributeError(DriverExceptions):
+    def __init__(self, msg, stacktrace=None):
+        super(DriverAttributeError, self).__init__(msg=msg, stacktrace=stacktrace)
+
+
+class DriverSizeError(DriverExceptions):
+    def __init__(self, msg, stacktrace=None, width=None, height=None):
+        super(DriverSizeError, self).__init__(msg=msg, stacktrace=stacktrace)
+        self.width = width
+        self.height = height
+        self.details["width"] = self.width
+        self.details["height"] = self.height
+
+
+class DriverURLError(DriverExceptions):
+    def __init__(self, msg, stacktrace=None, desired_url=None):
+        super(DriverURLError, self).__init__(msg=msg, stacktrace=stacktrace)
+        self.desired_url = desired_url
+        self.details["Desired URL"] = self.desired_url
+
+sh = SeleniumHelpers()
+sh.create_driver(browserName="firefox")
+sh.get_url("http://google.com")
