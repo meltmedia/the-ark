@@ -1,6 +1,6 @@
-import unittest
 from the_ark.field_handlers import FieldHandler, FieldHandlerException, SeleniumError, MissingKey, UnknownFieldType
 from the_ark import selenium_helpers
+import unittest
 from mock import patch
 
 
