@@ -3,13 +3,8 @@ import mandrill
 from mock import patch
 import unittest
 
-class EmailClientTestCase(unittest.TestCase):
-    # def setUp(self):
-    #     self.instantiate_email_client()
-    #
-    # def instantiate_email_client(self, mandrill):
-    #     self.ec = email_client(fake_api_key)
 
+class EmailClientTestCase(unittest.TestCase):
     @patch("mandrill.Messages.send")
     def test_successful_send(self, send):
         send.return_value = "Success!"
@@ -45,12 +40,11 @@ class EmailClientTestCase(unittest.TestCase):
     def test_invalid_to_email(self, send):
         send.side_effect = mandrill.Error()
         ec = EmailClient("fake_key")
+        bad_email = "bad.to.email@test"
         with self.assertRaises(EmailClientException) as error_message:
-            bad_email = "bad.to.email@test"
             ec.send_email("from.test@test.com", ["good.to.test@test.com", bad_email], "Message Text")
         self.assertIn("TO", error_message.exception.msg)
         self.assertIn(bad_email, error_message.exception.msg)
-
 
     #===================================================================
     #--- Email Client Exceptions
