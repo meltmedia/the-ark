@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as expected_condition
 import traceback
-
+import time
 
 class SeleniumHelpers:
 
@@ -30,6 +30,8 @@ class SeleniumHelpers:
                 sauce_url = "http://{0}:{1}@ondemand.saucelabs.com:80/wd/hub".format(desired_capabilities["username"],
                                                                                      desired_capabilities["access_key"])
                 self.driver = webdriver.Remote(desired_capabilities=desired_capabilities, command_executor=sauce_url)
+            elif desired_capabilities.get("mobile"):
+                self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
             elif desired_capabilities.get("browserName").lower() == "chrome":
                 self.driver = webdriver.Chrome()
             elif desired_capabilities.get("browserName").lower() == "firefox":
@@ -38,14 +40,13 @@ class SeleniumHelpers:
                 self.driver = webdriver.PhantomJS()
             elif desired_capabilities.get("browserName").lower() == "safari":
                 self.driver = webdriver.Safari()
-            elif desired_capabilities.get("mobile"):
-                self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
             else:
                 message = "No driver has been created. Pass through the needed desired capabilities in order to " \
                           "create a driver."
                 raise DriverAttributeError(msg=message)
+            return self.driver
         except Exception as driver_creation_error:
-            message = "There was an issue creating a driver with the specified desited capabilities: {0}\n" \
+            message = "There was an issue creating a driver with the specified desired capabilities: {0}\n" \
                       "<{1}>".format(desired_capabilities, driver_creation_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
@@ -102,7 +103,7 @@ class SeleniumHelpers:
             else:
                 window_handles = self.driver.window_handles
                 return window_handles
-        except AttributeError as get_handle_error:
+        except Exception as get_handle_error:
             message = "Unable to get window handle(s).\n<{0}>".format(get_handle_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
@@ -118,7 +119,7 @@ class SeleniumHelpers:
             else:
                 window_handles = self.get_window_handles()
                 self.driver.switch_to.window(window_handles[-1])
-        except AttributeError as window_handle_error:
+        except Exception as window_handle_error:
             message = "Unable to switch window handles.\n<{0}>".format(window_handle_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
@@ -128,7 +129,7 @@ class SeleniumHelpers:
         """
         try:
             self.driver.close()
-        except AttributeError as close_error:
+        except Exception as close_error:
             message = "Unable to close the current window. Is it possible you already closed the window?\n" \
                       "<{0}>".format(close_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
@@ -139,7 +140,7 @@ class SeleniumHelpers:
         """
         try:
             self.driver.quit()
-        except AttributeError as quit_error:
+        except Exception as quit_error:
             message = "Unable to quit the driver. Is it possible you already quit the driver?\n" \
                       "<{0}>".format(quit_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
@@ -603,7 +604,7 @@ class DriverExceptions(Exception):
         super(DriverExceptions, self).__init__()
 
     def __str__(self):
-        exception_msg = "Field Handler Exception: \n"
+        exception_msg = "Driver Creation Exception: \n"
         if self.stacktrace is not None:
             exception_msg += "{0}".format(self.stacktrace)
         if self.details:
@@ -635,7 +636,3 @@ class DriverURLError(DriverExceptions):
         super(DriverURLError, self).__init__(msg=msg, stacktrace=stacktrace)
         self.desired_url = desired_url
         self.details["Desired URL"] = self.desired_url
-
-sh = SeleniumHelpers()
-sh.create_driver(browserName="firefox")
-sh.get_url("http://google.com")
