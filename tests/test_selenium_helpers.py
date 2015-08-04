@@ -231,7 +231,8 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertTrue(mock_fill.called)
 
     def test_fill_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.fill_an_element, ".invalid input", "test text")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.fill_an_element, ".invalid input",
+                          "test text")
 
     def test_fill_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.fill_an_element, ".invalid &input", "test text")
@@ -378,14 +379,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(Exception, self.sh.show_element, "*invalid")
 
     def test_driver_exception_to_string_without_details(self):
-        field_handler = selenium_helpers.DriverExceptions("Message text")
-        error_string = field_handler.__str__()
+        driver_exception = selenium_helpers.DriverExceptions("Message text")
+        error_string = driver_exception.__str__()
         self.assertNotIn("stacktrace", error_string)
 
     def test_driver_exception_to_string_with_details(self):
-        field_handler = selenium_helpers.DriverExceptions("message",
-                                              "stacktrace:\nLine 1\nLine 2",
-                                              {"css_selector": "selector.1"})
-        error_string = field_handler.__str__()
-        self.assertIn("css_selector", error_string)
+        driver_exception = selenium_helpers.DriverExceptions("message",
+                                                          "stacktrace:\nLine 1\nLine 2")
+        error_string = driver_exception.__str__()
         self.assertIn("stacktrace", error_string)
