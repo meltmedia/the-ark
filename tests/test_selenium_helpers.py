@@ -2,7 +2,6 @@ import os
 import unittest
 
 from mock import patch
-from selenium.webdriver import PhantomJS
 from the_ark import selenium_helpers
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
