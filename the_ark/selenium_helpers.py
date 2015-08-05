@@ -1,6 +1,8 @@
 import logging
 
+import requests
 from selenium import common
+from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -10,20 +12,150 @@ import traceback
 
 class SeleniumHelpers:
 
-    def __init__(self, driver):
+    def __init__(self):
         """
         Methods to do various and repeatable selenium tasks.
-        :param
-            -   driver:     The current browser window that is being interacted with.
         """
         self.log = logging.getLogger(self.__class__.__name__)
-        self.driver = driver
+        self.driver = None
+
+    def create_driver(self, **desired_capabilities):
+        """
+        Creating a driver with the desired settings.
+        :param
+            -   desired_capabilities:   dictionary - Settings used to set up the desired browser.
+        """
+        try:
+            if desired_capabilities.get("username") and desired_capabilities.get("access_key"):
+                sauce_url = "http://{0}:{1}@ondemand.saucelabs.com:80/wd/hub".format(desired_capabilities["username"],
+                                                                                     desired_capabilities["access_key"])
+                self.driver = webdriver.Remote(desired_capabilities=desired_capabilities, command_executor=sauce_url)
+            elif desired_capabilities.get("mobile"):
+                self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
+            elif desired_capabilities.get("browserName").lower() == "chrome":
+                self.driver = webdriver.Chrome()
+            elif desired_capabilities.get("browserName").lower() == "firefox":
+                self.driver = webdriver.Firefox()
+            elif desired_capabilities.get("browserName").lower() == "phantomjs":
+                self.driver = webdriver.PhantomJS()
+            elif desired_capabilities.get("browserName").lower() == "safari":
+                self.driver = webdriver.Safari()
+            else:
+                message = "No driver has been created. Pass through the needed desired capabilities in order to " \
+                          "create a driver. | Desired Capabilities: {0}".format(desired_capabilities)
+                raise DriverAttributeError(msg=message)
+            return self.driver
+        except Exception as driver_creation_error:
+            message = "There was an issue creating a driver with the specified desired capabilities: {0}\n" \
+                      "<{1}>".format(desired_capabilities, driver_creation_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def resize_browser(self, width=None, height=None):
+        """
+        This will resize the browser with the given width and/or height.
+        :param
+            -   width:  integer - The number the width of the browser will be re-sized to.
+            -   height: integer - The number the height of the browser will be re-sized to.
+        """
+        try:
+            if not width and not height:
+                pass
+            elif width and height:
+                self.driver.set_window_size(width, height)
+            elif width:
+                self.driver.set_window_size(width, self.driver.get_window_size()["height"])
+            else:
+                self.driver.set_window_size(self.driver.get_window_size()["width"], height)
+        except Exception as resize_error:
+            message = "Unable to resize the browser with the give width ({0}) and/or height ({1}) value(s)\n" \
+                      "<{2}>".format(width, height, resize_error)
+            raise DriverSizeError(msg=message, stacktrace=traceback.format_exc(), width=width, height=height)
+
+    def get_url(self, url, bypass_status_code_check=False):
+        """
+        This will check to see if the status code of the URL is not 4XX or 5XX and navigate to the URL. If the
+        bypass_status_code_check is set to True it will just navigate to the given URL.
+        :param
+            -   url:    string - A valid URL (e.g. "http://www.google.com")
+            -   bypass_status_code_check:   boolean - Navigate to the given URL without checking the status code or not.
+        """
+        try:
+            if bypass_status_code_check:
+                self.driver.get(url)
+            else:
+                url_request = requests.get(url)
+                if url_request.status_code == requests.codes.ok:
+                    self.driver.get(url)
+                else:
+                    message = "The URL: {0} has the status code of: {1}. Maybe bypass the status code check if you need " \
+                              "to navigate to this URL.".format(url, url_request.status_code)
+                    raise DriverURLError(msg=message, desired_url=url)
+        except Exception as get_url_error:
+            message = "Unable to navigate to the desired URL: {0}\n" \
+                      "<{1}>".format(url, get_url_error)
+            raise DriverURLError(msg=message, stacktrace=traceback.format_exc(), desired_url=url)
+
+    def get_window_handles(self, get_current=None):
+        """
+        This will get and return a list of windows or tabs currently open.
+        :return
+            -   current_handle:  unicode - The current window handle of the driver.
+            -   window_handles:    list - A list of the current windows or tabs open in the driver.
+        """
+        try:
+            if get_current:
+                current_handle = self.driver.current_window_handle
+                return current_handle
+            else:
+                window_handles = self.driver.window_handles
+                return window_handles
+        except Exception as get_handle_error:
+            message = "Unable to get window handle(s).\n<{0}>".format(get_handle_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def switch_window_handle(self, specific_handle=None):
+        """
+        This will either switch to a specified window handle or the latest window handle.
+        :param
+            -   specific_handle:    unicode - The specific window handle to switch to in the driver.
+        """
+        try:
+            if specific_handle:
+                self.driver.switch_to.window(specific_handle)
+            else:
+                window_handles = self.get_window_handles()
+                self.driver.switch_to.window(window_handles[-1])
+        except Exception as window_handle_error:
+            message = "Unable to switch window handles.\n<{0}>".format(window_handle_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def close_window(self):
+        """
+        This will close the active window of the driver.
+        """
+        try:
+            self.driver.close()
+        except Exception as close_error:
+            message = "Unable to close the current window. Is it possible you already closed the window?\n" \
+                      "<{0}>".format(close_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def quit_driver(self):
+        """
+        This will quit the driver.
+        """
+        try:
+            self.driver.quit()
+        except Exception as quit_error:
+            message = "Unable to quit the driver. Is it possible you already quit the driver?\n" \
+                      "<{0}>".format(quit_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def ensure_element_exists(self, css_selector):
         """
         This will ensure that an element exists on the page under test, if not an exception will be raised.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         """
         try:
             self.driver.find_element_by_css_selector(css_selector)
@@ -37,7 +169,7 @@ class SeleniumHelpers:
         """
         This will ensure that an element is visible, if not an exception will be raised.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         """
         self.ensure_element_exists(css_selector)
         element_visible = self.driver.find_element_by_css_selector(css_selector).is_displayed()
@@ -52,9 +184,9 @@ class SeleniumHelpers:
         """
         Find a specific element on the page using a css_selector.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         :return
-            -   web_element:      object - The WebElement object that has been found.
+            -   web_element:    object - The WebElement object that has been found.
         """
         self.ensure_element_visible(css_selector)
         web_element = self.driver.find_element_by_css_selector(css_selector)
@@ -64,9 +196,9 @@ class SeleniumHelpers:
         """
         Return a full list of elements from a drop down menu, checkboxes, radio buttons, etc.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         :return
-            -   list_of_elements: list - The full list of web elements from a parent selector (e.g. drop down menus)
+            -   list_of_elements:   list - The full list of web elements from a parent selector (e.g. drop down menus)
         """
         self.ensure_element_visible(css_selector)
         list_of_elements = self.driver.find_elements_by_css_selector(css_selector)
@@ -76,8 +208,8 @@ class SeleniumHelpers:
         """
         This will wait for a specific element to be present on the page within a specified amount of time, in seconds.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
-            -   wait_time:        integer - The amount of time, in seconds, given to wait for an element to be present.
+            -   css_selector:   string - The specific element that will be interacted with.
+            -   wait_time:  integer - The amount of time, in seconds, given to wait for an element to be present.
         """
         try:
             WebDriverWait(self.driver, wait_time).until(expected_condition.presence_of_element_located((By.CSS_SELECTOR,
@@ -92,7 +224,7 @@ class SeleniumHelpers:
         """
         This will click an element on a page.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -110,9 +242,9 @@ class SeleniumHelpers:
         """
         Click on a specific location on the page.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
-            -   y_position:     integer - The position at which the mouse will be placed vertically.
-            -   x_position:     integer - The position at which the mouse will be placed horizontally.
+            -   css_selector:   string - The specific element that will be interacted with.
+            -   y_position: integer - The position at which the mouse will be placed vertically.
+            -   x_position: integer - The position at which the mouse will be placed horizontally.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -133,7 +265,7 @@ class SeleniumHelpers:
         """
         Double click an element on the page.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -151,7 +283,7 @@ class SeleniumHelpers:
         """
         This will clear a field on a page.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -170,8 +302,8 @@ class SeleniumHelpers:
         """
         This will fill a field on a page.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
-            -   fill_text:        string - The text that will be sent through to a field on page.
+            -   css_selector:   string - The specific element that will be interacted with.
+            -   fill_text:  string - The text that will be sent through to a field on page.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -191,7 +323,7 @@ class SeleniumHelpers:
         """
         This will hover over an element on a page.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -211,10 +343,10 @@ class SeleniumHelpers:
         This will scroll to an element on a page. This element can be put at the top, the bottom, or the middle
         (or close to) of the page.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
-            -   position_top:     boolean - Whether or not the element will be at the top of the page.
-            -   position_bottom:  boolean - Whether or not the element will be at the bottom of the page.
-            -   position_middle:  boolean - Whether or not the element will be in the middle of the page.
+            -   css_selector:   string - The specific element that will be interacted with.
+            -   position_top:   boolean - Whether or not the element will be at the top of the page.
+            -   position_bottom:    boolean - Whether or not the element will be at the bottom of the page.
+            -   position_middle:    boolean - Whether or not the element will be in the middle of the page.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -244,8 +376,8 @@ class SeleniumHelpers:
         """
         This will scroll to a specific position on the current page.
         :param
-            -   y_position:     integer - The position the browser will scroll to vertically.
-            -   x_position:     integer - The position the browser will scroll to horizontally.
+            -   y_position: integer - The position the browser will scroll to vertically.
+            -   x_position: integer - The position the browser will scroll to horizontally.
         """
         if type(y_position) == int or type(x_position) == int:
             self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
@@ -262,11 +394,11 @@ class SeleniumHelpers:
         element, the bottom of the element, a specific position in the element, or by the height of the scrollable area
         of the element.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
-            -   scroll_position:  integer - The position that the element will be scrolled to.
-            -   scroll_padding:   integer - The amount of padding that will be used when scroll by the element's height.
-            -   scroll_top:       boolean - Whether or not the element will be scrolled to the top.
-            -   scroll_bottom:    boolean - Whether or not the element will be scrolled to the bottom.
+            -   css_selector:   string - The specific element that will be interacted with.
+            -   scroll_position:    integer - The position that the element will be scrolled to.
+            -   scroll_padding: integer - The amount of padding that will be used when scroll by the element's height.
+            -   scroll_top: boolean - Whether or not the element will be scrolled to the top.
+            -   scroll_bottom:  boolean - Whether or not the element will be scrolled to the bottom.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -304,9 +436,9 @@ class SeleniumHelpers:
         """
         Check to see what position the scrollable element is at.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         :return
-            -   scroll_position:  integer - The amount that the element has been scrolled.
+            -   scroll_position:    integer - The amount that the element has been scrolled.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -328,9 +460,9 @@ class SeleniumHelpers:
         """
         Check to see if the scroll position is at the top of the scrollable element.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         :return
-            -   at_top:           boolean - Whether or not the scrollable element is at the top.
+            -   at_top: boolean - Whether or not the scrollable element is at the top.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -355,9 +487,9 @@ class SeleniumHelpers:
         """
         Check to see if the scroll position is at the bottom of the scrollable element.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         :return
-            -   at_bottom:        boolean - Whether or not the scrollable element is at the bottom.
+            -   at_bottom:  boolean - Whether or not the scrollable element is at the bottom.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -387,7 +519,7 @@ class SeleniumHelpers:
         """
         This will hide a specified element.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -405,7 +537,7 @@ class SeleniumHelpers:
         """
         This will show a specified element.
         :param
-            -   css_selector:     string - The specific element that will be interacted with.
+            -   css_selector:   string - The specific element that will be interacted with.
         """
         try:
             self.ensure_element_visible(css_selector)
@@ -447,7 +579,7 @@ class TimeoutError(SeleniumHelperExceptions):
         self.css_selector = css_selector
         self.wait_time = wait_time
         self.details["css_selector"] = self.css_selector
-        self.details["wait time"] = self.wait_time
+        self.details["wait_time"] = self.wait_time
 
 
 class ClickPositionError(SeleniumHelperExceptions):
@@ -468,3 +600,45 @@ class ScrollPositionError(SeleniumHelperExceptions):
         self.x_position = x_position
         self.details["y_position"] = self.y_position
         self.details["x_position"] = self.x_position
+
+
+class DriverExceptions(Exception):
+    def __init__(self, msg, stacktrace=None, details=None):
+        self.msg = msg
+        self.details = {} if details is None else details
+        self.stacktrace = stacktrace
+        super(DriverExceptions, self).__init__()
+
+    def __str__(self):
+        exception_msg = "Driver Creation Exception: \n"
+        if self.stacktrace is not None:
+            exception_msg += "{0}".format(self.stacktrace)
+        if self.details:
+            detail_string = "\nException Details:\n"
+            for key, value in self.details.items():
+                detail_string += "{0}: {1}\n".format(key, value)
+            exception_msg += detail_string
+        exception_msg += "Message: {0}".format(self.msg)
+
+        return exception_msg
+
+
+class DriverAttributeError(DriverExceptions):
+    def __init__(self, msg, stacktrace=None):
+        super(DriverAttributeError, self).__init__(msg=msg, stacktrace=stacktrace)
+
+
+class DriverSizeError(DriverExceptions):
+    def __init__(self, msg, stacktrace=None, width=None, height=None):
+        super(DriverSizeError, self).__init__(msg=msg, stacktrace=stacktrace)
+        self.width = width
+        self.height = height
+        self.details["width"] = self.width
+        self.details["height"] = self.height
+
+
+class DriverURLError(DriverExceptions):
+    def __init__(self, msg, stacktrace=None, desired_url=None):
+        super(DriverURLError, self).__init__(msg=msg, stacktrace=stacktrace)
+        self.desired_url = desired_url
+        self.details["desired_url"] = self.desired_url
