@@ -80,8 +80,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.DriverAttributeError, self.sh.create_driver, browserName="")
 
     def test_resize_window_valid(self):
+        starting_size = self.driver.get_window_size()
         self.sh.resize_browser()
-        assert True
+        self.assertTrue(starting_size, self.driver.get_window_size())
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.set_window_size")
     def test_resize_window_width_and_height_valid(self, mock_set_size):

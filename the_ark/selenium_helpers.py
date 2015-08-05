@@ -42,7 +42,7 @@ class SeleniumHelpers:
                 self.driver = webdriver.Safari()
             else:
                 message = "No driver has been created. Pass through the needed desired capabilities in order to " \
-                          "create a driver."
+                          "create a driver. | Desired Capabilities: {0}".format(desired_capabilities)
                 raise DriverAttributeError(msg=message)
             return self.driver
         except Exception as driver_creation_error:
