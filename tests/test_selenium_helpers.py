@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from mock import patch
+from mock import patch, Mock
 from the_ark import selenium_helpers
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -23,42 +23,55 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def setUp(self):
         self.sh.get_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.__init__")
-    def test_sauce_browser_valid(self, mock_browser):
+    @patch("selenium.webdriver.Remote", autospec=True)
+    def test_sauce_browser_valid(self, mock_sauce):
+        mock_driver = Mock(spec=mock_sauce)
+        mock_sauce.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(username="test", access_key="test", browserName="firefox")
-        self.assertTrue(mock_browser.called)
+        mock_sauce.assert_called_once_with(command_executor='http://test:test@ondemand.saucelabs.com:80/wd/hub',
+                                           desired_capabilities={'username': 'test', 'access_key': 'test',
+                                                                 'browserName': 'firefox'})
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.__init__")
-    def test_mobile_browser_valid(self, mock_browser):
+    @patch("selenium.webdriver.Remote", autospec=True)
+    def test_mobile_browser_valid(self, mock_mobile):
+        mock_driver = Mock(spec=mock_mobile)
+        mock_mobile.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(mobile=True)
-        self.assertTrue(mock_browser.called)
+        mock_mobile.assert_called_once_with(desired_capabilities={'mobile': True})
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.__init__")
-    def test_chrome_browser_valid(self, mock_browser):
+    @patch("selenium.webdriver.Chrome", autospec=True)
+    def test_chrome_browser_valid(self, mock_chrome):
+        mock_driver = Mock(spec=mock_chrome)
+        mock_chrome.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="chrome")
-        self.assertTrue(mock_browser.called)
+        mock_chrome.assert_called_once_with()
 
-    #TODO: Creates Firefox driver, needs to not do that crap
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.__init__")
-    def test_firefox_browser_valid(self, mock_browser):
+    @patch("selenium.webdriver.Firefox", autospec=True)
+    def test_firefox_browser_valid(self, mock_firefox):
+        mock_driver = Mock(spec=mock_firefox)
+        mock_firefox.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="firefox")
-        self.assertTrue(mock_browser.called)
+        mock_firefox.assert_called_once_with()
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.__init__")
-    def test_phantomjs_browser_valid(self, mock_browser):
+    @patch("selenium.webdriver.PhantomJS", autospec=True)
+    def test_phantomjs_browser_valid(self, mock_phantomjs):
+        mock_driver = Mock(spec=mock_phantomjs)
+        mock_phantomjs.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="phantomjs")
-        self.assertTrue(mock_browser.called)
+        mock_phantomjs.assert_called_once_with()
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.__init__")
-    def test_safari_browser_valid(self, mock_browser):
+    @patch("selenium.webdriver.Safari", autospec=True)
+    def test_safari_browser_valid(self, mock_safari):
+        mock_driver = Mock(spec=mock_safari)
+        mock_safari.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="safari")
-        self.assertTrue(mock_browser.called)
+        mock_safari.assert_called_once_with()
 
     def test_no_driver_invalid(self):
         self.assertRaises(selenium_helpers.DriverAttributeError, self.sh.create_driver, browserName="browser")
@@ -141,7 +154,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_quit_window_invalid(self):
         sh = selenium_helpers.SeleniumHelpers()
-        self.assertRaises(selenium_helpers.DriverAttributeError, sh.quit_driver())
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.quit_driver)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.find_element_by_css_selector")
     def test_exist_valid(self, mock_find):
@@ -384,7 +397,14 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertNotIn("stacktrace", error_string)
 
     def test_driver_exception_to_string_with_details(self):
-        driver_exception = selenium_helpers.DriverExceptions("message",
-                                                          "stacktrace:\nLine 1\nLine 2")
+        driver_exception = selenium_helpers.DriverExceptions("message", "stacktrace:\nLine 1\nLine 2")
         error_string = driver_exception.__str__()
+        self.assertIn("stacktrace", error_string)
+
+    def test_field_handler_exception_to_string_with_details(self):
+        field_handler = selenium_helpers.DriverExceptions("message",
+                                                          "stacktrace:\nLine 1\nLine 2",
+                                                          {"desired_url": "http://www.google.com"})
+        error_string = field_handler.__str__()
+        self.assertIn("desired_url", error_string)
         self.assertIn("stacktrace", error_string)

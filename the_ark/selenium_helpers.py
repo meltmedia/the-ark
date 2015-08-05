@@ -573,7 +573,7 @@ class TimeoutError(SeleniumHelperExceptions):
         self.css_selector = css_selector
         self.wait_time = wait_time
         self.details["css_selector"] = self.css_selector
-        self.details["wait time"] = self.wait_time
+        self.details["wait_time"] = self.wait_time
 
 
 class ClickPositionError(SeleniumHelperExceptions):
@@ -635,4 +635,4 @@ class DriverURLError(DriverExceptions):
     def __init__(self, msg, stacktrace=None, desired_url=None):
         super(DriverURLError, self).__init__(msg=msg, stacktrace=stacktrace)
         self.desired_url = desired_url
-        self.details["Desired URL"] = self.desired_url
+        self.details["desired_url"] = self.desired_url
