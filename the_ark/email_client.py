@@ -42,8 +42,8 @@ class EmailClient(object):
         # Attempt to send the email
         try:
             self.mandrill_client.messages.send(message=email_details)
-        except mandrill.Error as mandril_exception:
-            message = "Mandrill Error occurred while attempting to send your email | {0}".format(mandril_exception)
+        except mandrill.Error as mandrill_exception:
+            message = "Mandrill Error occurred while attempting to send your email | {0}".format(mandrill_exception)
             raise EmailClientException(message, traceback.format_exc(), email_details)
 
 
