@@ -1,7 +1,8 @@
-requests==2.3.0
-mock
-nose==1.3.1
+boto==2.29.1
 coverage==3.7.1
 flake8==2.3.0
-boto==2.29.1
+mandrill
+mock
+nose==1.3.1
+requests==2.3.0
 selenium==2.45.0
