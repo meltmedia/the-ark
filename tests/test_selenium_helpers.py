@@ -79,6 +79,10 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_driver_creation_invalid(self):
         self.assertRaises(selenium_helpers.DriverAttributeError, self.sh.create_driver, browserName="")
 
+    def test_resize_window_valid(self):
+        self.sh.resize_browser()
+        assert True
+
     @patch("selenium.webdriver.remote.webdriver.WebDriver.set_window_size")
     def test_resize_window_width_and_height_valid(self, mock_set_size):
         self.sh.resize_browser(width=50, height=50)
@@ -106,6 +110,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_url_valid(self, mock_get):
         self.sh.get_url("http://www.google.com")
         self.assertTrue(mock_get.called)
+
+    def test_get_404_url_invalid(self):
+        self.assertRaises(selenium_helpers.DriverURLError, self.sh.get_url, url="http://www.google.com/404")
 
     def test_get_url_invalid(self):
         self.assertRaises(selenium_helpers.DriverURLError, self.sh.get_url, url="google.com")

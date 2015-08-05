@@ -58,11 +58,13 @@ class SeleniumHelpers:
             -   height: integer - The number the height of the browser will be re-sized to.
         """
         try:
-            if width and height:
+            if not width and not height:
+                pass
+            elif width and height:
                 self.driver.set_window_size(width, height)
             elif width:
                 self.driver.set_window_size(width, self.driver.get_window_size()["height"])
-            elif height:
+            else:
                 self.driver.set_window_size(self.driver.get_window_size()["width"], height)
         except Exception as resize_error:
             message = "Unable to resize the browser with the give width ({0}) and/or height ({1}) value(s)\n" \
@@ -84,6 +86,10 @@ class SeleniumHelpers:
                 url_request = requests.get(url)
                 if url_request.status_code == requests.codes.ok:
                     self.driver.get(url)
+                else:
+                    message = "The URL: {0} has the status code of: {1}. Maybe bypass the status code check if you need " \
+                              "to navigate to this URL.".format(url, url_request.status_code)
+                    raise DriverURLError(msg=message, desired_url=url)
         except Exception as get_url_error:
             message = "Unable to navigate to the desired URL: {0}\n" \
                       "<{1}>".format(url, get_url_error)
