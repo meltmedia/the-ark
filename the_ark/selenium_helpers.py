@@ -540,7 +540,7 @@ class SeleniumHelpers:
             -   css_selector:   string - The specific element that will be interacted with.
         """
         try:
-            self.ensure_element_visible(css_selector)
+            self.ensure_element_exists(css_selector)
             self.driver.execute_script("document.querySelector(arguments[0]).style.display = 'block';", css_selector)
         except SeleniumHelperExceptions as show_error:
             show_error.msg = "Unable to show element. | " + show_error.msg
