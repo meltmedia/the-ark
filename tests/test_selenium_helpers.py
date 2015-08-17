@@ -332,16 +332,16 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_scroll_element_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.scroll_an_element, "!not-scrollable")
 
-    def test_element_current_scroll_position_valid(self):
+    def test_get_element_current_scroll_position_valid(self):
         valid_css_selector = ".scrollable"
-        self.assertEqual(self.sh.element_current_scroll_position(valid_css_selector), 0)
+        self.assertEqual(self.sh.get_element_current_scroll_position(valid_css_selector), 0)
 
-    def test_element_current_scroll_position_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.element_current_scroll_position,
+    def test_get_element_current_scroll_position_invalid(self):
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_current_scroll_position,
                           ".not-scrollable")
 
-    def test_element_current_scroll_position_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.element_current_scroll_position, "*not-scrollable")
+    def test_get_element_current_scroll_position_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.get_element_current_scroll_position, "*not-scrollable")
 
     def test_is_element_scroll_position_at_top_true_valid(self):
         valid_css_selector = ".scrollable"

@@ -432,7 +432,7 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def element_current_scroll_position(self, css_selector):
+    def get_element_current_scroll_position(self, css_selector):
         """
         Check to see what position the scrollable element is at.
         :param
