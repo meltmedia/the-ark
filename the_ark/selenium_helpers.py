@@ -71,7 +71,7 @@ class SeleniumHelpers:
                       "<{2}>".format(width, height, resize_error)
             raise DriverSizeError(msg=message, stacktrace=traceback.format_exc(), width=width, height=height)
 
-    def get_url(self, url, bypass_status_code_check=False):
+    def load_url(self, url, bypass_status_code_check=False):
         """
         This will check to see if the status code of the URL is not 4XX or 5XX and navigate to the URL. If the
         bypass_status_code_check is set to True it will just navigate to the given URL.

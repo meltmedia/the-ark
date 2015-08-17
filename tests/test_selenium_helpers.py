@@ -21,7 +21,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         cls.driver.quit()
 
     def setUp(self):
-        self.sh.get_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+        self.sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
 
     @patch("selenium.webdriver.Remote", autospec=True)
     def test_sauce_browser_valid(self, mock_sauce):
@@ -103,20 +103,20 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.DriverSizeError, self.sh.resize_browser, width="text")
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.get")
-    def test_get_url_bypass_valid(self, mock_get):
-        self.sh.get_url("www.google.com", bypass_status_code_check=True)
+    def test_load_url_bypass_valid(self, mock_get):
+        self.sh.load_url("www.google.com", bypass_status_code_check=True)
         self.assertTrue(mock_get.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.get")
-    def test_get_url_valid(self, mock_get):
-        self.sh.get_url("http://www.google.com")
+    def test_load_url_valid(self, mock_get):
+        self.sh.load_url("http://www.google.com")
         self.assertTrue(mock_get.called)
 
-    def test_get_404_url_invalid(self):
-        self.assertRaises(selenium_helpers.DriverURLError, self.sh.get_url, url="http://www.google.com/404")
+    def test_load_404_url_invalid(self):
+        self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="http://www.google.com/404")
 
-    def test_get_url_invalid(self):
-        self.assertRaises(selenium_helpers.DriverURLError, self.sh.get_url, url="google.com")
+    def test_load_url_invalid(self):
+        self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="google.com")
 
     def test_get_current_handle_valid(self):
         self.assertTrue(self.sh.get_window_handles(get_current=True))
