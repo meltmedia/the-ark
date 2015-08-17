@@ -343,37 +343,37 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_element_current_scroll_position_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.element_current_scroll_position, "*not-scrollable")
 
-    def test_element_scroll_position_at_top_true_valid(self):
+    def test_is_element_scroll_position_at_top_true_valid(self):
         valid_css_selector = ".scrollable"
-        self.assertTrue(self.sh.element_scroll_position_at_top(valid_css_selector))
+        self.assertTrue(self.sh.is_element_scroll_position_at_top(valid_css_selector))
 
-    def test_element_scroll_position_at_top_false_valid(self):
+    def test_is_element_scroll_position_at_top_false_valid(self):
         valid_css_selector = ".scrollable"
         self.sh.scroll_an_element(valid_css_selector)
-        self.assertFalse(self.sh.element_scroll_position_at_top(valid_css_selector))
+        self.assertFalse(self.sh.is_element_scroll_position_at_top(valid_css_selector))
 
-    def test_element_scroll_position_at_top_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.element_scroll_position_at_top,
+    def test_is_element_scroll_position_at_top_invalid(self):
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.is_element_scroll_position_at_top,
                           ".not-scrollable")
 
-    def test_element_scroll_position_at_top_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.element_scroll_position_at_top, "*not-scrollable")
+    def test_is_element_scroll_position_at_top_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.is_element_scroll_position_at_top, "*not-scrollable")
 
-    def test_element_scroll_position_at_bottom_true_valid(self):
+    def test_is_element_scroll_position_at_bottom_true_valid(self):
         valid_css_selector = ".scrollable"
         self.sh.scroll_an_element(valid_css_selector, scroll_bottom=True)
-        self.assertTrue(self.sh.element_scroll_position_at_bottom(valid_css_selector))
+        self.assertTrue(self.sh.is_element_scroll_position_at_bottom(valid_css_selector))
 
-    def test_element_scroll_position_at_bottom_false_valid(self):
+    def test_is_element_scroll_position_at_bottom_false_valid(self):
         valid_css_selector = ".scrollable"
-        self.assertFalse(self.sh.element_scroll_position_at_bottom(valid_css_selector))
+        self.assertFalse(self.sh.is_element_scroll_position_at_bottom(valid_css_selector))
 
-    def test_element_scroll_position_at_bottom_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.element_scroll_position_at_bottom,
+    def test_is_element_scroll_position_at_bottom_invalid(self):
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.is_element_scroll_position_at_bottom,
                           ".not-scrollable")
 
-    def test_element_scroll_position_at_bottom_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.element_scroll_position_at_bottom, "*not-scrollable")
+    def test_is_element_scroll_position_at_bottom_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.is_element_scroll_position_at_bottom, "*not-scrollable")
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_hide_element_valid(self, mock_hide):
