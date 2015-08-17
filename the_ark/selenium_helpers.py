@@ -71,7 +71,7 @@ class SeleniumHelpers:
                       "<{2}>".format(width, height, resize_error)
             raise DriverSizeError(msg=message, stacktrace=traceback.format_exc(), width=width, height=height)
 
-    def get_url(self, url, bypass_status_code_check=False):
+    def load_url(self, url, bypass_status_code_check=False):
         """
         This will check to see if the status code of the URL is not 4XX or 5XX and navigate to the URL. If the
         bypass_status_code_check is set to True it will just navigate to the given URL.
@@ -432,7 +432,7 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def element_current_scroll_position(self, css_selector):
+    def get_element_current_scroll_position(self, css_selector):
         """
         Check to see what position the scrollable element is at.
         :param
@@ -456,7 +456,7 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def element_scroll_position_at_top(self, css_selector):
+    def is_element_scroll_position_at_top(self, css_selector):
         """
         Check to see if the scroll position is at the top of the scrollable element.
         :param
@@ -483,7 +483,7 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def element_scroll_position_at_bottom(self, css_selector):
+    def is_element_scroll_position_at_bottom(self, css_selector):
         """
         Check to see if the scroll position is at the bottom of the scrollable element.
         :param
@@ -540,7 +540,7 @@ class SeleniumHelpers:
             -   css_selector:   string - The specific element that will be interacted with.
         """
         try:
-            self.ensure_element_visible(css_selector)
+            self.ensure_element_exists(css_selector)
             self.driver.execute_script("document.querySelector(arguments[0]).style.display = 'block';", css_selector)
         except SeleniumHelperExceptions as show_error:
             show_error.msg = "Unable to show element. | " + show_error.msg
