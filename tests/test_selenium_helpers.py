@@ -182,6 +182,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         valid_css_selector = ".valid"
         self.assertTrue(self.sh.ensure_element_visible(valid_css_selector))
 
+    def test_web_element_visible_invalid(self):
+        web_element = self.sh.get_element(".valid")
+        self.sh.hide_element(web_element=web_element)
+        self.assertRaises(selenium_helpers.ElementNotVisibleError, self.sh.ensure_element_visible,
+                          web_element=web_element)
+
     def test_visible_invalid(self):
         self.assertRaises(selenium_helpers.ElementNotVisibleError, self.sh.ensure_element_visible,
                           css_selector=".hidden")
@@ -189,6 +195,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_valid(self):
         valid_css_selector = ".valid"
         self.assertEqual(self.sh.get_element(valid_css_selector).location, {'y': 21, 'x': 48})
+
+    def test_get_invalid(self):
+        self.assertRaises(Exception, self.sh.get_element, "*invalid")
 
     def test_get_list_of_elements_valid(self):
         valid_css_selector = ".valid-list li"
@@ -220,6 +229,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_an_element,
                           css_selector=".invalid a")
 
+    def test_click_web_element_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.click_an_element, web_element="*valid a")
+
     def test_click_element_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.click_an_element, css_selector="*valid a")
 
@@ -238,6 +250,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_click_location_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_location, css_selector=".invalid a")
+
+    def test_web_element_click_location_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.click_location, web_element="*invalid")
 
     def test_click_location_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.click_location, css_selector="*valid a")
@@ -258,6 +273,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_double_click_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.double_click, css_selector=".invalid a")
 
+    def test_web_element_double_click_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.double_click, web_element="@hidden a")
+
     def test_double_click_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.double_click, css_selector="@hidden a")
 
@@ -277,6 +295,11 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_clear_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.clear_an_element,
                           css_selector=".invalid input")
+
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.click_an_element")
+    def test_web_element_clear_unexpected_invalid(self, mock_click):
+        mock_click.side_effect = Exception("Fail!")
+        self.assertRaises(Exception, self.sh.clear_an_element, web_element="*invalid input")
 
     @patch("the_ark.selenium_helpers.SeleniumHelpers.click_an_element")
     def test_clear_unexpected_invalid(self, mock_click):
@@ -301,6 +324,11 @@ class SeleniumHelpersTestCase(unittest.TestCase):
                           css_selector=".invalid input")
 
     @patch("the_ark.selenium_helpers.SeleniumHelpers.clear_an_element")
+    def test_fill_web_element_unexpected_invalid(self, mock_clear):
+        mock_clear.side_effect = Exception("Fail!")
+        self.assertRaises(Exception, self.sh.fill_an_element, fill_text="test text", web_element=".invalid &input")
+
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.clear_an_element")
     def test_fill_unexpected_invalid(self, mock_clear):
         mock_clear.side_effect = Exception("Fail!")
         self.assertRaises(Exception, self.sh.fill_an_element, fill_text="test text", css_selector=".invalid &input")
@@ -321,6 +349,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_hover_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.hover_on_element,
                           css_selector=".invalid a")
+
+    def test_hover_web_element_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.hover_on_element, web_element="+invalid a")
 
     def test_hover_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.hover_on_element, css_selector="+invalid a")
@@ -353,6 +384,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_scroll_to_element_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.scroll_to_element,
                           css_selector=".invalid a")
+
+    def test_scroll_to_web_element_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.scroll_to_element, web_element="*invalid a")
 
     def test_scroll_to_element_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.scroll_to_element, css_selector="*invalid a")
@@ -400,6 +434,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.scroll_an_element,
                           css_selector=".not-scrollable")
 
+    def test_scroll_web_element_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.scroll_an_element, web_element="!not-scrollable")
+
     def test_scroll_element_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.scroll_an_element, css_selector="!not-scrollable")
 
@@ -415,6 +452,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_element_current_scroll_position_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_current_scroll_position,
                           css_selector=".not-scrollable")
+
+    def test_get_web_element_current_scroll_position_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.get_element_current_scroll_position, web_element="*not-scrollable")
 
     def test_get_element_current_scroll_position_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.get_element_current_scroll_position, css_selector="*not-scrollable")
@@ -436,6 +476,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_is_element_scroll_position_at_top_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.is_element_scroll_position_at_top,
                           css_selector=".not-scrollable")
+
+    def test_is_web_element_scroll_position_at_top_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.is_element_scroll_position_at_top, web_element="*not-scrollable")
 
     def test_is_element_scroll_position_at_top_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.is_element_scroll_position_at_top, css_selector="*not-scrollable")
@@ -459,6 +502,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.is_element_scroll_position_at_bottom,
                           css_selector=".not-scrollable")
 
+    def test_is_web_element_scroll_position_at_bottom_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.is_element_scroll_position_at_bottom, web_element="*not-scrollable")
+
     def test_is_element_scroll_position_at_bottom_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.is_element_scroll_position_at_bottom, css_selector="*not-scrollable")
 
@@ -478,6 +524,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_hide_element_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.hide_element, css_selector=".invalid")
 
+    def test_hide_web_element_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.hide_element, web_element="*invalid")
+
     def test_hide_element_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.hide_element, css_selector="*invalid")
 
@@ -496,6 +545,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_show_element_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.show_element, css_selector=".invalid")
+
+    def test_show_web_element_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.show_element, web_element="*invalid")
 
     def test_show_element_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.show_element, css_selector="*invalid")

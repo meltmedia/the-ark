@@ -87,8 +87,8 @@ class SeleniumHelpers:
                 if url_request.status_code == requests.codes.ok:
                     self.driver.get(url)
                 else:
-                    message = "The URL: {0} has the status code of: {1}. Maybe bypass the status code check if you need " \
-                              "to navigate to this URL.".format(url, url_request.status_code)
+                    message = "The URL: {0} has the status code of: {1}. You may bypass the status code check if you " \
+                              "need to navigate to this URL.".format(url, url_request.status_code)
                     raise DriverURLError(msg=message, desired_url=url)
         except Exception as get_url_error:
             message = "Unable to navigate to the desired URL: {0}\n" \
@@ -181,6 +181,8 @@ class SeleniumHelpers:
             message = "The element is not visible on page '{0}'.".format(self.driver.current_url)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementNotVisibleError(msg=message, stacktrace=traceback.format_exc(),
                                          current_url=self.driver.current_url, css_selector=css_selector)
         else:
@@ -194,9 +196,15 @@ class SeleniumHelpers:
         :return
             -   web_element:    object - The WebElement object that has been found.
         """
-        self.ensure_element_visible(css_selector)
-        web_element = self.driver.find_element_by_css_selector(css_selector)
-        return web_element
+        try:
+            self.ensure_element_visible(css_selector)
+            web_element = self.driver.find_element_by_css_selector(css_selector)
+            return web_element
+        except Exception as unexpected_error:
+            message = "Unable to find and return the element '{0}' on page '{1}'.\n" \
+                      "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
+            raise ElementError(msg=message, stacktrace=traceback.format_exc(),
+                               current_url=self.driver.current_url, css_selector=css_selector)
 
     def get_list_of_elements(self, css_selector):
         """
@@ -248,6 +256,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -275,7 +285,9 @@ class SeleniumHelpers:
         except Exception as unexpected_error:
             message = "Unable to click at the position ({0}, {1}) of the element on page '{2}'.\n" \
                       "<{3}>".format(x_position, y_position, self.driver.current_url, unexpected_error)
-            if css_selector:
+            if web_element:
+                message += " | Based off the WebElement passed through."
+            else:
                 message += " | CSS Selector: {0}".format(css_selector)
             raise ClickPositionError(msg=message, stacktrace=traceback.format_exc(),
                                      current_url=self.driver.current_url, css_selector=css_selector,
@@ -303,6 +315,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -328,6 +342,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -354,6 +370,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -380,6 +398,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -420,6 +440,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -455,8 +477,9 @@ class SeleniumHelpers:
         try:
             if web_element:
                 element = web_element
+                self.ensure_element_visible(web_element=web_element)
             else:
-                self.ensure_element_visible(css_selector)
+                self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
             if scroll_top:
                 self.driver.execute_script("arguments[0].scrollTop = 0;", element)
@@ -483,6 +506,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -497,9 +522,10 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
+                self.ensure_element_visible(web_element=web_element)
                 element = web_element
             else:
-                self.ensure_element_visible(css_selector)
+                self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
             scroll_position = self.driver.execute_script("var element = arguments[0]; "
                                                          "scrollPosition = element.scrollTop; "
@@ -514,6 +540,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -528,9 +556,10 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
+                self.ensure_element_visible(web_element=web_element)
                 element = web_element
             else:
-                self.ensure_element_visible(css_selector)
+                self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
             scroll_position = self.driver.execute_script("var element = arguments[0]; "
                                                          "scrollPosition = element.scrollTop; "
@@ -548,6 +577,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -562,9 +593,10 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
+                self.ensure_element_visible(web_element=web_element)
                 element = web_element
             else:
-                self.ensure_element_visible(css_selector)
+                self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
             element_max_height = self.driver.execute_script("var element = arguments[0]; "
                                                             "var scrollHeight = element.scrollHeight; "
@@ -587,6 +619,8 @@ class SeleniumHelpers:
                       "\n<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -599,9 +633,10 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
+                self.ensure_element_visible(web_element=web_element)
                 element = web_element
             else:
-                self.ensure_element_visible(css_selector)
+                self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
             self.driver.execute_script("arguments[0].style.display = 'none';", element)
         except SeleniumHelperExceptions as hide_error:
@@ -612,6 +647,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -637,6 +674,8 @@ class SeleniumHelpers:
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
+            else:
+                message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
