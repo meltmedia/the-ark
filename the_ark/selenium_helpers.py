@@ -178,7 +178,7 @@ class SeleniumHelpers:
             self.ensure_element_exists(css_selector)
             element_visible = self.driver.find_element_by_css_selector(css_selector).is_displayed()
         if not element_visible:
-            message = "The element is not visible on page '{1}'.".format(self.driver.current_url)
+            message = "The element is not visible on page '{0}'.".format(self.driver.current_url)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
             raise ElementNotVisibleError(msg=message, stacktrace=traceback.format_exc(),
@@ -235,9 +235,10 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
+                self.ensure_element_visible(web_element=web_element)
                 web_element.click()
             else:
-                self.ensure_element_visible(css_selector)
+                self.ensure_element_visible(css_selector=css_selector)
                 self.get_element(css_selector).click()
         except SeleniumHelperExceptions as click_error:
             click_error.msg = "Unable to click element. | " + click_error.msg
@@ -261,9 +262,10 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
+                self.ensure_element_visible(web_element=web_element)
                 ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position)
             else:
-                self.ensure_element_visible(css_selector)
+                self.ensure_element_visible(css_selector=css_selector)
                 ActionChains(self.driver).move_to_element_with_offset(self.get_element(css_selector), x_position,
                                                                       y_position)
         except SeleniumHelperExceptions as click_location_error:
@@ -288,6 +290,7 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
+                self.ensure_element_visible(web_element=web_element)
                 ActionChains(self.driver).double_click(web_element)
             else:
                 self.ensure_element_visible(css_selector)
@@ -315,8 +318,7 @@ class SeleniumHelpers:
                 self.click_an_element(web_element=web_element)
                 web_element.clear()
             else:
-                self.ensure_element_visible(css_selector)
-                self.click_an_element(css_selector)
+                self.click_an_element(css_selector=css_selector)
                 self.get_element(css_selector).clear()
         except SeleniumHelperExceptions as clear_error:
             clear_error.msg = "Unable to clear element. | " + clear_error.msg
@@ -339,13 +341,10 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
-                self.click_an_element(web_element=web_element)
                 self.clear_an_element(web_element=web_element)
                 web_element.send_keys(fill_text)
             else:
-                self.ensure_element_visible(css_selector)
-                self.click_an_element(css_selector)
-                self.clear_an_element(css_selector)
+                self.clear_an_element(css_selector=css_selector)
                 self.get_element(css_selector).send_keys(fill_text)
         except SeleniumHelperExceptions as fill_error:
             fill_error.msg = "Unable to fill element. | " + fill_error.msg

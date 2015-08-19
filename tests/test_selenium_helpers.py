@@ -173,12 +173,18 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_exist_invalid(self):
         self.assertRaises(selenium_helpers.ElementError, self.sh.ensure_element_exists, ".invalid")
 
-    def test_visible_valid(self):
+    def test_visible_web_element_valid(self):
+        valid_css_selector = ".valid"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.assertTrue(self.sh.ensure_element_visible(web_element=web_element))
+
+    def test_visible_css_valid(self):
         valid_css_selector = ".valid"
         self.assertTrue(self.sh.ensure_element_visible(valid_css_selector))
 
     def test_visible_invalid(self):
-        self.assertRaises(selenium_helpers.ElementNotVisibleError, self.sh.ensure_element_visible, ".hidden")
+        self.assertRaises(selenium_helpers.ElementNotVisibleError, self.sh.ensure_element_visible,
+                          css_selector=".hidden")
 
     def test_get_valid(self):
         valid_css_selector = ".valid"
@@ -198,101 +204,158 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.TimeoutError, self.sh.wait_for_element, ".invalid", 1)
 
     @patch("selenium.webdriver.remote.webelement.WebElement.click")
-    def test_click_element_valid(self, mock_click):
+    def test_click_web_element_valid(self, mock_click):
+        valid_css_selector = ".valid a"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.click_an_element(web_element=web_element)
+        self.assertTrue(mock_click.called)
+
+    @patch("selenium.webdriver.remote.webelement.WebElement.click")
+    def test_click_css_valid(self, mock_click):
         valid_css_selector = ".valid a"
         self.sh.click_an_element(valid_css_selector)
         self.assertTrue(mock_click.called)
 
     def test_click_element_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_an_element, ".invalid a")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_an_element,
+                          css_selector=".invalid a")
 
     def test_click_element_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.click_an_element, "*valid a")
+        self.assertRaises(Exception, self.sh.click_an_element, css_selector="*valid a")
+
+    @patch("selenium.webdriver.common.action_chains.ActionChains.move_to_element_with_offset")
+    def test_click_location_web_element_valid(self, mock_click_location):
+        valid_css_selector = ".valid a"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.click_location(web_element=web_element, x_position=30, y_position=30)
+        self.assertTrue(mock_click_location.called)
 
     @patch("selenium.webdriver.common.action_chains.ActionChains.move_to_element_with_offset")
     def test_click_location_valid(self, mock_click_location):
         valid_css_selector = ".valid a"
-        self.sh.click_location(valid_css_selector, 30, 30)
+        self.sh.click_location(css_selector=valid_css_selector, x_position=30, y_position=30)
         self.assertTrue(mock_click_location.called)
 
     def test_click_location_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_location, ".invalid a")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_location, css_selector=".invalid a")
 
     def test_click_location_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.click_location, "*valid a")
+        self.assertRaises(Exception, self.sh.click_location, css_selector="*valid a")
+
+    @patch("selenium.webdriver.common.action_chains.ActionChains.double_click")
+    def test_double_click_web_element_valid(self, mock_double_click):
+        valid_css_selector = ".valid a"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.double_click(web_element=web_element)
+        self.assertTrue(mock_double_click.called)
 
     @patch("selenium.webdriver.common.action_chains.ActionChains.double_click")
     def test_double_click_valid(self, mock_double_click):
         valid_css_selector = ".valid a"
-        self.sh.double_click(valid_css_selector)
+        self.sh.double_click(css_selector=valid_css_selector)
         self.assertTrue(mock_double_click.called)
 
     def test_double_click_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.double_click, ".invalid a")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.double_click, css_selector=".invalid a")
 
     def test_double_click_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.double_click, "@hidden a")
+        self.assertRaises(Exception, self.sh.double_click, css_selector="@hidden a")
+
+    @patch("selenium.webdriver.remote.webelement.WebElement.clear")
+    def test_clear_web_element_valid(self, mock_clear):
+        valid_css_selector = ".valid input"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.clear_an_element(web_element=web_element)
+        self.assertTrue(mock_clear.called)
 
     @patch("selenium.webdriver.remote.webelement.WebElement.clear")
     def test_clear_valid(self, mock_clear):
         valid_css_selector = ".valid input"
-        self.sh.clear_an_element(valid_css_selector)
+        self.sh.clear_an_element(css_selector=valid_css_selector)
         self.assertTrue(mock_clear.called)
 
     def test_clear_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.clear_an_element, ".invalid input")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.clear_an_element,
+                          css_selector=".invalid input")
 
-    def test_clear_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.clear_an_element, "*invalid input")
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.click_an_element")
+    def test_clear_unexpected_invalid(self, mock_click):
+        mock_click.side_effect = Exception("Fail!")
+        self.assertRaises(Exception, self.sh.clear_an_element, css_selector="*invalid input")
+
+    @patch("selenium.webdriver.remote.webelement.WebElement.send_keys")
+    def test_fill_web_element_valid(self, mock_fill):
+        valid_css_selector = ".valid input"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.fill_an_element(fill_text="test text", web_element=web_element)
+        self.assertTrue(mock_fill.called)
 
     @patch("selenium.webdriver.remote.webelement.WebElement.send_keys")
     def test_fill_valid(self, mock_fill):
         valid_css_selector = ".valid input"
-        self.sh.fill_an_element(valid_css_selector, "test text")
+        self.sh.fill_an_element(fill_text="test text", css_selector=valid_css_selector)
         self.assertTrue(mock_fill.called)
 
     def test_fill_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.fill_an_element, ".invalid input",
-                          "test text")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.fill_an_element, fill_text="test text",
+                          css_selector=".invalid input")
 
-    def test_fill_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.fill_an_element, ".invalid &input", "test text")
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.clear_an_element")
+    def test_fill_unexpected_invalid(self, mock_clear):
+        mock_clear.side_effect = Exception("Fail!")
+        self.assertRaises(Exception, self.sh.fill_an_element, fill_text="test text", css_selector=".invalid &input")
+
+    @patch("selenium.webdriver.common.action_chains.ActionChains.move_to_element")
+    def test_hover_web_element_valid(self, mock_hover):
+        valid_css_selector = ".valid a"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.hover_on_element(web_element=web_element)
+        self.assertTrue(mock_hover.called)
 
     @patch("selenium.webdriver.common.action_chains.ActionChains.move_to_element")
     def test_hover_valid(self, mock_hover):
         valid_css_selector = ".valid a"
-        self.sh.hover_on_element(valid_css_selector)
+        self.sh.hover_on_element(css_selector=valid_css_selector)
         self.assertTrue(mock_hover.called)
 
     def test_hover_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.hover_on_element, ".invalid a")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.hover_on_element,
+                          css_selector=".invalid a")
 
     def test_hover_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.hover_on_element, "+invalid a")
+        self.assertRaises(Exception, self.sh.hover_on_element, css_selector="+invalid a")
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_to_element_bottom_valid(self, mock_scroll_bottom):
         valid_css_selector = ".valid a"
-        self.sh.scroll_to_element(valid_css_selector, position_bottom=True)
+        self.sh.scroll_to_element(css_selector=valid_css_selector, position_bottom=True)
         self.assertTrue(mock_scroll_bottom.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_to_element_middle_valid(self,  mock_scroll_middle):
         valid_css_selector = ".valid a"
-        self.sh.scroll_to_element(valid_css_selector, position_middle=True)
+        self.sh.scroll_to_element(css_selector=valid_css_selector, position_middle=True)
         self.assertTrue(mock_scroll_middle.called)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_scroll_to_web_element_top_valid(self, mock_scroll_top):
+        valid_css_selector = ".valid a"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.scroll_to_element(web_element=web_element)
+        self.assertTrue(mock_scroll_top.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_to_element_top_valid(self, mock_scroll_top):
         valid_css_selector = ".valid a"
-        self.sh.scroll_to_element(valid_css_selector)
+        self.sh.scroll_to_element(css_selector=valid_css_selector)
         self.assertTrue(mock_scroll_top.called)
 
     def test_scroll_to_element_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.scroll_to_element, ".invalid a")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.scroll_to_element,
+                          css_selector=".invalid a")
 
     def test_scroll_to_element_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.scroll_to_element, "*invalid a")
+        self.assertRaises(Exception, self.sh.scroll_to_element, css_selector="*invalid a")
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_to_position_valid(self, mock_scroll_position):
@@ -303,101 +366,139 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.ScrollPositionError, self.sh.scroll_to_position, None, None)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_scroll_web_element_top_valid(self, mock_scroll_element_top):
+        valid_css_selector = ".scrollable"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.scroll_an_element(web_element=web_element, scroll_top=True)
+        self.assertTrue(mock_scroll_element_top.called)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_element_top_valid(self, mock_scroll_element_top):
         valid_css_selector = ".scrollable"
-        self.sh.scroll_an_element(valid_css_selector, scroll_top=True)
+        self.sh.scroll_an_element(css_selector=valid_css_selector, scroll_top=True)
         self.assertTrue(mock_scroll_element_top.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_element_bottom_valid(self, mock_scroll_element_bottom):
         valid_css_selector = ".scrollable"
-        self.sh.scroll_an_element(valid_css_selector, scroll_bottom=True)
+        self.sh.scroll_an_element(css_selector=valid_css_selector, scroll_bottom=True)
         self.assertTrue(mock_scroll_element_bottom.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_element_position_valid(self, mock_scroll_element_position):
         valid_css_selector = ".scrollable"
-        self.sh.scroll_an_element(valid_css_selector, scroll_position=50)
+        self.sh.scroll_an_element(css_selector=valid_css_selector, scroll_position=50)
         self.assertTrue(mock_scroll_element_position.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_element_valid(self, mock_scroll_element_padding):
         valid_css_selector = ".scrollable"
-        self.sh.scroll_an_element(valid_css_selector, scroll_padding=5)
+        self.sh.scroll_an_element(css_selector=valid_css_selector, scroll_padding=5)
         self.assertTrue(mock_scroll_element_padding.called)
 
     def test_scroll_element_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.scroll_an_element, ".not-scrollable")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.scroll_an_element,
+                          css_selector=".not-scrollable")
 
     def test_scroll_element_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.scroll_an_element, "!not-scrollable")
+        self.assertRaises(Exception, self.sh.scroll_an_element, css_selector="!not-scrollable")
+
+    def test_get_web_element_current_scroll_position_valid(self):
+        valid_css_selector = ".scrollable"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.assertEqual(self.sh.get_element_current_scroll_position(web_element=web_element), 0)
 
     def test_get_element_current_scroll_position_valid(self):
         valid_css_selector = ".scrollable"
-        self.assertEqual(self.sh.get_element_current_scroll_position(valid_css_selector), 0)
+        self.assertEqual(self.sh.get_element_current_scroll_position(css_selector=valid_css_selector), 0)
 
     def test_get_element_current_scroll_position_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_current_scroll_position,
-                          ".not-scrollable")
+                          css_selector=".not-scrollable")
 
     def test_get_element_current_scroll_position_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.get_element_current_scroll_position, "*not-scrollable")
+        self.assertRaises(Exception, self.sh.get_element_current_scroll_position, css_selector="*not-scrollable")
+
+    def test_is_web_element_scroll_position_at_top_true_valid(self):
+        valid_css_selector = ".scrollable"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.assertTrue(self.sh.is_element_scroll_position_at_top(web_element=web_element))
 
     def test_is_element_scroll_position_at_top_true_valid(self):
         valid_css_selector = ".scrollable"
-        self.assertTrue(self.sh.is_element_scroll_position_at_top(valid_css_selector))
+        self.assertTrue(self.sh.is_element_scroll_position_at_top(css_selector=valid_css_selector))
 
     def test_is_element_scroll_position_at_top_false_valid(self):
         valid_css_selector = ".scrollable"
-        self.sh.scroll_an_element(valid_css_selector)
-        self.assertFalse(self.sh.is_element_scroll_position_at_top(valid_css_selector))
+        self.sh.scroll_an_element(css_selector=valid_css_selector)
+        self.assertFalse(self.sh.is_element_scroll_position_at_top(css_selector=valid_css_selector))
 
     def test_is_element_scroll_position_at_top_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.is_element_scroll_position_at_top,
-                          ".not-scrollable")
+                          css_selector=".not-scrollable")
 
     def test_is_element_scroll_position_at_top_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.is_element_scroll_position_at_top, "*not-scrollable")
+        self.assertRaises(Exception, self.sh.is_element_scroll_position_at_top, css_selector="*not-scrollable")
+
+    def test_is_web_element_scroll_position_at_bottom_true_valid(self):
+        valid_css_selector = ".scrollable"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.scroll_an_element(web_element=web_element, scroll_bottom=True)
+        self.assertTrue(self.sh.is_element_scroll_position_at_bottom(web_element=web_element))
 
     def test_is_element_scroll_position_at_bottom_true_valid(self):
         valid_css_selector = ".scrollable"
-        self.sh.scroll_an_element(valid_css_selector, scroll_bottom=True)
-        self.assertTrue(self.sh.is_element_scroll_position_at_bottom(valid_css_selector))
+        self.sh.scroll_an_element(css_selector=valid_css_selector, scroll_bottom=True)
+        self.assertTrue(self.sh.is_element_scroll_position_at_bottom(css_selector=valid_css_selector))
 
     def test_is_element_scroll_position_at_bottom_false_valid(self):
         valid_css_selector = ".scrollable"
-        self.assertFalse(self.sh.is_element_scroll_position_at_bottom(valid_css_selector))
+        self.assertFalse(self.sh.is_element_scroll_position_at_bottom(css_selector=valid_css_selector))
 
     def test_is_element_scroll_position_at_bottom_invalid(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.is_element_scroll_position_at_bottom,
-                          ".not-scrollable")
+                          css_selector=".not-scrollable")
 
     def test_is_element_scroll_position_at_bottom_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.is_element_scroll_position_at_bottom, "*not-scrollable")
+        self.assertRaises(Exception, self.sh.is_element_scroll_position_at_bottom, css_selector="*not-scrollable")
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_hide_web_element_valid(self, mock_hide):
+        valid_css_selector = ".valid"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.hide_element(web_element=web_element)
+        self.assertTrue(mock_hide.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_hide_element_valid(self, mock_hide):
         valid_css_selector = ".valid"
-        self.sh.hide_element(valid_css_selector)
+        self.sh.hide_element(css_selector=valid_css_selector)
         self.assertTrue(mock_hide.called)
 
     def test_hide_element_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.hide_element, ".invalid")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.hide_element, css_selector=".invalid")
 
     def test_hide_element_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.hide_element, "*invalid")
+        self.assertRaises(Exception, self.sh.hide_element, css_selector="*invalid")
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_show_web_element_valid(self, mock_show):
+        valid_css_selector = ".valid"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.show_element(web_element=web_element)
+        self.assertTrue(mock_show.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_show_element_valid(self, mock_show):
         valid_css_selector = ".valid"
-        self.sh.show_element(valid_css_selector)
+        self.sh.show_element(css_selector=valid_css_selector)
         self.assertTrue(mock_show.called)
 
     def test_show_element_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.show_element, ".invalid")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.show_element, css_selector=".invalid")
 
     def test_show_element_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.show_element, "*invalid")
+        self.assertRaises(Exception, self.sh.show_element, css_selector="*invalid")
 
     def test_driver_exception_to_string_without_details(self):
         driver_exception = selenium_helpers.DriverExceptions("Message text")
