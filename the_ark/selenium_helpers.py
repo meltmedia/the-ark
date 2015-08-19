@@ -384,10 +384,11 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
+                self.ensure_element_visible(web_element=web_element)
                 hover = ActionChains(self.driver).move_to_element(web_element)
                 hover.perform()
             else:
-                self.ensure_element_visible(css_selector)
+                self.ensure_element_visible(css_selector=css_selector)
                 hover = ActionChains(self.driver).move_to_element(self.get_element(css_selector))
                 hover.perform()
         except SeleniumHelperExceptions as hover_error:
@@ -416,9 +417,10 @@ class SeleniumHelpers:
         """
         try:
             if web_element:
+                self.ensure_element_visible(web_element=web_element)
                 element = web_element
             else:
-                self.ensure_element_visible(css_selector)
+                self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
 
             if position_bottom or position_middle:
