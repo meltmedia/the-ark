@@ -60,7 +60,7 @@ class S3Client(object):
             # (so that it downloads properly)
             # --- content_type can be 'image/png',
             # 'application/pdf', 'text/plain', etc.
-            mime_type = mimetypes.guess_type(file_to_store) if mime_type is None \
+            mime_type = mimetypes.guess_type(filename) if mime_type is None \
                 else mime_type
             s3_file.set_metadata('Content-Type', mime_type)
 
