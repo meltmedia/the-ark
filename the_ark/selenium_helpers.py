@@ -685,8 +685,18 @@ class SeleniumHelpers:
 class SeleniumHelperExceptions(common.exceptions.WebDriverException):
     def __init__(self, msg, stacktrace, current_url):
         self.current_url = current_url
-        self.details = {"current_url": self.current_url}
+        self.details = {"current_url": self.current_url, "stacktrace": stacktrace}
         super(SeleniumHelperExceptions, self).__init__(msg=msg, stacktrace=stacktrace)
+
+    def __str__(self):
+        exception_msg = "Selenium Exception: \n"
+        detail_string = "Exception Details:\n"
+        for key, value in self.details.items():
+            detail_string += "{0}: {1}\n".format(key, value)
+        exception_msg += detail_string
+        exception_msg += "Message: {0}".format(self.msg)
+
+        return exception_msg
 
 
 class ElementError(SeleniumHelperExceptions):
@@ -742,7 +752,7 @@ class DriverExceptions(Exception):
     def __str__(self):
         exception_msg = "Driver Creation Exception: \n"
         if self.stacktrace is not None:
-            exception_msg += "{0}".format(self.stacktrace)
+            exception_msg += "\nStacktrace: {0}\n".format(self.stacktrace)
         if self.details:
             detail_string = "\nException Details:\n"
             for key, value in self.details.items():

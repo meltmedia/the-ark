@@ -552,6 +552,13 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_show_element_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.show_element, css_selector="*invalid")
 
+    def test_selenium_exception_to_string_with_details(self):
+        selenium_exception = selenium_helpers.SeleniumHelperExceptions("message",
+                                                                       "stacktrace:\nLine 1\nLine 2",
+                                                                       "google")
+        error_string = selenium_exception.__str__()
+        self.assertIn("current_url", error_string)
+
     def test_driver_exception_to_string_without_details(self):
         driver_exception = selenium_helpers.DriverExceptions("Message text")
         error_string = driver_exception.__str__()
