@@ -115,7 +115,7 @@ class S3MethodTestCase(unittest.TestCase):
     @patch('boto.s3.bucket.Bucket.list')
     def test_get_all_filenames_in_folder(self, list):
         list.return_value = []
-        self.client.get_all_filenames_in_folder('path', True)
+        self.client.get_all_filenames_in_folder('path')
 
     def test_get_most_recent_file_from_s3_key_list(self):
         first = Key()
