@@ -1,4 +1,3 @@
-import logging
 import mimetypes
 from StringIO import StringIO
 from boto.s3.key import Key
@@ -16,7 +15,6 @@ class S3Client(object):
         :param
             - bucket:   string - The name of the bucket you will be working with
         """
-        self.log = logging.getLogger(self.__class__.__name__)
         self.bucket_name = bucket
 
     def connect(self):
@@ -35,17 +33,14 @@ class S3Client(object):
             #- Reset the variables on failure to allow a reconnect
             self.s3_connection = None
             self.bucket = None
-
-            self.log.warning("Exception while connecting to S3: " +
-                             s3_connection_exception.message)
-
-            raise Exception('Unable to connect to S3')
+            message = "Exception while connecting to S3: {0}".format(s3_connection_exception)
+            raise S3ClientException(message)
 
     def store_file(self, s3_path, file_to_store, filename, return_url=False, mime_type=None):
         """
         Pushes the desired file up to S3 (e.g. log file).
         :param
-            - s3_path:          string - The css selector for the element that you plan to scroll
+            - s3_path:          string - The S3 path to the folder in which you'd like to store the file
             - file_to_store:    StringIO or string - The fileIO or file local file path for the file to be sent
             - filename:         string - The name the file will have when on S3. Should include the file extension
             - return_url:       boolean - Whether to return the path to the file on S3
@@ -77,8 +72,8 @@ class S3Client(object):
                 return file_url
 
         except Exception as store_file_exception:
-            self.log.warning("Exception while storing file on S3: " +
-                             store_file_exception.message)
+            message = "Exception while storing file on S3: {0}".format(store_file_exception)
+            raise S3ClientException(message)
 
     def get_file(self, s3_path, file_to_get):
         """
@@ -102,8 +97,8 @@ class S3Client(object):
                 raise S3ClientException("File not found in S3")
 
         except Exception as get_file_exception:
-            self.log.warning("Exception while retrieving file from S3: " +
-                             get_file_exception.message)
+            message = "Exception while retrieving file from S3: {0}".format(get_file_exception)
+            raise S3ClientException(message)
 
     def verify_file(self, s3_path, file_to_verify):
         """
@@ -125,8 +120,8 @@ class S3Client(object):
                 return False
 
         except Exception as verify_file_exception:
-            self.log.warning("Exception while verifying file on S3: " +
-                             verify_file_exception.message)
+            message = "Exception while verifying file on S3: {0}".format(verify_file_exception)
+            raise S3ClientException(message)
 
     def _generate_file_path(self, s3_path, file_to_store):
         """
@@ -159,7 +154,7 @@ class S3Client(object):
         :param
             - key_list:    list - The list of files returned from a s3.bucket.list() operation
         :return
-            - key   The most recently modified file in the key list
+            - key   boto.s3.Key - The most recently modified file in the key list
         """
         most_recent_key = None
         for key in key_list:
@@ -169,5 +164,8 @@ class S3Client(object):
 
 
 class S3ClientException(Exception):
-    def __init__(self, arg):
-        self.msg = arg
+    def __init__(self, message):
+        self.msg = message
+
+    def __str__(self):
+        return self.msg

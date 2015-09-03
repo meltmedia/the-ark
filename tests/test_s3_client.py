@@ -1,5 +1,5 @@
 import unittest
-from the_ark.s3_client import S3Client
+from the_ark.s3_client import S3Client, S3ClientException
 from mock import Mock, patch
 from boto.s3.key import Key
 
@@ -76,8 +76,8 @@ class S3MethodTestCase(unittest.TestCase):
     def test_verify_file_boom(self):
         self.client.bucket.get_key.side_effect = Exception(
             'Here Comes the Boom!')
-        self.assertRaises(Exception, self.client.verify_file(
-            'stuff', 'more stuff'))
+        with self.assertRaises(S3ClientException):
+            self.client.verify_file('stuff', 'more stuff')
 
     @patch('the_ark.s3_client.S3Client.verify_file')
     def test_get_file(self, verify):
@@ -89,17 +89,27 @@ class S3MethodTestCase(unittest.TestCase):
         self.client.bucket.get_key.assert_called_once_with(
             'stuff/more stuff')
 
+    @patch('the_ark.s3_client.S3Client.verify_file')
+    def test_get_file_with_no_file(self, verify):
+        file = Mock()
+        verify.return_value = False
+        self.client.bucket.get_key.return_value = file
+        with self.assertRaises(S3ClientException):
+            self.client.get_file('stuff', 'more stuff')
+
+
     def test_get_file_boom(self):
         self.client.bucket.get_key.side_effect = Exception(
             'Here Comes the Boom!')
-        self.assertRaises(Exception, self.client.get_file(
-            'stuff', 'more stuff'))
+        with self.assertRaises(S3ClientException):
+            self.client.get_file('stuff', 'more stuff')
 
     def test_store_file_boom(self):
-        self.assertRaises(Exception, self.client.store_file(
-            'stuff', 'more stuff', 'file_name'))
-        self.assertRaises(Exception, self.client.store_file(
-            'stuff', 'more stuff', filename="bob's file"))
+        with self.assertRaises(S3ClientException):
+            self.client.store_file('stuff', 'more stuff', 'file_name')
+
+        with self.assertRaises(S3ClientException):
+            self.client.store_file('stuff', 'more stuff', filename="bob's file")
 
     @patch('mimetypes.guess_type')
     @patch('boto.s3.key.Key.set_contents_from_file')
