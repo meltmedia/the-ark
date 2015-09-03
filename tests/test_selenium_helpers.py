@@ -547,10 +547,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.show_element, css_selector=".invalid")
 
     def test_show_web_element_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.show_element, web_element="*invalid")
+        self.assertRaises(Exception, self.sh.show_element, web_element="*invalid_element")
 
-    def test_show_element_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.show_element, css_selector="*invalid")
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.get_element")
+    def test_show_element_unexpected_invalid(self, mock_get):
+        mock_get.side_effect = Exception("Boo!")
+        self.assertRaises(Exception, self.sh.show_element, css_selector="*invalid_selector")
 
     def test_selenium_exception_to_string_with_details(self):
         selenium_exception = selenium_helpers.SeleniumHelperExceptions("message",

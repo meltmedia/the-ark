@@ -197,7 +197,7 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement object that has been found.
         """
         try:
-            self.ensure_element_visible(css_selector)
+            self.ensure_element_exists(css_selector)
             web_element = self.driver.find_element_by_css_selector(css_selector)
             return web_element
         except Exception as unexpected_error:
@@ -665,7 +665,6 @@ class SeleniumHelpers:
             if web_element:
                 element = web_element
             else:
-                self.ensure_element_exists(css_selector)
                 element = self.get_element(css_selector)
             self.driver.execute_script("arguments[0].style.display = 'block';", element)
         except SeleniumHelperExceptions as show_error:
