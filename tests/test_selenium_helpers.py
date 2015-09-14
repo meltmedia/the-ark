@@ -119,7 +119,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="google.com")
 
     def test_get_current_url_valid(self):
-        test_url = "http://www.google.com"
+        test_url = "http://www.google.com/"
         self.sh.load_url(test_url)
         current_url = self.sh.get_current_url()
         self.assertEqual(current_url, test_url)
