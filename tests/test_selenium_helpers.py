@@ -118,6 +118,16 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_load_url_invalid(self):
         self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="google.com")
 
+    def test_get_current_url_valid(self):
+        test_url = "http://www.google.com"
+        self.sh.load_url(test_url)
+        current_url = self.sh.get_current_url()
+        self.assertEqual(current_url, test_url)
+
+    def test_get_current_url_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverURLError, sh.get_current_url)
+
     def test_get_current_handle_valid(self):
         self.assertTrue(self.sh.get_window_handles(get_current=True))
 

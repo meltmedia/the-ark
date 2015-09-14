@@ -95,6 +95,20 @@ class SeleniumHelpers:
                       "<{1}>".format(url, get_url_error)
             raise DriverURLError(msg=message, stacktrace=traceback.format_exc(), desired_url=url)
 
+    def get_current_url(self):
+        """
+        This will get and return the URL the driver is currently on.
+        :return
+            -   current_url:  string - The current URL the driver is on.
+        """
+        try:
+            current_url = self.driver.current_url
+            return current_url
+        except Exception as get_current_url_error:
+            message = "Unable to get the URL the driver is currently on.\n" \
+                      "<{0}>".format(get_current_url_error)
+            raise DriverURLError(msg=message, stacktrace=traceback.format_exc())
+
     def get_window_handles(self, get_current=None):
         """
         This will get and return a list of windows or tabs currently open.
