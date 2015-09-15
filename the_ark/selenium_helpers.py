@@ -109,6 +109,17 @@ class SeleniumHelpers:
                       "<{0}>".format(get_current_url_error)
             raise DriverURLError(msg=message, stacktrace=traceback.format_exc())
 
+    def refresh_driver(self):
+        """
+        This will refresh the page the driver is currently on.
+        """
+        try:
+            self.driver.refresh()
+        except Exception as refresh_driver_error:
+            message = "Unable to refresh the driver.\n" \
+                      "<{0}>".format(refresh_driver_error)
+            raise DriverURLError(msg=message, stacktrace=traceback.format_exc())
+
     def get_window_handles(self, get_current=None):
         """
         This will get and return a list of windows or tabs currently open.

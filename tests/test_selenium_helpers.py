@@ -128,6 +128,16 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers()
         self.assertRaises(selenium_helpers.DriverURLError, sh.get_current_url)
 
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.refresh")
+    def test_refresh_driver_valid(self, mock_refresh):
+        self.sh.load_url("http://www.google.com")
+        self.sh.refresh_driver()
+        self.assertTrue(mock_refresh.called)
+
+    def test_refresh_driver_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverURLError, sh.refresh_driver)
+
     def test_get_current_handle_valid(self):
         self.assertTrue(self.sh.get_window_handles(get_current=True))
 
