@@ -120,6 +120,23 @@ class SeleniumHelpers:
                       "<{0}>".format(refresh_driver_error)
             raise DriverURLError(msg=message, stacktrace=traceback.format_exc())
 
+    def get_viewport_size(self, get_only_width=False, get_only_height=False):
+        try:
+            if get_only_width:
+                viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
+                return viewport_width
+            elif get_only_height:
+                viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
+                return viewport_height
+            else:
+                viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
+                viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
+                return viewport_width, viewport_height
+        except Exception as get_viewport_size_error:
+            message = "Unable to get the width and/or the height of the viewport.\n" \
+                      "<{0}>".format(get_viewport_size_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
     def get_window_handles(self, get_current=None):
         """
         This will get and return a list of windows or tabs currently open.
