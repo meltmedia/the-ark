@@ -134,10 +134,10 @@ class SeleniumHelpers:
             -   viewport_height:    integer - The number the height of the viewport is at.
         """
         try:
-            if get_only_width:
+            if get_only_width and not get_only_height:
                 viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
                 return viewport_width
-            elif get_only_height:
+            elif get_only_height and not get_only_width:
                 viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
                 return viewport_height
             else:
