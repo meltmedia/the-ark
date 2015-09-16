@@ -102,6 +102,38 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_resize_window_invalid(self):
         self.assertRaises(selenium_helpers.DriverSizeError, self.sh.resize_browser, width="text")
 
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_window_size")
+    def test_get_window_size_width_valid(self, mock_width_size):
+        self.sh.get_window_size(get_only_width=True)
+        mock_width_size.assert_called_once()
+
+    def test_get_window_size_width_value_valid(self):
+        window_width = self.sh.get_window_size(get_only_width=True)
+        self.assertEqual(window_width, 400)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_window_size")
+    def test_get_window_size_width_valid(self, mock_height_size):
+        self.sh.get_window_size(get_only_height=True)
+        mock_height_size.assert_called_once()
+
+    def test_get_window_size_height_value_valid(self):
+        window_height = self.sh.get_window_size(get_only_height=True)
+        self.assertEqual(window_height, 300)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_window_size")
+    def test_get_window_size_valid(self, mock_window_size):
+        self.sh.get_window_size()
+        mock_window_size.assert_called_once()
+
+    def test_get_window_size_value_valid(self):
+        window_width, window_height = self.sh.get_window_size()
+        self.assertEqual(window_width, 400)
+        self.assertEqual(window_height, 300)
+
+    def test_window_size_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_window_size)
+
     @patch("selenium.webdriver.remote.webdriver.WebDriver.get")
     def test_load_url_bypass_valid(self, mock_get):
         self.sh.load_url("www.google.com", bypass_status_code_check=True)
@@ -137,6 +169,40 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_refresh_driver_invalid(self):
         sh = selenium_helpers.SeleniumHelpers()
         self.assertRaises(selenium_helpers.DriverURLError, sh.refresh_driver)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_get_viewport_size_width_valid(self, mock_width_script):
+        self.sh.get_viewport_size(get_only_width=True)
+        mock_width_script.assert_called_once_with("return document.documentElement.clientWidth")
+
+    def test_get_viewport_size_width_value_valid(self):
+        viewport_width = self.sh.get_viewport_size(get_only_width=True)
+        self.assertEqual(viewport_width, 400)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_get_viewport_size_height_valid(self, mock_height_script):
+        self.sh.get_viewport_size(get_only_height=True)
+        mock_height_script.assert_called_once_with("return document.documentElement.clientHeight")
+
+    def test_get_viewport_size_height_value_valid(self):
+        viewport_height = self.sh.get_viewport_size(get_only_height=True)
+        self.assertEqual(viewport_height, 300)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_get_viewport_size_valid(self, mock_script):
+        self.sh.get_viewport_size()
+        mock_script.assert_any_call("return document.documentElement.clientWidth")
+        mock_script.assert_any_call("return document.documentElement.clientHeight")
+        self.assertTrue(mock_script.call_count, 2)
+
+    def test_get_viewport_size_values_valid(self):
+        viewport_width, viewport_height = self.sh.get_viewport_size()
+        self.assertEqual(viewport_width, 400)
+        self.assertEqual(viewport_height, 300)
+
+    def test_viewport_size_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_viewport_size)
 
     def test_get_current_handle_valid(self):
         self.assertTrue(self.sh.get_window_handles(get_current=True))
