@@ -1,11 +1,8 @@
-from PIL import Image
 import numpy
+from PIL import Image
 from the_ark.selenium_helpers import SeleniumHelperExceptions, ElementNotVisibleError, ElementError
 from StringIO import StringIO
-import time
 import traceback
-
-from the_ark import field_handlers
 
 DEFAULT_SCROLL_PADDING = 100
 SCREENSHOT_FILE_EXTENSION = ".png"
@@ -52,10 +49,10 @@ class Screenshot:
             - StringIO: A StingIO object containing the captured image(s)
         """
         try:
-            if self.paginated:
-                return self._capture_paginated_page()
-            elif viewport_only:
+            if viewport_only:
                 return self._capture_single_viewport()
+            elif self.paginated:
+                return self._capture_paginated_page()
             else:
                 return self._capture_full_page()
 
@@ -126,7 +123,6 @@ class Screenshot:
         """
         if self.headers and self.footers:
             #- Capture viewport size window of the headers
-            #TODO: Consider
             self.sh.scroll_to_position(0)
             self._hide_elements(self.footers)
             header_image = self._get_image_data(True)
@@ -222,7 +218,7 @@ class Screenshot:
             - viewport_only:    bool - Captures only the visible /viewport area if true
 
         :return
-            - image:        Image() - The image canvas of the captured data
+            - image:    Image() - The image canvas of the captured data
         """
         #--- Capture the image
         #- Gather image byte data
@@ -237,16 +233,17 @@ class Screenshot:
             #- Viewport Dimensions
             #TODO: Test these size actions on mobile devices. Possibly switch to driver size methods
             #TODO: Update to use selenium helpers once methods are available
-            viewport_width = self.sh.driver.execute_script("return document.documentElement.clientWidth")
-            viewport_height = self.sh.driver.execute_script("return document.documentElement.clientHeight")
+            viewport_width, viewport_height = self.sh.
 
             #- Calculate the visible area
             crop_box = (0, current_scroll_position, viewport_width, current_scroll_position + viewport_height)
 
             #- Crop everything of the image but the visible area
-            image = image.crop(crop_box)
+            cropped_image = image.crop(crop_box)
+            return cropped_image
 
-        return image
+        else:
+            return image
 
     def _crop_and_stitch_image(self, header_image, footer_image):
         """
@@ -269,6 +266,7 @@ class Screenshot:
             crop_row = 0
             pixel_range_offset = 100
             header_image_height = len(header_array) - 1
+            #- Set the offset to the height of the image if the height is less than the offset
             if pixel_range_offset > header_image_height:
                 pixel_range_offset = header_image_height
 
@@ -296,30 +294,34 @@ class Screenshot:
                                 break
 
             #- If no rows matched, crop at height of header image
-            #TODO: What is the use case for continuing to capture the image at this point.
             if crop_row == 0:
                 crop_row = header_image_height
 
+            #-- Crop the top of the footer image off above the line that matches the header image's bottom row
+            #- Create the crop box that outlines what to remove from the footer image
             footer_image_width = footer_image.size[0]
             footer_image_height = footer_image.size[1]
             crop_box = (0, crop_row, footer_image_width, footer_image_height)
-
-            #- crop the overlapping pixels off of the top of the footer image
+            #- Perform the crop
             cropped_footer_image = footer_image.crop(crop_box)
+
+            #- Grab the new height of the footer image
             cropped_footer_image_height = cropped_footer_image.size[1]
 
             #- Create a blank image canvas that is as tall the footer and header images combined
             total_height = header_image_height + cropped_footer_image_height
             stitched_image = Image.new("RGB", (footer_image_width, total_height))
 
-            #--- Paste the header and footer images onto the canvas
+            #-- Paste the header and footer images onto the canvas
+            #- Paste the header image at the top
             stitched_image.paste(header_image, (0, 0))
+            #- Paste the footer image directly below the header image
             stitched_image.paste(cropped_footer_image, (0, header_image_height))
 
             return stitched_image
 
         except Exception as e:
-            message = " Error while cropping and stitching a full page screenshot | {0}".format(e)
+            message = "Error while cropping and stitching a full page screenshot | {0}".format(e)
             raise ScreenshotException(message, stacktrace=traceback.format_exc())
 
     def _create_image_file(self, image):
@@ -336,7 +338,7 @@ class Screenshot:
         #- Save the image canvas to the file as a PNG tpe
         image.save(image_file, SCREENSHOT_FILE_EXTENSION[1:].upper())
         #- Set the file marker back to the beginning
-        image.seek(0)
+        image_file.seek(0)
 
         return image_file
 
