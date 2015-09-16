@@ -121,6 +121,18 @@ class SeleniumHelpers:
             raise DriverURLError(msg=message, stacktrace=traceback.format_exc())
 
     def get_viewport_size(self, get_only_width=False, get_only_height=False):
+        """
+        This will get the width and/or height of the viewport. The reason for not using driver.get_window_size here
+        instead is because it's not just getting the height of the viewport but the whole window (address bar,
+        favorites bar, etc.). In order to be accurate this uses the driver.execute_script with scripts to get the
+        clientWidth and/or clientHeight.
+        :param
+            -   get_only_width: boolean - Whether or not to just return the width of the viewport.
+            -   get_only_height:    boolean - Whether or not to just return the height of the viewport.
+        :return
+            -   viewport_width: integer - The number the width of the viewport is at.
+            -   viewport_height:    integer - The number the height of the viewport is at.
+        """
         try:
             if get_only_width:
                 viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
