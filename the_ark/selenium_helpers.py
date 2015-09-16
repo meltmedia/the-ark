@@ -71,6 +71,32 @@ class SeleniumHelpers:
                       "<{2}>".format(width, height, resize_error)
             raise DriverSizeError(msg=message, stacktrace=traceback.format_exc(), width=width, height=height)
 
+    def get_window_size(self, get_only_width=False, get_only_height=False):
+        """
+        This will return the width and/or height of the full window. These numbers will include the address bar,
+        favorites bar, etc.
+        :param
+            -   get_only_width: boolean - Whether or not to just return the width of the window.
+            -   get_only_height:    boolean - Whether or not to just return the height of the window.
+        :return
+            -   window_width: integer - The number the width of the window is at.
+            -   window_height:    integer - The number the height of the window is at.
+        """
+        try:
+            if get_only_width and not get_only_height:
+                window_width = self.driver.get_window_size()["width"]
+                return window_width
+            elif get_only_height and not get_only_width:
+                window_height = self.driver.get_window_size()["height"]
+                return window_height
+            else:
+                window_size = self.driver.get_window_size()
+                return window_size["width"], window_size["height"]
+        except Exception as get_window_size_error:
+            message = "Unable to get the width and/or the height of the window.\n" \
+                      "<{0}>".format(get_window_size_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
     def load_url(self, url, bypass_status_code_check=False):
         """
         This will check to see if the status code of the URL is not 4XX or 5XX and navigate to the URL. If the
@@ -121,11 +147,23 @@ class SeleniumHelpers:
             raise DriverURLError(msg=message, stacktrace=traceback.format_exc())
 
     def get_viewport_size(self, get_only_width=False, get_only_height=False):
+        """
+        This will get the width and/or height of the viewport. The reason for not using driver.get_window_size here
+        instead is because it's not just getting the height of the viewport but the whole window (address bar,
+        favorites bar, etc.). In order to be accurate this uses the driver.execute_script with scripts to get the
+        clientWidth and/or clientHeight.
+        :param
+            -   get_only_width: boolean - Whether or not to just return the width of the viewport.
+            -   get_only_height:    boolean - Whether or not to just return the height of the viewport.
+        :return
+            -   viewport_width: integer - The number the width of the viewport is at.
+            -   viewport_height:    integer - The number the height of the viewport is at.
+        """
         try:
-            if get_only_width:
+            if get_only_width and not get_only_height:
                 viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
                 return viewport_width
-            elif get_only_height:
+            elif get_only_height and not get_only_width:
                 viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
                 return viewport_height
             else:
