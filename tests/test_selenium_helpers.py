@@ -138,6 +138,40 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers()
         self.assertRaises(selenium_helpers.DriverURLError, sh.refresh_driver)
 
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_get_viewport_size_width_valid(self, mock_width_script):
+        self.sh.get_viewport_size(get_only_width=True)
+        mock_width_script.assert_called_once_with("return document.documentElement.clientWidth")
+
+    def test_get_viewport_size_width_value_valid(self):
+        viewport_width = self.sh.get_viewport_size(get_only_width=True)
+        self.assertEqual(viewport_width, 400)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_get_viewport_size_height_valid(self, mock_height_script):
+        self.sh.get_viewport_size(get_only_height=True)
+        mock_height_script.assert_called_once_with("return document.documentElement.clientHeight")
+
+    def test_get_viewport_size_height_value_valid(self):
+        viewport_height = self.sh.get_viewport_size(get_only_height=True)
+        self.assertEqual(viewport_height, 300)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_get_viewport_size_valid(self, mock_script):
+        self.sh.get_viewport_size()
+        mock_script.assert_any_call("return document.documentElement.clientWidth")
+        mock_script.assert_any_call("return document.documentElement.clientHeight")
+        self.assertTrue(mock_script.call_count, 2)
+
+    def test_get_viewport_size_values_valid(self):
+        viewport_width, viewport_height = self.sh.get_viewport_size()
+        self.assertEqual(viewport_width, 400)
+        self.assertEqual(viewport_height, 300)
+
+    def test_viewport_size_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_viewport_size)
+
     def test_get_current_handle_valid(self):
         self.assertTrue(self.sh.get_window_handles(get_current=True))
 
