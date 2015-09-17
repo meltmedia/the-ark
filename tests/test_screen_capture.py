@@ -1,11 +1,10 @@
 from mock import patch
 import os
+from PIL import Image
 from the_ark.selenium_helpers import SeleniumHelpers, ElementNotVisibleError, ElementError, SeleniumHelperExceptions
 from the_ark.screen_capture import Screenshot, ScreenshotException, SeleniumError
-import unittest
-
-from PIL import Image
 from StringIO import StringIO
+import unittest
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 SCREENSHOT_TEST_PNG = '{0}/etc/test.png'.format(ROOT)
@@ -14,6 +13,7 @@ All_BLACK_TEST_PNG = '{0}/etc/all_black.png'.format(ROOT)
 WHITE_STRIPES_TEST_PNG = '{0}/etc/white_stripes.png'.format(ROOT)
 SMALL_TEST_PNG = '{0}/etc/small.png'.format(ROOT)
 SELENIUM_TEST_HTML = '{0}/etc/test.html'.format(ROOT)
+
 
 class ScreenCaptureTestCase(unittest.TestCase):
     def setUp(self):
@@ -41,7 +41,6 @@ class ScreenCaptureTestCase(unittest.TestCase):
         # capture.return_value = True
         self.sc.paginated = True
         self.assertEqual(self.sc.capture_page(), [True, True])
-        #TODO: Determine how best to check variables within the method (like that the scroll and padding are working)
 
     #--- Full Page
     @patch("the_ark.screen_capture.Screenshot._crop_and_stitch_image")
@@ -184,7 +183,6 @@ class ScreenCaptureTestCase(unittest.TestCase):
         returned_image = self.sc._crop_and_stitch_image(header, footer)
         self.assertIsInstance(returned_image, Image.Image)
 
-
     #===================================================================
     #--- Exceptions
     #===================================================================
@@ -226,18 +224,3 @@ class ScreenCaptureTestCase(unittest.TestCase):
             self.sc.capture_scrolling_element(css_selector)
         self.assertIn("Unhandled", selenium_error.exception.msg)
         self.assertIn(css_selector, selenium_error.exception.msg)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
