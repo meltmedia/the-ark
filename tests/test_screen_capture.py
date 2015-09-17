@@ -1,7 +1,7 @@
 from mock import patch
 import os
-from the_ark.selenium_helpers import SeleniumHelpers, ElementNotVisibleError, ElementError
-from the_ark.screen_capture import Screenshot, ScreenshotException
+from the_ark.selenium_helpers import SeleniumHelpers, ElementNotVisibleError, ElementError, SeleniumHelperExceptions
+from the_ark.screen_capture import Screenshot, ScreenshotException, SeleniumError
 import unittest
 
 from PIL import Image
@@ -10,6 +10,9 @@ from StringIO import StringIO
 ROOT = os.path.abspath(os.path.dirname(__file__))
 SCREENSHOT_TEST_PNG = '{0}/etc/test.png'.format(ROOT)
 All_WHITE_TEST_PNG = '{0}/etc/all_white.png'.format(ROOT)
+All_BLACK_TEST_PNG = '{0}/etc/all_black.png'.format(ROOT)
+WHITE_STRIPES_TEST_PNG = '{0}/etc/white_stripes.png'.format(ROOT)
+SMALL_TEST_PNG = '{0}/etc/small.png'.format(ROOT)
 SELENIUM_TEST_HTML = '{0}/etc/test.html'.format(ROOT)
 
 class ScreenCaptureTestCase(unittest.TestCase):
@@ -27,7 +30,7 @@ class ScreenCaptureTestCase(unittest.TestCase):
     @patch("the_ark.screen_capture.Screenshot._get_image_data")
     def test_capture_single_viewport(self, image_data):
         image_data.return_value = Image.open(SCREENSHOT_TEST_PNG)
-        returned_image = self.sc.screenshot_page(True)
+        returned_image = self.sc.capture_page(True)
         self.assertIsInstance(returned_image, StringIO)
 
     #--- Paginated
@@ -37,7 +40,7 @@ class ScreenCaptureTestCase(unittest.TestCase):
         self.sc.sh.driver.excecute_script.return_value = "1200"
         # capture.return_value = True
         self.sc.paginated = True
-        self.assertEqual(self.sc.screenshot_page(), [True, True])
+        self.assertEqual(self.sc.capture_page(), [True, True])
         #TODO: Determine how best to check variables within the method (like that the scroll and padding are working)
 
     #--- Full Page
@@ -52,27 +55,27 @@ class ScreenCaptureTestCase(unittest.TestCase):
         crop.return_value = Image.open(SCREENSHOT_TEST_PNG)
         self.sc.footers = ["footers"]
         self.sc.headers = ["headers"]
-        returned_image = self.sc.screenshot_page()
+        returned_image = self.sc.capture_page()
         self.assertIsInstance(returned_image, StringIO)
 
     @patch("the_ark.screen_capture.Screenshot._get_image_data")
     def test_capture_full_page_with_headers_only(self, image_data):
         image_data.return_value = Image.open(SCREENSHOT_TEST_PNG)
         self.sc.headers = ["headers"]
-        returned_image = self.sc.screenshot_page()
+        returned_image = self.sc.capture_page()
         self.assertIsInstance(returned_image, StringIO)
 
     @patch("the_ark.screen_capture.Screenshot._get_image_data")
     def test_capture_full_page_with_footers_only(self, image_data):
         image_data.return_value = Image.open(SCREENSHOT_TEST_PNG)
         self.sc.footers = ["footers"]
-        returned_image = self.sc.screenshot_page()
+        returned_image = self.sc.capture_page()
         self.assertIsInstance(returned_image, StringIO)
 
     @patch("the_ark.screen_capture.Screenshot._get_image_data")
     def test_capture_full_page_with_no_stickies(self, image_data):
         image_data.return_value = Image.open(SCREENSHOT_TEST_PNG)
-        returned_image = self.sc.screenshot_page()
+        returned_image = self.sc.capture_page()
         self.assertIsInstance(returned_image, StringIO)
 
     #--- Scrolling Element
@@ -155,10 +158,78 @@ class ScreenCaptureTestCase(unittest.TestCase):
         self.assertIsInstance(returned_image, Image.Image)
 
     def test_crop_and_stitch_crop_zero(self):
-        header = Image.open(All_WHITE_TEST_PNG)
+        header = Image.open(All_BLACK_TEST_PNG)
         footer = Image.open(All_WHITE_TEST_PNG)
         returned_image = self.sc._crop_and_stitch_image(header, footer)
         self.assertIsInstance(returned_image, Image.Image)
+
+    def test_crop_and_stitch_small_image(self):
+        header = Image.open(SMALL_TEST_PNG)
+        footer = Image.open(All_WHITE_TEST_PNG)
+        returned_image = self.sc._crop_and_stitch_image(header, footer)
+        self.assertIsInstance(returned_image, Image.Image)
+
+    @patch("numpy.array_equal")
+    def test_crop_and_stitch_error(self, numpy):
+        numpy.side_effect = Exception("Boo!")
+
+        header = Image.open(SMALL_TEST_PNG)
+        footer = Image.open(All_WHITE_TEST_PNG)
+        with self.assertRaises(ScreenshotException):
+            self.sc._crop_and_stitch_image(header, footer)
+
+    def test_crop_and_stitch_not_100_matching_rows(self):
+        header = Image.open(All_WHITE_TEST_PNG)
+        footer = Image.open(WHITE_STRIPES_TEST_PNG)
+        returned_image = self.sc._crop_and_stitch_image(header, footer)
+        self.assertIsInstance(returned_image, Image.Image)
+
+
+    #===================================================================
+    #--- Exceptions
+    #===================================================================
+    @patch("the_ark.screen_capture.Screenshot._capture_full_page")
+    def test_screenshot_page_selenium_error(self, capture_full_page):
+        capture_full_page.side_effect = ElementError("Boo!", "stacktrace", "google", ".class")
+        with self.assertRaises(SeleniumError) as selenium_error:
+            self.sc.capture_page()
+        self.assertIn("selenium issue", selenium_error.exception.msg)
+
+    @patch("the_ark.screen_capture.Screenshot._capture_full_page")
+    def test_screenshot_page_screenshot_error(self, capture_full_page):
+        capture_full_page.side_effect = Exception("Boo!")
+        with self.assertRaises(ScreenshotException) as selenium_error:
+            self.sc.capture_page()
+        self.assertIn("Unhandled", selenium_error.exception.msg)
+
+    def test_screenshot_exception_to_string_with_details(self):
+        error = ScreenshotException("Message text", "stacktrace\ntext\nhere", {"url": "google"})
+        error_string = error.__str__()
+        self.assertIn("stacktrace", error_string)
+        self.assertIn("google", error_string)
+
+    def test_scrolling_screenshot_element_selenium_error(self):
+        sh = SeleniumHelpers()
+        sc = Screenshot(sh)
+        sh.create_driver(browserName="phantomjs")
+        sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+
+        with self.assertRaises(SeleniumError) as selenium_error:
+            sc.capture_scrolling_element(".class")
+        self.assertIn("selenium issue", selenium_error.exception.msg)
+
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.scroll_an_element")
+    def test__scrolling_screenshot_element_screenshot_error(self, scroll_an_element):
+        scroll_an_element.side_effect = Exception("Boo!")
+        css_selector = ".class"
+        with self.assertRaises(ScreenshotException) as selenium_error:
+            self.sc.capture_scrolling_element(css_selector)
+        self.assertIn("Unhandled", selenium_error.exception.msg)
+        self.assertIn(css_selector, selenium_error.exception.msg)
+
+
+
+
 
 
 

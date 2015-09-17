@@ -38,7 +38,7 @@ class Screenshot:
         self.footers = footer_ids
         self.scroll_padding = scroll_padding or DEFAULT_SCROLL_PADDING
 
-    def screenshot_page(self, viewport_only=False):
+    def capture_page(self, viewport_only=False):
         """
         Entry point for a screenshot of the whole page. This will send the screenshot off to the correct methods
         depending on whether you need paginated screenshots, just the current viewport area, or the whole page in
@@ -61,8 +61,8 @@ class Screenshot:
             error = SeleniumError(message, selenium_error)
             raise error
         except Exception as e:
-            #TODO:
-            print "Unhandled Exception! {0}".format(e)
+            message = "Unhandled exception while taking the screenshot | {0}".format(e)
+            raise ScreenshotException(message, stacktrace=traceback.format_exc())
 
     def capture_scrolling_element(self, element_selector, viewport_only=True):
         """
@@ -101,8 +101,11 @@ class Screenshot:
             error = SeleniumError(message, selenium_error)
             raise error
         except Exception as e:
-            # TODO:
-            print "Unhandled Exception! {0}".format(e)
+            message = "Unhandled exception while taking the scrolling screenshot " \
+                      "of the element '{0}' | {1}".format(element_selector, e)
+            raise ScreenshotException(message,
+                                      stacktrace=traceback.format_exc(),
+                                      details={"css_selector": element_selector})
 
     def _capture_single_viewport(self):
         """
@@ -227,13 +230,13 @@ class Screenshot:
         image = Image.open(StringIO(image_data.decode('base64')))
 
         if viewport_only:
-            #-- Crop the image to just the visble area
+            #-- Crop the image to just the visible area
             #- Top of the viewport
+            #TODO: Update this once selenium helpers has it
             current_scroll_position = self.sh.driver.execute_script("return window.scrollY;")
+
             #- Viewport Dimensions
-            #TODO: Test these size actions on mobile devices. Possibly switch to driver size methods
-            #TODO: Update to use selenium helpers once methods are available
-            viewport_width, viewport_height = self.sh.
+            viewport_width, viewport_height = self.sh.get_viewport_size()
 
             #- Calculate the visible area
             crop_box = (0, current_scroll_position, viewport_width, current_scroll_position + viewport_height)
@@ -265,14 +268,14 @@ class Screenshot:
             #--- Find a place in both images that match then crop and stitch them at that location
             crop_row = 0
             pixel_range_offset = 100
-            header_image_height = len(header_array) - 1
+            header_image_height = header_image.height
             #- Set the offset to the height of the image if the height is less than the offset
             if pixel_range_offset > header_image_height:
                 pixel_range_offset = header_image_height
 
             #-- Find the pixel row in the footer image that matches the bottom row in the header image
             #- Grab the last 100 rows of header_image
-            header_last_hundred_rows = footer_array[header_image_height - pixel_range_offset: header_image_height]
+            header_last_hundred_rows = header_array[header_image_height - pixel_range_offset: header_image_height]
 
             #- Iterates throughout the check, will match the height of the row being checked in the image.
             for i, footer_row in enumerate(footer_array):
@@ -347,18 +350,15 @@ class ScreenshotException(Exception):
     def __init__(self, msg, stacktrace=None, details=None):
         self.msg = msg
         self.details = {} if details is None else details
-        self.stacktrace = stacktrace
+        self.details["stracktrace"] = stacktrace
         super(ScreenshotException, self).__init__()
 
     def __str__(self):
         exception_msg = "Screenshot Exception: \n"
-        if self.stacktrace is not None:
-            exception_msg += "{0}".format(self.stacktrace)
-        if self.details:
-            detail_string = "\nException Details:\n"
-            for key, value in self.details.items():
-                detail_string += "{0}: {1}\n".format(key, value)
-            exception_msg += detail_string
+        detail_string = "Exception Details:\n"
+        for key, value in self.details.items():
+            detail_string += "{0}: {1}\n".format(key, value)
+        exception_msg += detail_string
         exception_msg += "Message: {0}".format(self.msg)
 
         return exception_msg
