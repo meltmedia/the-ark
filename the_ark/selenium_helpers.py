@@ -527,7 +527,7 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def scroll_to_position(self, y_position=0, x_position=0):
+    def scroll_window_to_position(self, y_position=0, x_position=0):
         """
         This will scroll to a specific position on the current page.
         :param
