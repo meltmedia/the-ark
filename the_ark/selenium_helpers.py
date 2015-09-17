@@ -542,6 +542,35 @@ class SeleniumHelpers:
             raise ScrollPositionError(msg=message, stacktrace=traceback.format_exc(),
                                       current_url=self.driver.current_url, y_position=y_position, x_position=x_position)
 
+    def get_window_current_scroll_position(self, get_both_positions=False, get_only_x_position=False):
+        """
+        This will get the current scroll position that the window is at. You can get both the X scroll position and Y
+        scroll position, only the X scroll position, or only the Y scroll position.
+        :param
+            -   get_both_positions: boolean - Whether or not both the X position and Y position are returned.
+            -   get_only_x_position: boolean - Whether or not only the X position is returned.
+        :return
+            -   x_scroll_position:  integer - The amount that the window has been scrolled on the x axis.
+            -   y_scroll_position:  integer - The amount that the window has been scrolled on the y axis.
+        """
+        try:
+            x_scroll_position = self.driver.execute_script("return window.scrollX;")
+            y_scroll_position = self.driver.execute_script("return window.scrollY;")
+            if get_both_positions and not get_only_x_position:
+                return x_scroll_position, y_scroll_position
+            elif get_only_x_position and not get_both_positions:
+                return x_scroll_position
+            else:
+                return y_scroll_position
+        except SeleniumHelperExceptions as current_scroll_error:
+            current_scroll_error.msg = "Unable to determine the window's scroll position. | " + \
+                                       current_scroll_error.msg
+            raise current_scroll_error
+        except Exception as get_window_current_scroll_position_error:
+            message = "Unable to determine the scroll position of the window on page '{0}'.\n" \
+                      "<{1}>".format(self.driver.current_url, get_window_current_scroll_position_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
     def scroll_an_element(self, css_selector=None, web_element=None, scroll_position=None, scroll_padding=0,
                           scroll_top=False, scroll_bottom=False):
         """
@@ -603,6 +632,7 @@ class SeleniumHelpers:
             -   scroll_position:    integer - The amount that the element has been scrolled.
         """
         try:
+            #TODO: Have this return the X and Y position of the scroll in the same fashion as the get_window_size method
             if web_element:
                 self.ensure_element_visible(web_element=web_element)
                 element = web_element
