@@ -549,10 +549,29 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_scroll_element_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.scroll_an_element, css_selector="!not-scrollable")
 
-    def test_get_web_element_current_scroll_position_valid(self):
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_get_web_element_current_scroll_position_scripts_valid(self, mock_element_scroll):
         valid_css_selector = ".scrollable"
         web_element = self.sh.get_element(valid_css_selector)
-        self.assertEqual(self.sh.get_element_current_scroll_position(web_element=web_element), 0)
+        self.sh.get_element_current_scroll_position(web_element=web_element)
+        mock_element_scroll.assert_any_call("var element = arguments[0]; "
+                                            "scrollPosition = element.scrollLeft; "
+                                            "return scrollPosition;", web_element)
+        mock_element_scroll.assert_any_call("var element = arguments[0]; "
+                                            "scrollPosition = element.scrollTop; "
+                                            "return scrollPosition;", web_element)
+
+    def test_get_web_element_current_scroll_position_both_valid(self):
+        valid_css_selector = ".scrollable"
+        web_element = self.sh.get_element(valid_css_selector)
+        x_pos, y_pos = self.sh.get_element_current_scroll_position(web_element=web_element, get_both_positions=True)
+        self.assertEqual(x_pos, 0)
+        self.assertEqual(y_pos, 0)
+
+    def test_get_element_current_scroll_position_x_valid(self):
+        valid_css_selector = ".scrollable"
+        self.assertEqual(self.sh.get_element_current_scroll_position(css_selector=valid_css_selector,
+                                                                     get_only_x_position=True), 0)
 
     def test_get_element_current_scroll_position_valid(self):
         valid_css_selector = ".scrollable"
