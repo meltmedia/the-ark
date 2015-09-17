@@ -83,14 +83,14 @@ class SeleniumHelpers:
             -   window_height:    integer - The number the height of the window is at.
         """
         try:
+            window_size = self.driver.get_window_size()
             if get_only_width and not get_only_height:
-                window_width = self.driver.get_window_size()["width"]
+                window_width = window_size["width"]
                 return window_width
             elif get_only_height and not get_only_width:
-                window_height = self.driver.get_window_size()["height"]
+                window_height = window_size["height"]
                 return window_height
             else:
-                window_size = self.driver.get_window_size()
                 return window_size["width"], window_size["height"]
         except Exception as get_window_size_error:
             message = "Unable to get the width and/or the height of the window.\n" \
@@ -160,15 +160,13 @@ class SeleniumHelpers:
             -   viewport_height:    integer - The number the height of the viewport is at.
         """
         try:
+            viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
+            viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
             if get_only_width and not get_only_height:
-                viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
                 return viewport_width
             elif get_only_height and not get_only_width:
-                viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
                 return viewport_height
             else:
-                viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
-                viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
                 return viewport_width, viewport_height
         except Exception as get_viewport_size_error:
             message = "Unable to get the width and/or the height of the viewport.\n" \
