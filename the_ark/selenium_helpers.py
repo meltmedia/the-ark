@@ -560,13 +560,9 @@ class SeleniumHelpers:
                 return x_scroll_position
             else:
                 return y_scroll_position
-        except SeleniumHelperExceptions as current_scroll_error:
-            current_scroll_error.msg = "Unable to determine the window's scroll position. | " + \
-                                       current_scroll_error.msg
-            raise current_scroll_error
         except Exception as get_window_current_scroll_position_error:
-            message = "Unable to determine the scroll position of the window on page '{0}'.\n" \
-                      "<{1}>".format(self.driver.current_url, get_window_current_scroll_position_error)
+            message = "Unable to determine the scroll position of the window.\n" \
+                      "<{0}>".format(get_window_current_scroll_position_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def scroll_an_element(self, css_selector=None, web_element=None, scroll_position=None, scroll_padding=0,

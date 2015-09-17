@@ -173,7 +173,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_get_viewport_size_width_valid(self, mock_width_script):
         self.sh.get_viewport_size(get_only_width=True)
-        mock_width_script.assert_called_once_with("return document.documentElement.clientWidth")
+        mock_width_script.assert_any_call("return document.documentElement.clientWidth")
 
     def test_get_viewport_size_width_value_valid(self):
         viewport_width = self.sh.get_viewport_size(get_only_width=True)
@@ -182,7 +182,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_get_viewport_size_height_valid(self, mock_height_script):
         self.sh.get_viewport_size(get_only_height=True)
-        mock_height_script.assert_called_once_with("return document.documentElement.clientHeight")
+        mock_height_script.assert_any_call("return document.documentElement.clientHeight")
 
     def test_get_viewport_size_height_value_valid(self):
         viewport_height = self.sh.get_viewport_size(get_only_height=True)
@@ -484,6 +484,29 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_scroll_window_to_position_invalid(self):
         self.assertRaises(selenium_helpers.ScrollPositionError, self.sh.scroll_window_to_position, None, None)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_get_window_current_scroll_position_both_valid(self, mock_scroll_both):
+        self.sh.get_window_current_scroll_position(get_both_positions=True)
+        mock_scroll_both.assert_any_call("return window.scrollX;")
+        mock_scroll_both.assert_any_call("return window.scrollY;")
+
+    def test_get_window_current_scroll_position_both_values_valid(self):
+        x_position, y_position = self.sh.get_window_current_scroll_position(get_both_positions=True)
+        self.assertEqual(x_position, 0)
+        self.assertEqual(y_position, 0)
+
+    def test_get_window_current_scroll_position_x_values_valid(self):
+        x_position = self.sh.get_window_current_scroll_position(get_only_x_position=True)
+        self.assertEqual(x_position, 0)
+
+    def test_get_window_current_scroll_position_values_valid(self):
+        y_position = self.sh.get_window_current_scroll_position()
+        self.assertEqual(y_position, 0)
+
+    def test_get_window_current_scroll_position_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_window_current_scroll_position)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_web_element_top_valid(self, mock_scroll_element_top):
