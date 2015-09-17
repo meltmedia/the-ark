@@ -132,8 +132,8 @@ class Screenshot:
 
             #--- Capture the page from the bottom without headers
             self._show_elements(self.footers)
-            #TODO: Update when scroll position updates to have a bottom option
-            self.sh.scroll_to_position(40000)
+            #TODO: Update when scroll position updates to have a scroll to bottom option
+            self.sh.scroll_window_to_position(40000)
             self._hide_elements(self.headers)
             footer_image = self._get_image_data()
 
@@ -143,11 +143,11 @@ class Screenshot:
             #- Send the two images off to get merged into one
             image_data = self._crop_and_stitch_image(header_image, footer_image)
         elif self.headers:
-            # Scroll to the top so that the headers are not covering content
+            #- Scroll to the top so that the headers are not covering content
             self.sh.scroll_to_position(0)
             image_data = self._get_image_data()
         elif self.footers:
-            # Scroll to the bottom so that the footer items are not covering content
+            #- Scroll to the bottom so that the footer items are not covering content
             self.sh.scroll_to_position(40000)
             image_data = self._get_image_data()
         else:
@@ -204,7 +204,7 @@ class Screenshot:
             #- Scroll for the next one!
             self.sh.scroll_to_position(current_scroll_position + viewport_height - self.scroll_padding)
             # TODO: Update to use new Selenium helper methods when available
-            new_scroll_position = self.sh.driver.execute_script("return window.scrollY;")
+            new_scroll_position = self.sh.pt("return window.scrollY;")
 
             #- Break if the scroll position did not change (because it was at the bottom)
             if new_scroll_position == current_scroll_position:
