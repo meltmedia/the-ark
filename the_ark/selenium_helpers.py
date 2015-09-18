@@ -83,14 +83,14 @@ class SeleniumHelpers:
             -   window_height:    integer - The number the height of the window is at.
         """
         try:
+            window_size = self.driver.get_window_size()
             if get_only_width and not get_only_height:
-                window_width = self.driver.get_window_size()["width"]
+                window_width = window_size["width"]
                 return window_width
             elif get_only_height and not get_only_width:
-                window_height = self.driver.get_window_size()["height"]
+                window_height = window_size["height"]
                 return window_height
             else:
-                window_size = self.driver.get_window_size()
                 return window_size["width"], window_size["height"]
         except Exception as get_window_size_error:
             message = "Unable to get the width and/or the height of the window.\n" \
@@ -160,15 +160,13 @@ class SeleniumHelpers:
             -   viewport_height:    integer - The number the height of the viewport is at.
         """
         try:
+            viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
+            viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
             if get_only_width and not get_only_height:
-                viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
                 return viewport_width
             elif get_only_height and not get_only_width:
-                viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
                 return viewport_height
             else:
-                viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
-                viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
                 return viewport_width, viewport_height
         except Exception as get_viewport_size_error:
             message = "Unable to get the width and/or the height of the viewport.\n" \
@@ -542,6 +540,31 @@ class SeleniumHelpers:
             raise ScrollPositionError(msg=message, stacktrace=traceback.format_exc(),
                                       current_url=self.driver.current_url, y_position=y_position, x_position=x_position)
 
+    def get_window_current_scroll_position(self, get_both_positions=False, get_only_x_position=False):
+        """
+        This will get the current scroll position that the window is at. You can get both the X scroll position and Y
+        scroll position, only the X scroll position, or only the Y scroll position.
+        :param
+            -   get_both_positions: boolean - Whether or not both the X position and Y position are returned.
+            -   get_only_x_position: boolean - Whether or not only the X position is returned.
+        :return
+            -   x_scroll_position:  integer - The amount that the window has been scrolled on the x axis.
+            -   y_scroll_position:  integer - The amount that the window has been scrolled on the y axis.
+        """
+        try:
+            x_scroll_position = self.driver.execute_script("return window.scrollX;")
+            y_scroll_position = self.driver.execute_script("return window.scrollY;")
+            if get_both_positions and not get_only_x_position:
+                return x_scroll_position, y_scroll_position
+            elif get_only_x_position and not get_both_positions:
+                return x_scroll_position
+            else:
+                return y_scroll_position
+        except Exception as get_window_current_scroll_position_error:
+            message = "Unable to determine the scroll position of the window.\n" \
+                      "<{0}>".format(get_window_current_scroll_position_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
     def scroll_an_element(self, css_selector=None, web_element=None, scroll_position=None, scroll_padding=0,
                           scroll_top=False, scroll_bottom=False):
         """
@@ -593,14 +616,19 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def get_element_current_scroll_position(self, css_selector=None, web_element=None):
+    def get_element_current_scroll_position(self, css_selector=None, web_element=None, get_both_positions=False,
+                                            get_only_x_position=False):
         """
-        Check to see what position the scrollable element is at.
+        Check to see what position the scrollable element is at.You can get both the X scroll position and Y
+        scroll position, only the X scroll position, or only the Y scroll position.
         :param
             -   css_selector:   string - The specific element that will be interacted with.
             -   web_element:    object - The WebElement that will be interacted with.
+            -   get_both_positions: boolean - Whether or not both the X position and Y position are returned.
+            -   get_only_x_position:    boolean - Whether or not only the X position is returned.
         :return
-            -   scroll_position:    integer - The amount that the element has been scrolled.
+            -   x_scroll_position:  integer - The amount that the element has been scrolled on the x axis.
+            -   y_scroll_position:  integer - The amount that the element has been scrolled on the y axis.
         """
         try:
             if web_element:
@@ -609,10 +637,18 @@ class SeleniumHelpers:
             else:
                 self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
-            scroll_position = self.driver.execute_script("var element = arguments[0]; "
-                                                         "scrollPosition = element.scrollTop; "
-                                                         "return scrollPosition;", element)
-            return scroll_position
+            x_scroll_position = self.driver.execute_script("var element = arguments[0]; "
+                                                           "scrollPosition = element.scrollLeft; "
+                                                           "return scrollPosition;", element)
+            y_scroll_position = self.driver.execute_script("var element = arguments[0]; "
+                                                           "scrollPosition = element.scrollTop; "
+                                                           "return scrollPosition;", element)
+            if get_both_positions and not get_only_x_position:
+                return x_scroll_position, y_scroll_position
+            elif get_only_x_position and not get_both_positions:
+                return x_scroll_position
+            else:
+                return y_scroll_position
         except SeleniumHelperExceptions as current_scroll_error:
             current_scroll_error.msg = "Unable to determine the element's scroll position. | " + \
                                        current_scroll_error.msg
