@@ -685,7 +685,7 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def is_element_scroll_position_at_top(self, css_selector=None, web_element=None):
+    def get_is_element_scroll_position_at_top(self, css_selector=None, web_element=None):
         """
         Check to see if the scroll position is at the top of the scrollable element.
         :param
@@ -722,7 +722,7 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def is_element_scroll_position_at_bottom(self, css_selector=None, web_element=None):
+    def get_is_element_scroll_position_at_bottom(self, css_selector=None, web_element=None):
         """
         Check to see if the scroll position is at the bottom of the scrollable element.
         :param
