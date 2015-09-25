@@ -539,15 +539,23 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def scroll_window_to_position(self, y_position=0, x_position=0):
+    def scroll_window_to_position(self, y_position=0, x_position=0, scroll_top=False, scroll_bottom=False):
         """
-        This will scroll to a specific position on the current page.
+        This will scroll to a specific position on the current page, scroll to the top of the page, or it will scroll
+        to the bottom of the page.
         :param
             -   y_position: integer - The position the browser will scroll to vertically.
             -   x_position: integer - The position the browser will scroll to horizontally.
+            -   scroll_top: boolean - Whether or not the element will be scrolled to the top.
+            -   scroll_bottom:  boolean - Whether or not the element will be scrolled to the bottom.
         """
         if type(y_position) == int or type(x_position) == int:
             self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
+        elif scroll_top:
+            self.driver.execute_script("window.scrollTo(0, 0);")
+        elif scroll_bottom:
+            total_height = self.driver.execute_script("var height = document.body.scrollHeight; return height")
+            self.driver.execute_script("window.scrollTo(0, arguments[0]);", total_height)
         else:
             message = "Unable to scroll to position ('{0}', '{1}') on page '{2}'.".format(x_position, y_position,
                                                                                           self.driver.current_url)
@@ -582,7 +590,7 @@ class SeleniumHelpers:
     def scroll_an_element(self, css_selector=None, web_element=None, scroll_position=None, scroll_padding=0,
                           scroll_top=False, scroll_bottom=False):
         """
-        This will scroll an element on a page (i.e. An ISI modal).  The user can have it scroll to the top of the
+        This will scroll an element on a page (e.g. An ISI modal).  The user can have it scroll to the top of the
         element, the bottom of the element, a specific position in the element, or by the height of the scrollable area
         of the element.
         :param
