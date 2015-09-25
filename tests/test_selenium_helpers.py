@@ -419,6 +419,14 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         mock_clear.side_effect = Exception("Fail!")
         self.assertRaises(Exception, self.sh.fill_an_element, fill_text="test text", css_selector=".invalid &input")
 
+    @patch("selenium.webdriver.common.action_chains.ActionChains.send_keys")
+    def test_send_special_key_valid(self, mock_keys):
+        self.sh.send_special_key("tab")
+        mock_keys.assert_called_once_with(u'\ue004')
+
+    def test_send_special_key_invalid(self):
+        self.assertRaises(selenium_helpers.DriverAttributeError, self.sh.send_special_key, special_key="meltmedia")
+
     @patch("selenium.webdriver.common.action_chains.ActionChains.move_to_element")
     def test_hover_web_element_valid(self, mock_hover):
         valid_css_selector = ".valid a"
