@@ -2,7 +2,7 @@ from mock import patch
 import os
 from PIL import Image
 from the_ark.selenium_helpers import SeleniumHelpers, ElementNotVisibleError, ElementError, SeleniumHelperExceptions
-from the_ark.screen_capture import Screenshot, ScreenshotException, SeleniumError
+from the_ark.screen_capture import Screenshot, ScreenshotException, SeleniumError, DEFAULT_PIXEL_MATCH_OFFSET
 from StringIO import StringIO
 import unittest
 
@@ -167,6 +167,21 @@ class ScreenCaptureTestCase(unittest.TestCase):
         footer = Image.open(All_WHITE_TEST_PNG)
         returned_image = self.sc._crop_and_stitch_image(header, footer)
         self.assertIsInstance(returned_image, Image.Image)
+
+    def test_crop_and_stitch_pixel_offset(self):
+        header = Image.open(SMALL_TEST_PNG)
+        footer = Image.open(All_WHITE_TEST_PNG)
+
+        sh1 = SeleniumHelpers()
+        sc1 = Screenshot(sh1)
+        returned_image = self.sc._crop_and_stitch_image(header, footer)
+        self.assertEqual(sc1.pixel_match_offset, DEFAULT_PIXEL_MATCH_OFFSET)
+
+        test_pixel_value = 20
+        sh2 = SeleniumHelpers()
+        sc2 = Screenshot(sh2, pixel_match_offset=test_pixel_value)
+        returned_image = self.sc._crop_and_stitch_image(header, footer)
+        self.assertEqual(sc2.pixel_match_offset, test_pixel_value)
 
     @patch("numpy.array_equal")
     def test_crop_and_stitch_error(self, numpy):

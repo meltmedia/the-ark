@@ -6,14 +6,14 @@ import traceback
 
 DEFAULT_SCROLL_PADDING = 100
 SCREENSHOT_FILE_EXTENSION = ".png"
-
+DEFAULT_PIXEL_MATCH_OFFSET = 100
 
 class Screenshot:
     """
     #TODO:
     """
-    def __init__(self, selenium_helper, paginated=None, header_ids=None, footer_ids=None,
-                 scroll_padding=None):
+    def __init__(self, selenium_helper, paginated=False, header_ids=None, footer_ids=None,
+                 scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET):
         """
         Initializes the Screenshot class. These variable will be used throughout to help determine how to capture pages
         for this website.
@@ -33,10 +33,11 @@ class Screenshot:
         """
         #- Set parameters as class variables
         self.sh = selenium_helper
-        self.paginated = paginated or False
+        self.paginated = paginated
         self.headers = header_ids
         self.footers = footer_ids
-        self.scroll_padding = scroll_padding or DEFAULT_SCROLL_PADDING
+        self.scroll_padding = scroll_padding
+        self.pixel_match_offset = pixel_match_offset
 
     def capture_page(self, viewport_only=False):
         """
@@ -64,13 +65,13 @@ class Screenshot:
             message = "Unhandled exception while taking the screenshot | {0}".format(e)
             raise ScreenshotException(message, stacktrace=traceback.format_exc())
 
-    def capture_scrolling_element(self, element_selector, viewport_only=True):
+    def capture_scrolling_element(self, css_selector, viewport_only=True):
         """
         This method will scroll an element one height (with padding) and take a screenshot each scroll until the element
         has been scrolled to the bottom. You can choose to capture the whole page (helpful when the scrollable element
         is taller than the viewport) or just the viewport area
         :param
-            - element_selector: string - The css selector for the element that you plan to scroll
+            - css_selector:     string - The css selector for the element that you plan to scroll
             - viewport_only:    bool   - Whether to capture just the viewport's visible area or not (each screenshot
                                        after scrolling)
         :return
@@ -79,7 +80,8 @@ class Screenshot:
         try:
             image_list = []
             # Scroll the element to the top
-            self.sh.scroll_an_element(element_selector, scroll_top=True)
+            self.sh.scroll_an_element(css_selector, scroll_top=True)
+
             while True:
                 #- Capture the image
                 if viewport_only:
@@ -87,12 +89,12 @@ class Screenshot:
                 else:
                     image_list.append(self._capture_full_page())
 
-                if self.sh.is_element_scroll_position_at_bottom(element_selector):
+                if self.sh.is_element_scroll_position_at_bottom(css_selector):
                     #- Stop capturing once you're at the bottom
                     break
                 else:
                     #- Scroll down for the next one!
-                    self.sh.scroll_an_element(element_selector, scroll_padding=self.scroll_padding)
+                    self.sh.scroll_an_element(css_selector, scroll_padding=self.scroll_padding)
 
             return image_list
 
@@ -102,10 +104,10 @@ class Screenshot:
             raise error
         except Exception as e:
             message = "Unhandled exception while taking the scrolling screenshot " \
-                      "of the element '{0}' | {1}".format(element_selector, e)
+                      "of the element '{0}' | {1}".format(css_selector, e)
             raise ScreenshotException(message,
                                       stacktrace=traceback.format_exc(),
-                                      details={"css_selector": element_selector})
+                                      details={"css_selector": css_selector})
 
     def _capture_single_viewport(self):
         """
@@ -155,13 +157,13 @@ class Screenshot:
 
         return self._create_image_file(image_data)
 
-    def _hide_elements(self, element_selectors):
+    def _hide_elements(self, css_selectors):
         """
         Hides all elements in the given list
         :param
-            - element_selectors:    list - A list of the elements you would like to hide
+            - css_selectors:    list - A list of the elements you would like to hide
         """
-        for selector in element_selectors:
+        for selector in css_selectors:
             try:
                 self.sh.hide_element(selector)
             #- Continue to the next item is this one did not exist or was already not visible
@@ -170,14 +172,14 @@ class Screenshot:
             except ElementError:
                 pass
 
-    def _show_elements(self, element_selectors):
+    def _show_elements(self, css_selectors):
         """
         Shows all elements in the given list
         :param
-            - element_selectors:    list - A list of the elements you would like to make visible
+            - css_selectors:    list - A list of the elements you would like to make visible
         """
         #- Show footer items again
-        for selector in element_selectors:
+        for selector in css_selectors:
             try:
                 self.sh.show_element(selector)
             #- Continue to the next item is this one did not exist
@@ -203,8 +205,7 @@ class Screenshot:
 
             #- Scroll for the next one!
             self.sh.scroll_to_position(current_scroll_position + viewport_height - self.scroll_padding)
-            # TODO: Update to use new Selenium helper methods when available
-            new_scroll_position = self.sh.pt("return window.scrollY;")
+            new_scroll_position = self.sh.get_window_current_scroll_position()
 
             #- Break if the scroll position did not change (because it was at the bottom)
             if new_scroll_position == current_scroll_position:
@@ -232,8 +233,7 @@ class Screenshot:
         if viewport_only:
             #-- Crop the image to just the visible area
             #- Top of the viewport
-            #TODO: Update this once selenium helpers has it
-            current_scroll_position = self.sh.driver.execute_script("return window.scrollY;")
+            current_scroll_position = self.sh.get_window_current_scroll_position()
 
             #- Viewport Dimensions
             viewport_width, viewport_height = self.sh.get_viewport_size()
@@ -267,15 +267,14 @@ class Screenshot:
 
             #--- Find a place in both images that match then crop and stitch them at that location
             crop_row = 0
-            pixel_range_offset = 100
             header_image_height = header_image.height
             #- Set the offset to the height of the image if the height is less than the offset
-            if pixel_range_offset > header_image_height:
-                pixel_range_offset = header_image_height
+            if self.pixel_match_offset > header_image_height:
+                self.pixel_match_offset = header_image_height
 
             #-- Find the pixel row in the footer image that matches the bottom row in the header image
             #- Grab the last 100 rows of header_image
-            header_last_hundred_rows = header_array[header_image_height - pixel_range_offset: header_image_height]
+            header_last_hundred_rows = header_array[header_image_height - self.pixel_match_offset: header_image_height]
 
             #- Iterates throughout the check, will match the height of the row being checked in the image.
             for i, footer_row in enumerate(footer_array):
@@ -291,9 +290,9 @@ class Screenshot:
                         #  the header image we grabbed at the start of this check
                         if numpy.array_equal(footer_array[i + y], header_last_hundred_rows[y]):
                             #- Check whether we've found 100 matching rows or not
-                            if y == pixel_range_offset - 1:
+                            if y == self.pixel_match_offset - 1:
                                 #- Yes! All 100 matched. Set the crop row to this row
-                                crop_row = i + pixel_range_offset
+                                crop_row = i + self.pixel_match_offset
                                 break
 
             #- If no rows matched, crop at height of header image
