@@ -5,6 +5,7 @@ from selenium import common
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as expected_condition
 import traceback
@@ -452,6 +453,19 @@ class SeleniumHelpers:
                 message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
+
+    def send_special_key(self, special_key):
+        """
+        This will send a special key through to the driver (e.g. TAB, ENTER, RETURN).
+        :param
+            -   special_key:  string - The key that will be sent through to the driver.
+        """
+        try:
+            ActionChains(self.driver).send_keys(getattr(Keys, special_key.upper())).perform()
+        except Exception as send_special_key_error:
+            message = "Unable to send the special key '{0}'.\n" \
+                      "<{1}>".format(special_key, send_special_key_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def hover_on_element(self, css_selector=None, web_element=None):
         """
