@@ -10,7 +10,7 @@ DEFAULT_PIXEL_MATCH_OFFSET = 100
 
 class Screenshot:
     """
-    #TODO:
+    A helper class for taking screenshots using a Selenium Helper instance
     """
     def __init__(self, selenium_helper, paginated=False, header_ids=None, footer_ids=None,
                  scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET):
@@ -128,7 +128,7 @@ class Screenshot:
         """
         if self.headers and self.footers:
             #- Capture viewport size window of the headers
-            self.sh.scroll_to_position(0)
+            self.sh.scroll_window_to_position(0)
             self._hide_elements(self.footers)
             header_image = self._get_image_data(True)
 
@@ -146,11 +146,11 @@ class Screenshot:
             image_data = self._crop_and_stitch_image(header_image, footer_image)
         elif self.headers:
             #- Scroll to the top so that the headers are not covering content
-            self.sh.scroll_to_position(0)
+            self.sh.scroll_window_to_position(0)
             image_data = self._get_image_data()
         elif self.footers:
             #- Scroll to the bottom so that the footer items are not covering content
-            self.sh.scroll_to_position(40000)
+            self.sh.scroll_window_to_position(40000)
             image_data = self._get_image_data()
         else:
             image_data = self._get_image_data()
@@ -194,7 +194,7 @@ class Screenshot:
         image_list = []
 
         #- Scroll page to the top
-        self.sh.scroll_to_position(0)
+        self.sh.scroll_window_to_position(0)
 
         current_scroll_position = 0
         viewport_height = self.sh.driver.execute_script("return document.documentElement.clientHeight")
@@ -204,7 +204,7 @@ class Screenshot:
             image_list.append(self._capture_single_viewport())
 
             #- Scroll for the next one!
-            self.sh.scroll_to_position(current_scroll_position + viewport_height - self.scroll_padding)
+            self.sh.scroll_window_to_position(current_scroll_position + viewport_height - self.scroll_padding)
             new_scroll_position = self.sh.get_window_current_scroll_position()
 
             #- Break if the scroll position did not change (because it was at the bottom)
