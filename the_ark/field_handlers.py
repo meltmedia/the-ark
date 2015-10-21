@@ -108,10 +108,10 @@ class FieldHandler():
         """
         try:
             #--- Handle the field
-            self.sh.fill_an_element(css_selector, input_text)
+            self.sh.fill_an_element(css_selector=css_selector, fill_text=input_text)
             #- Fill in the confirm field as well, if provided
             if confirm_css_selector:
-                self.sh.fill_an_element(confirm_css_selector, input_text)
+                self.sh.fill_an_element(css_selector=confirm_css_selector, fill_text=input_text)
 
         except selenium_helpers.SeleniumHelperExceptions as selenium_error:
             message = "A selenium issue arose while handling the text field."
@@ -141,7 +141,7 @@ class FieldHandler():
             #--- Handle the field
             for index in input_indexes:
                 current_test_index = index
-                self.sh.click_an_element(enums[index]["css_selector"])
+                self.sh.click_an_element(css_selector=enums[index]["css_selector"])
 
         except KeyError as key:
             message = "Key {0} is missing from the dictionary at " \
@@ -171,7 +171,7 @@ class FieldHandler():
         """
         try:
             #--- Handle the field
-            self.sh.click_an_element(enums[input_index]["css_selector"])
+            self.sh.click_an_element(css_selector=enums[input_index]["css_selector"])
 
         except KeyError as key:
             message = "Key {0} is missing from the dictionary at " \
@@ -205,7 +205,7 @@ class FieldHandler():
             if first_valid:
                 index_offset = 1
 
-            self.sh.click_an_element("{0} option:nth-child({1})".format(
+            self.sh.click_an_element(css_selector="{0} option:nth-child({1})".format(
                 css_selector, input_index + index_offset))
 
         except selenium_helpers.SeleniumHelperExceptions as selenium_error:
@@ -234,9 +234,9 @@ class FieldHandler():
         try:
             #--- Handle the field
             #- Click the parent element to reveal the options
-            self.sh.click_an_element(css_selector)
+            self.sh.click_an_element(css_selector=css_selector)
             #- Click the option that corresponds with the css_selector in the given index of the enum
-            self.sh.click_an_element(enums[input_index]["css_selector"])
+            self.sh.click_an_element(css_selector=enums[input_index]["css_selector"])
 
         except KeyError as key:
             message = "Key {0} is missing from the dictionary at " \
@@ -261,7 +261,7 @@ class FieldHandler():
             - css_selector:     string - The element's css selector in the webpage's DOM.
         """
         try:
-            self.sh.click_an_element(css_selector)
+            self.sh.click_an_element(css_selector=css_selector)
 
         except selenium_helpers.SeleniumHelperExceptions as selenium_error:
             message = "A selenium issue arose while attempting to select click the button"
