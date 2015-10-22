@@ -550,13 +550,13 @@ class SeleniumHelpers:
             -   scroll_bottom:  boolean - Whether or not the element will be scrolled to the bottom.
         """
         try:
-            if type(y_position) == int or type(x_position) == int:
-                self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
-            elif scroll_top:
+            if scroll_top:
                 self.driver.execute_script("window.scrollTo(0, 0);")
             elif scroll_bottom:
                 total_height = self.driver.execute_script("var height = document.body.scrollHeight; return height")
                 self.driver.execute_script("window.scrollTo(0, arguments[0]);", total_height)
+            elif type(y_position) == int or type(x_position) == int:
+                self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
             else:
                 message = "Unable to scroll to position ('{0}', '{1}') on page '{2}'.".format(x_position, y_position,
                                                                                               self.driver.current_url)

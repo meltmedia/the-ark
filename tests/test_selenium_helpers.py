@@ -486,11 +486,6 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(Exception, self.sh.scroll_to_element, css_selector="*invalid a")
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
-    def test_scroll_window_to_position_valid(self, mock_scroll_position):
-        self.sh.scroll_window_to_position(y_position=0, x_position=10)
-        self.assertTrue(mock_scroll_position.called)
-
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_window_to_top(self, mock_scroll_top):
         self.sh.scroll_window_to_position(scroll_top=True)
         self.assertTrue(mock_scroll_top.called)
@@ -500,8 +495,14 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.sh.scroll_window_to_position(scroll_bottom=True)
         self.assertTrue(mock_scroll_bottom.called)
 
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_scroll_window_to_position_valid(self, mock_scroll_position):
+        self.sh.scroll_window_to_position(y_position=0, x_position=10)
+        self.assertTrue(mock_scroll_position.called)
+
     def test_scroll_window_to_position_invalid(self):
-        self.assertRaises(selenium_helpers.ScrollPositionError, self.sh.scroll_window_to_position, None, None)
+        self.assertRaises(selenium_helpers.ScrollPositionError, self.sh.scroll_window_to_position,
+                          y_position=None, x_position=None)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_get_window_current_scroll_position_both_valid(self, mock_scroll_both):
