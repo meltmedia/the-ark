@@ -226,14 +226,14 @@ class FieldHandlerTestCase(unittest.TestCase):
     #--- Handle Text
     def test_handle_text_without_confirm(self):
         self.fh.handle_text("selector", "input text")
-        self.sh.fill_an_element.assert_called_once_with("selector", "input text")
+        self.sh.fill_an_element.assert_called_once_with(css_selector="selector", fill_text="input text")
 
     def test_handle_text_with_confirm(self):
         css_selector = "selector"
         input_text = "input text"
         confirm_css_selector = "confirm"
         self.fh.handle_text(css_selector, input_text, confirm_css_selector)
-        self.sh.fill_an_element.assert_called_with(confirm_css_selector, input_text)
+        self.sh.fill_an_element.assert_called_with(css_selector=confirm_css_selector, fill_text=input_text)
 
     def test_handle_text_selenium_exception(self):
         self.sh.fill_an_element.side_effect = selenium_helpers.SeleniumHelperExceptions("message text",
@@ -251,7 +251,7 @@ class FieldHandlerTestCase(unittest.TestCase):
     def test_handle_check_box(self):
         enum = [{"css_selector": "selector.1"}, {"css_selector": "selector.2"}]
         self.fh.handle_check_box(enum, [0, 1])
-        self.sh.click_an_element.assert_called_with(enum[1]["css_selector"])
+        self.sh.click_an_element.assert_called_with(css_selector=enum[1]["css_selector"])
 
     def test_handle_check_box_key_error(self):
         enum = [{"bad_key": "selector.1"}, {"css_selector": "selector.2"}]
@@ -277,7 +277,7 @@ class FieldHandlerTestCase(unittest.TestCase):
     def test_handle_radio_button(self):
         enum = [{"css_selector": "selector.1"}, {"css_selector": "selector.2"}]
         self.fh.handle_radio_button(enum, 1)
-        self.sh.click_an_element.assert_called_with(enum[1]["css_selector"])
+        self.sh.click_an_element.assert_called_with(css_selector=enum[1]["css_selector"])
 
     def test_handle_radio_button_key_error(self):
         enum = [{"bad_key": "selector.1"}, {"css_selector": "selector.1"}]
@@ -303,12 +303,12 @@ class FieldHandlerTestCase(unittest.TestCase):
     def test_handle_select_with_first_invalid(self):
         selector = "select.1"
         self.fh.handle_select(selector, 1)
-        self.sh.click_an_element.assert_called_once_with("{0} option:nth-child({1})".format(selector, 3))
+        self.sh.click_an_element.assert_called_once_with(css_selector="{0} option:nth-child({1})".format(selector, 3))
 
     def test_handle_select_with_first_valid(self):
         selector = "select.1"
         self.fh.handle_select(selector, 1, True)
-        self.sh.click_an_element.assert_called_once_with("{0} option:nth-child({1})".format(selector, 2))
+        self.sh.click_an_element.assert_called_once_with(css_selector="{0} option:nth-child({1})".format(selector, 2))
 
     def test_handle_select_selenium_exception(self):
         self.sh.click_an_element.side_effect = selenium_helpers.SeleniumHelperExceptions("message text",
@@ -328,7 +328,7 @@ class FieldHandlerTestCase(unittest.TestCase):
         css_selector = "selector.1"
         enum = [{"css_selector": "selector.1"}, {"css_selector": "selector.2"}]
         self.fh.handle_drop_down(css_selector, enum, 1)
-        self.sh.click_an_element.assert_called_with(enum[1]["css_selector"])
+        self.sh.click_an_element.assert_called_with(css_selector=enum[1]["css_selector"])
 
     def test_handle_drop_down_key_error(self):
         css_selector = "selector.1"
@@ -355,7 +355,7 @@ class FieldHandlerTestCase(unittest.TestCase):
     def test_handle_button(self):
         css_selector = "selector.1"
         self.fh.handle_button(css_selector)
-        self.sh.click_an_element.assert_called_with(css_selector)
+        self.sh.click_an_element.assert_called_with(css_selector=css_selector)
 
     def test_handle_button_selenium_exception(self):
         css_selector = "selector.1"
