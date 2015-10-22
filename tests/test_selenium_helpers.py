@@ -501,7 +501,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertTrue(mock_scroll_position.called)
 
     def test_scroll_window_to_position_invalid(self):
-        self.assertRaises(selenium_helpers.ScrollPositionError, self.sh.scroll_window_to_position,
+        self.assertRaises(selenium_helpers.DriverAttributeError, self.sh.scroll_window_to_position,
                           y_position=None, x_position=None)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
