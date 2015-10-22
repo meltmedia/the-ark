@@ -496,7 +496,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertTrue(mock_scroll_top.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
-    def test_scroll_window_to_top(self, mock_scroll_bottom):
+    def test_scroll_window_to_bottom(self, mock_scroll_bottom):
         self.sh.scroll_window_to_position(scroll_bottom=True)
         self.assertTrue(mock_scroll_bottom.called)
 
