@@ -490,6 +490,16 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.sh.scroll_window_to_position(y_position=0, x_position=10)
         self.assertTrue(mock_scroll_position.called)
 
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_scroll_window_to_top(self, mock_scroll_top):
+        self.sh.scroll_window_to_position(scroll_top=True)
+        self.assertTrue(mock_scroll_top.called)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_scroll_window_to_top(self, mock_scroll_bottom):
+        self.sh.scroll_window_to_position(scroll_bottom=True)
+        self.assertTrue(mock_scroll_bottom.called)
+
     def test_scroll_window_to_position_invalid(self):
         self.assertRaises(selenium_helpers.ScrollPositionError, self.sh.scroll_window_to_position, None, None)
 

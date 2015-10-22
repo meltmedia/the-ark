@@ -549,18 +549,24 @@ class SeleniumHelpers:
             -   scroll_top: boolean - Whether or not the element will be scrolled to the top.
             -   scroll_bottom:  boolean - Whether or not the element will be scrolled to the bottom.
         """
-        if type(y_position) == int or type(x_position) == int:
-            self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
-        elif scroll_top:
-            self.driver.execute_script("window.scrollTo(0, 0);")
-        elif scroll_bottom:
-            total_height = self.driver.execute_script("var height = document.body.scrollHeight; return height")
-            self.driver.execute_script("window.scrollTo(0, arguments[0]);", total_height)
-        else:
-            message = "Unable to scroll to position ('{0}', '{1}') on page '{2}'.".format(x_position, y_position,
-                                                                                          self.driver.current_url)
-            raise ScrollPositionError(msg=message, stacktrace=traceback.format_exc(),
-                                      current_url=self.driver.current_url, y_position=y_position, x_position=x_position)
+        try:
+            if type(y_position) == int or type(x_position) == int:
+                self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
+            elif scroll_top:
+                self.driver.execute_script("window.scrollTo(0, 0);")
+            elif scroll_bottom:
+                total_height = self.driver.execute_script("var height = document.body.scrollHeight; return height")
+                self.driver.execute_script("window.scrollTo(0, arguments[0]);", total_height)
+            else:
+                message = "Unable to scroll to position ('{0}', '{1}') on page '{2}'.".format(x_position, y_position,
+                                                                                              self.driver.current_url)
+                raise ScrollPositionError(msg=message, stacktrace=traceback.format_exc(),
+                                          current_url=self.driver.current_url, y_position=y_position,
+                                          x_position=x_position)
+        except Exception as scroll_window_to_position_error:
+            message = "Unable to scroll to position ('{0}', '{1}').\n" \
+                      "<{2}>".format(x_position, y_position, scroll_window_to_position_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def get_window_current_scroll_position(self, get_both_positions=False, get_only_x_position=False):
         """
