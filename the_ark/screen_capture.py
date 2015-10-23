@@ -89,7 +89,7 @@ class Screenshot:
                 else:
                     image_list.append(self._capture_full_page())
 
-                if self.sh.is_element_scroll_position_at_bottom(css_selector):
+                if self.sh.get_is_element_scroll_position_at_bottom(css_selector):
                     #- Stop capturing once you're at the bottom
                     break
                 else:
