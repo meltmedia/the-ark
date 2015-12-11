@@ -624,7 +624,7 @@ class SeleniumHelpers:
                                                                 "var maxHeight = scrollHeight - clientHeight; "
                                                                 "return maxHeight;", element)
                 self.driver.execute_script("arguments[0].scrollTop = arguments[1];", element, element_max_height)
-            elif type(y_position) == int or type(x_position) == int:
+            elif (y_position or x_position) > 0:
                 self.driver.execute_script("arguments[0].scrollTop = arguments[1];", element, y_position)
                 self.driver.execute_script("arguments[0].scrollLeft = arguments[1];", element, x_position)
             else:

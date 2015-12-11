@@ -547,10 +547,16 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertTrue(mock_scroll_element_bottom.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
-    def test_scroll_element_y_position_valid(self, mock_scroll_element_position):
+    def test_scroll_element_y_position_valid(self, mock_scroll_element_vertical):
         valid_css_selector = ".scrollable"
         self.sh.scroll_an_element(css_selector=valid_css_selector, y_position=50)
-        self.assertTrue(mock_scroll_element_position.called)
+        self.assertTrue(mock_scroll_element_vertical.called)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_scroll_element_x_position_valid(self, mock_scroll_element_horizontal):
+        valid_css_selector = ".image-scroll"
+        self.sh.scroll_an_element(css_selector=valid_css_selector, x_position=50)
+        self.assertTrue(mock_scroll_element_horizontal.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_element_valid(self, mock_scroll_element_padding):
