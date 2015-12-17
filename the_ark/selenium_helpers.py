@@ -593,7 +593,7 @@ class SeleniumHelpers:
                       "<{0}>".format(get_window_current_scroll_position_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
-    def scroll_an_element(self, css_selector=None, web_element=None, scroll_position=None, scroll_padding=0,
+    def scroll_an_element(self, css_selector=None, web_element=None, y_position=0, x_position=0, scroll_padding=0,
                           scroll_top=False, scroll_bottom=False):
         """
         This will scroll an element on a page (e.g. An ISI modal).  The user can have it scroll to the top of the
@@ -602,7 +602,8 @@ class SeleniumHelpers:
         :param
             -   css_selector:   string - The specific element that will be interacted with.
             -   web_element:    object - The WebElement that will be interacted with.
-            -   scroll_position:    integer - The position that the element will be scrolled to.
+            -   y_position:    integer - The position that the element will be scrolled to vertically.
+            -   x_position:    integer - The position that the element will be scrolled to horizontally.
             -   scroll_padding: integer - The amount of padding that will be used when scroll by the element's height.
             -   scroll_top: boolean - Whether or not the element will be scrolled to the top.
             -   scroll_bottom:  boolean - Whether or not the element will be scrolled to the bottom.
@@ -623,8 +624,9 @@ class SeleniumHelpers:
                                                                 "var maxHeight = scrollHeight - clientHeight; "
                                                                 "return maxHeight;", element)
                 self.driver.execute_script("arguments[0].scrollTop = arguments[1];", element, element_max_height)
-            elif scroll_position:
-                self.driver.execute_script("arguments[0].scrollTop = arguments[1];", element, scroll_position)
+            elif (y_position or x_position) > 0:
+                self.driver.execute_script("arguments[0].scrollTop = arguments[1];", element, y_position)
+                self.driver.execute_script("arguments[0].scrollLeft = arguments[1];", element, x_position)
             else:
                 element_height = self.driver.execute_script("var element = arguments[0]; "
                                                             "var elementHeight = element.offsetHeight; "
