@@ -283,6 +283,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertEqual(self.sh.get_element(valid_css_selector).location, {'y': 21, 'x': 48})
 
     def test_get_invalid(self):
+        self.assertRaises(selenium_helpers.ElementError, self.sh.get_element, ".invalid")
+
+    def test_get_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.get_element, "*invalid")
 
     def test_get_list_of_elements_valid(self):

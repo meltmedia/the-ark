@@ -276,9 +276,13 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement object that has been found.
         """
         try:
-            self.ensure_element_exists(css_selector)
             web_element = self.driver.find_element_by_css_selector(css_selector)
             return web_element
+        except common.exceptions.NoSuchElementException as no_such:
+            message = "Element '{0}' does not exist on page '{1}' and could not be returned.\n" \
+                      "<{2}>".format(css_selector, self.driver.current_url, no_such)
+            raise ElementError(msg=message, stacktrace=traceback.format_exc(),
+                               current_url=self.driver.current_url, css_selector=css_selector)
         except Exception as unexpected_error:
             message = "Unable to find and return the element '{0}' on page '{1}'.\n" \
                       "<{2}>".format(css_selector, self.driver.current_url, unexpected_error)
