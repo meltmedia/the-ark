@@ -102,28 +102,26 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_resize_window_invalid(self):
         self.assertRaises(selenium_helpers.DriverSizeError, self.sh.resize_browser, width="text")
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_window_size")
-    def test_get_window_size_width_valid(self, mock_width_size):
-        self.sh.get_window_size(get_only_width=True)
-        mock_width_size.assert_called_once()
+    def test_get_window_size_width_valid(self):
+        width = self.sh.get_window_size(get_only_width=True)
+        self.assertEqual(width, 400)
 
     def test_get_window_size_width_value_valid(self):
         window_width = self.sh.get_window_size(get_only_width=True)
         self.assertEqual(window_width, 400)
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_window_size")
-    def test_get_window_size_width_valid(self, mock_height_size):
-        self.sh.get_window_size(get_only_height=True)
-        mock_height_size.assert_called_once()
+    def test_get_window_size_height_valid(self):
+        height = self.sh.get_window_size(get_only_height=True)
+        self.assertEqual(height, 300)
 
     def test_get_window_size_height_value_valid(self):
         window_height = self.sh.get_window_size(get_only_height=True)
         self.assertEqual(window_height, 300)
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_window_size")
-    def test_get_window_size_valid(self, mock_window_size):
-        self.sh.get_window_size()
-        mock_window_size.assert_called_once()
+    def test_get_window_size_valid(self):
+        width, height = self.sh.get_window_size()
+        self.assertEqual(width, 400)
+        self.assertEqual(height, 300)
 
     def test_get_window_size_value_valid(self):
         window_width, window_height = self.sh.get_window_size()
@@ -283,6 +281,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertEqual(self.sh.get_element(valid_css_selector).location, {'y': 21, 'x': 48})
 
     def test_get_invalid(self):
+        self.assertRaises(selenium_helpers.ElementError, self.sh.get_element, ".invalid")
+
+    def test_get_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.get_element, "*invalid")
 
     def test_get_list_of_elements_valid(self):
