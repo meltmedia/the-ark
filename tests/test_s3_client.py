@@ -40,8 +40,8 @@ class S3MethodTestCase(unittest.TestCase):
 
         self.client.connect()
 
-        s3_cls.assert_called_once()
-        cls_inst.get_bucket.assert_called_once()
+        s3_cls.assert_called_once_with(is_secure=False)
+        cls_inst.get_bucket.assert_called_once_with('some bucket', validate=False)
 
         # make it go boom
         self.client.s3_connection = None

@@ -10,7 +10,9 @@ class EmailClientTestCase(unittest.TestCase):
         send.return_value = "Success!"
         ec = EmailClient("fake_key")
         ec.send_email("from.test@test.com", ["to.test@test.com"], "Message Text")
-        send.assert_called()
+        send.assert_called_once_with(message={'from_email': 'from.test@test.com', 'from_name': 'The Ark',
+                                              'html': 'Message Text', 'to': [{'email': 'to.test@test.com'}],
+                                              'subject': 'A Message From The Ark'})
 
     @patch("mandrill.Messages.send")
     def test_unsuccessful_send(self, send):
