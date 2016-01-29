@@ -80,7 +80,7 @@ class ScreenCaptureTestCase(unittest.TestCase):
     #--- Scrolling Element
     def test_scrolling_element_with_viewport_only(self):
         sh = SeleniumHelpers()
-        sc = Screenshot(sh, scroll_padding=100)
+        sc = Screenshot(sh, scroll_padding=100, file_extenson="bmp")
         sh.create_driver(browserName="phantomjs")
         sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
         self.assertIsInstance(sc.capture_scrolling_element(".scrollable"), list)
