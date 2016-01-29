@@ -13,7 +13,8 @@ class Screenshot:
     A helper class for taking screenshots using a Selenium Helper instance
     """
     def __init__(self, selenium_helper, paginated=False, header_ids=None, footer_ids=None,
-                 scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET):
+                 scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET,
+                 file_extenson=SCREENSHOT_FILE_EXTENSION):
         """
         Initializes the Screenshot class. These variable will be used throughout to help determine how to capture pages
         for this website.
@@ -30,6 +31,8 @@ class Screenshot:
             - scroll_padding:   int - The height, in pixels, of the overlap between paginated captures. This is also
                                     used when scrolling elements. the element is scrolled its height minus the padding
                                     to create an overlapping of content shown on both images to not cut any text in half
+            - file_extenson:    string - If provided, this extension will be used while creating the image. This must
+                                        be an extension that is usable with PIL
         """
         #- Set parameters as class variables
         self.sh = selenium_helper
@@ -38,6 +41,7 @@ class Screenshot:
         self.footers = footer_ids
         self.scroll_padding = scroll_padding
         self.pixel_match_offset = pixel_match_offset
+        self.file_extenson = file_extenson
 
     def capture_page(self, viewport_only=False):
         """
@@ -337,8 +341,8 @@ class Screenshot:
         """
         #- Instantiate the file object
         image_file = StringIO()
-        #- Save the image canvas to the file as a PNG tpe
-        image.save(image_file, SCREENSHOT_FILE_EXTENSION[1:].upper())
+        #- Save the image canvas to the file as the given file type
+        image.save(image_file, self.file_extenson[1:].upper())
         #- Set the file marker back to the beginning
         image_file.seek(0)
 
