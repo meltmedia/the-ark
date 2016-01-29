@@ -5,7 +5,7 @@ from StringIO import StringIO
 import traceback
 
 DEFAULT_SCROLL_PADDING = 100
-SCREENSHOT_FILE_EXTENSION = ".png"
+SCREENSHOT_FILE_EXTENSION = "png"
 DEFAULT_PIXEL_MATCH_OFFSET = 100
 
 class Screenshot:
@@ -342,7 +342,7 @@ class Screenshot:
         #- Instantiate the file object
         image_file = StringIO()
         #- Save the image canvas to the file as the given file type
-        image.save(image_file, self.file_extenson[1:].upper())
+        image.save(image_file, self.file_extenson.upper())
         #- Set the file marker back to the beginning
         image_file.seek(0)
 
