@@ -69,7 +69,7 @@ class Screenshot:
             message = "Unhandled exception while taking the screenshot | {0}".format(e)
             raise ScreenshotException(message, stacktrace=traceback.format_exc())
 
-    def capture_scrolling_element(self, css_selector, viewport_only=True):
+    def capture_scrolling_element(self, css_selector, viewport_only=True, scroll_padding=None):
         """
         This method will scroll an element one height (with padding) and take a screenshot each scroll until the element
         has been scrolled to the bottom. You can choose to capture the whole page (helpful when the scrollable element
@@ -78,9 +78,13 @@ class Screenshot:
             - css_selector:     string - The css selector for the element that you plan to scroll
             - viewport_only:    bool   - Whether to capture just the viewport's visible area or not (each screenshot
                                        after scrolling)
+            - scroll_padding:   int    - Overwrites the default scroll padding for the class. This can be used when the
+                                       element, or site, have greatly different scroll padding numbers
         :return
             - StringIO:     list - A list containing multiple StringIO image objects
         """
+        padding = scroll_padding if scroll_padding else self.scroll_padding
+
         try:
             image_list = []
             # Scroll the element to the top
@@ -98,7 +102,7 @@ class Screenshot:
                     break
                 else:
                     #- Scroll down for the next one!
-                    self.sh.scroll_an_element(css_selector, scroll_padding=self.scroll_padding)
+                    self.sh.scroll_an_element(css_selector, scroll_padding=padding)
 
             return image_list
 
