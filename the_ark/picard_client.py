@@ -10,13 +10,13 @@ class PicardClient(object):
         Contains methods used to query Epsilon.
         """
 
-    def send_to_picard(self, schema_url, form_data, headers=None):
+    def send_to_picard(self, schema_url, form_data, headers=None, **kwargs):
         r = None
 
         if not headers:
             headers = self.create_headers()
 
-        r = requests.post(schema_url, form_data, headers=headers)
+        r = requests.post(schema_url, form_data, headers=headers, **kwargs)
 
         #- Able to reach Picard, but request failed
         if r.status_code == 400:
