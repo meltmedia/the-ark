@@ -299,7 +299,7 @@ class SeleniumHelpers:
         :return
             -   list_of_elements:   list - The full list of web elements from a parent selector (e.g. drop down menus)
         """
-        self.ensure_element_visible(css_selector)
+        self.ensure_element_exists(css_selector)
         list_of_elements = self.driver.find_elements_by_css_selector(css_selector)
         return list_of_elements
 

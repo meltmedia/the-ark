@@ -5,7 +5,7 @@ from StringIO import StringIO
 import traceback
 
 DEFAULT_SCROLL_PADDING = 100
-SCREENSHOT_FILE_EXTENSION = ".png"
+SCREENSHOT_FILE_EXTENSION = "png"
 DEFAULT_PIXEL_MATCH_OFFSET = 100
 
 class Screenshot:
@@ -13,7 +13,8 @@ class Screenshot:
     A helper class for taking screenshots using a Selenium Helper instance
     """
     def __init__(self, selenium_helper, paginated=False, header_ids=None, footer_ids=None,
-                 scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET):
+                 scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET,
+                 file_extenson=SCREENSHOT_FILE_EXTENSION):
         """
         Initializes the Screenshot class. These variable will be used throughout to help determine how to capture pages
         for this website.
@@ -30,6 +31,8 @@ class Screenshot:
             - scroll_padding:   int - The height, in pixels, of the overlap between paginated captures. This is also
                                     used when scrolling elements. the element is scrolled its height minus the padding
                                     to create an overlapping of content shown on both images to not cut any text in half
+            - file_extenson:    string - If provided, this extension will be used while creating the image. This must
+                                        be an extension that is usable with PIL
         """
         #- Set parameters as class variables
         self.sh = selenium_helper
@@ -38,6 +41,7 @@ class Screenshot:
         self.footers = footer_ids
         self.scroll_padding = scroll_padding
         self.pixel_match_offset = pixel_match_offset
+        self.file_extenson = file_extenson
 
     def capture_page(self, viewport_only=False):
         """
@@ -65,7 +69,7 @@ class Screenshot:
             message = "Unhandled exception while taking the screenshot | {0}".format(e)
             raise ScreenshotException(message, stacktrace=traceback.format_exc())
 
-    def capture_scrolling_element(self, css_selector, viewport_only=True):
+    def capture_scrolling_element(self, css_selector, viewport_only=True, scroll_padding=None):
         """
         This method will scroll an element one height (with padding) and take a screenshot each scroll until the element
         has been scrolled to the bottom. You can choose to capture the whole page (helpful when the scrollable element
@@ -74,9 +78,13 @@ class Screenshot:
             - css_selector:     string - The css selector for the element that you plan to scroll
             - viewport_only:    bool   - Whether to capture just the viewport's visible area or not (each screenshot
                                        after scrolling)
+            - scroll_padding:   int    - Overwrites the default scroll padding for the class. This can be used when the
+                                       element, or site, have greatly different scroll padding numbers
         :return
             - StringIO:     list - A list containing multiple StringIO image objects
         """
+        padding = scroll_padding if scroll_padding else self.scroll_padding
+
         try:
             image_list = []
             # Scroll the element to the top
@@ -94,7 +102,7 @@ class Screenshot:
                     break
                 else:
                     #- Scroll down for the next one!
-                    self.sh.scroll_an_element(css_selector, scroll_padding=self.scroll_padding)
+                    self.sh.scroll_an_element(css_selector, scroll_padding=padding)
 
             return image_list
 
@@ -337,8 +345,8 @@ class Screenshot:
         """
         #- Instantiate the file object
         image_file = StringIO()
-        #- Save the image canvas to the file as a PNG tpe
-        image.save(image_file, SCREENSHOT_FILE_EXTENSION[1:].upper())
+        #- Save the image canvas to the file as the given file type
+        image.save(image_file, self.file_extenson.upper())
         #- Set the file marker back to the beginning
         image_file.seek(0)
 
