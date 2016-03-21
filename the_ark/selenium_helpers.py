@@ -230,7 +230,7 @@ class SeleniumHelpers:
                       "<{0}>".format(quit_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
-    def ensure_element_exists(self, css_selector):
+    def element_exists(self, css_selector):
         """
         This will ensure that an element exists on the page under test, if not an exception will be raised.
         :param
@@ -238,11 +238,13 @@ class SeleniumHelpers:
         """
         try:
             self.driver.find_element_by_css_selector(css_selector)
-        except common.exceptions.NoSuchElementException as no_such:
-            message = "Element '{0}' does not exist on page '{1}'.\n" \
-                      "<{2}>".format(css_selector, self.driver.current_url, no_such)
-            raise ElementError(msg=message, stacktrace=traceback.format_exc(),
-                               current_url=self.driver.current_url, css_selector=css_selector)
+            return True
+        except common.exceptions.NoSuchElementException:
+            return False
+            # message = "Element '{0}' does not exist on page '{1}'.\n" \
+            #           "<{2}>".format(css_selector, self.driver.current_url, no_such)
+            # raise ElementError(msg=message, stacktrace=traceback.format_exc(),
+            #                    current_url=self.driver.current_url, css_selector=css_selector)
 
     def ensure_element_visible(self, css_selector=None, web_element=None):
         """
