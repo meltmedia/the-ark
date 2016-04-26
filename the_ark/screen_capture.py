@@ -238,7 +238,9 @@ class Screenshot:
         #- Create an image canvas and write the byte data to it
         image = Image.open(StringIO(image_data.decode('base64')))
 
-        if viewport_only:
+        if self.sh.desired_capabilities.get("mobile"):
+            return image
+        elif viewport_only:
             #-- Crop the image to just the visible area
             #- Top of the viewport
             current_scroll_position = self.sh.get_window_current_scroll_position()
@@ -252,7 +254,6 @@ class Screenshot:
             #- Crop everything of the image but the visible area
             cropped_image = image.crop(crop_box)
             return cropped_image
-
         else:
             return image
 
