@@ -19,6 +19,7 @@ class SeleniumHelpers:
         """
         self.log = logging.getLogger(self.__class__.__name__)
         self.driver = None
+        self.desired_capabilities = {}
 
     def create_driver(self, **desired_capabilities):
         """
@@ -45,6 +46,10 @@ class SeleniumHelpers:
                 message = "No driver has been created. Pass through the needed desired capabilities in order to " \
                           "create a driver. | Desired Capabilities: {0}".format(desired_capabilities)
                 raise DriverAttributeError(msg=message)
+
+            # Set the desired_capabilities variable on the class if the browser creation was successful
+            self.desired_capabilities = desired_capabilities
+
             return self.driver
         except Exception as driver_creation_error:
             message = "There was an issue creating a driver with the specified desired capabilities: {0}\n" \
@@ -68,7 +73,7 @@ class SeleniumHelpers:
             else:
                 self.driver.set_window_size(self.driver.get_window_size()["width"], height)
         except Exception as resize_error:
-            message = "Unable to resize the browser with the give width ({0}) and/or height ({1}) value(s)\n" \
+            message = "Unable to resize the browser with the given width ({0}) and/or height ({1}) value(s)\n" \
                       "<{2}>".format(width, height, resize_error)
             raise DriverSizeError(msg=message, stacktrace=traceback.format_exc(), width=width, height=height)
 
