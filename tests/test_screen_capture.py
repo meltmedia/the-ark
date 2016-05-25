@@ -92,6 +92,16 @@ class ScreenCaptureTestCase(unittest.TestCase):
         sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
         self.assertIsInstance(sc.capture_scrolling_element(".scrollable", False), list)
 
+    @patch("PIL.Image")
+    def test_mobile_device_capture(self, image_class):
+        sh = SeleniumHelpers()
+        sc = Screenshot(sh, scroll_padding=100)
+        sh.create_driver(browserName="phantomjs")
+        sh.desired_capabilities["mobile"] = True
+        sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+        image = sc._get_image_data()
+        self.assertFalse(image_class.crop.called)
+
     #===================================================================
     #--- Helper Functions
     #===================================================================
