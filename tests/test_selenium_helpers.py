@@ -251,11 +251,11 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     @patch("selenium.webdriver.remote.webdriver.WebDriver.find_element_by_css_selector")
     def test_exist_valid(self, mock_find):
         valid_css_selector = ".valid"
-        self.sh.ensure_element_exists(valid_css_selector)
+        self.sh.element_exists(valid_css_selector)
         mock_find.assert_called_with(valid_css_selector)
 
     def test_exist_invalid(self):
-        self.assertRaises(selenium_helpers.ElementError, self.sh.ensure_element_exists, ".invalid")
+        self.assertEqual(self.sh.element_exists(".invalid"), False)
 
     def test_visible_web_element_valid(self):
         valid_css_selector = ".valid"
@@ -289,6 +289,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_list_of_elements_valid(self):
         valid_css_selector = ".valid-list li"
         self.assertEqual(len(self.sh.get_list_of_elements(valid_css_selector)), 3)
+
+    def test_get_list_of_elements_invalid(self):
+        self.assertRaises(selenium_helpers.ElementError, self.sh.get_list_of_elements, ".invalid")
 
     @patch("selenium.webdriver.support.ui.WebDriverWait.until")
     def test_wait_valid(self, mock_wait):

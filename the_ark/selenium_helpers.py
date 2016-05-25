@@ -235,7 +235,7 @@ class SeleniumHelpers:
                       "<{0}>".format(quit_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
-    def ensure_element_exists(self, css_selector):
+    def element_exists(self, css_selector):
         """
         This will ensure that an element exists on the page under test, if not an exception will be raised.
         :param
@@ -243,11 +243,9 @@ class SeleniumHelpers:
         """
         try:
             self.driver.find_element_by_css_selector(css_selector)
+            return True
         except common.exceptions.NoSuchElementException as no_such:
-            message = "Element '{0}' does not exist on page '{1}'.\n" \
-                      "<{2}>".format(css_selector, self.driver.current_url, no_such)
-            raise ElementError(msg=message, stacktrace=traceback.format_exc(),
-                               current_url=self.driver.current_url, css_selector=css_selector)
+            return False
 
     def ensure_element_visible(self, css_selector=None, web_element=None):
         """
@@ -259,8 +257,12 @@ class SeleniumHelpers:
         if web_element:
             element_visible = web_element.is_displayed()
         else:
-            self.ensure_element_exists(css_selector)
-            element_visible = self.driver.find_element_by_css_selector(css_selector).is_displayed()
+            if self.element_exists(css_selector):
+                element_visible = self.driver.find_element_by_css_selector(css_selector).is_displayed()
+            else:
+                message = "Element '{0}' does not exist on page '{1}'.".format(css_selector, self.driver.current_url)
+                raise ElementError(msg=message, stacktrace=traceback.format_exc(),
+                                   current_url=self.driver.current_url, css_selector=css_selector)
         if not element_visible:
             message = "The element is not visible on page '{0}'.".format(self.driver.current_url)
             if css_selector:
@@ -302,9 +304,13 @@ class SeleniumHelpers:
         :return
             -   list_of_elements:   list - The full list of web elements from a parent selector (e.g. drop down menus)
         """
-        self.ensure_element_exists(css_selector)
-        list_of_elements = self.driver.find_elements_by_css_selector(css_selector)
-        return list_of_elements
+        if self.element_exists(css_selector):
+            list_of_elements = self.driver.find_elements_by_css_selector(css_selector)
+            return list_of_elements
+        else:
+            message = "Element '{0}' does not exist on page '{1}'.".format(css_selector, self.driver.current_url)
+            raise ElementError(msg=message, stacktrace=traceback.format_exc(),
+                               current_url=self.driver.current_url, css_selector=css_selector)
 
     def wait_for_element(self, css_selector, wait_time=15):
         """
