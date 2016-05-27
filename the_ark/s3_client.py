@@ -7,6 +7,7 @@ import tempfile
 from boto.s3.key import Key
 from StringIO import StringIO
 
+
 class S3Client(object):
     """A client that helps user to send and get files from S3"""
     s3_connection = None
@@ -62,13 +63,15 @@ class S3Client(object):
             mime_type = mimetypes.guess_type(filename) if mime_type is None else mime_type
             s3_file.set_metadata('Content-Type', mime_type)
 
+            # - Check to see if file that is getting uploaded is greater than chunk_at_size then upload cool multi style
             if os.path.getsize(file_to_store) > chunk_at_size:
                 file_count = 0
                 # - Split the file and get it chunky
                 split_file_dir = self._split_file(file_to_store)
 
                 # - Initiate the file to be uploaded in parts
-                multipart_file = self.bucket.initiate_multipart_upload(s3_file.key, None, False, s3_file.set_metadata)
+                multipart_file = self.bucket.initiate_multipart_upload(key_name=s3_file.key,
+                                                                       metadata=s3_file.metadata)
 
                 # - Upload the file parts
                 for files in os.listdir(split_file_dir):
@@ -82,6 +85,7 @@ class S3Client(object):
                 # - Remove the folder from splitting the file
                 shutil.rmtree(split_file_dir)
 
+            # - The normal BS upload boo~~~~!
             else:
                 # - Determine whether the file_to_store is an object or file path/string
                 file_type = type(file_to_store)
