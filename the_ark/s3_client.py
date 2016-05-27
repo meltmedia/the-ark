@@ -1,9 +1,11 @@
 import boto.s3.connection
 import mimetypes
+import os
+import shutil
 import tempfile
-from StringIO import StringIO
-from boto.s3.key import Key
 
+from boto.s3.key import Key
+from StringIO import StringIO
 
 class S3Client(object):
     """A client that helps user to send and get files from S3"""
@@ -37,7 +39,7 @@ class S3Client(object):
             message = "Exception while connecting to S3: {0}".format(s3_connection_exception)
             raise S3ClientException(message)
 
-    def store_file(self, s3_path, file_to_store, filename, return_url=False, mime_type=None):
+    def store_file(self, s3_path, file_to_store, filename, return_url=False, mime_type=None, chunk_at_size=20000000):
         """
         Pushes the desired file up to S3 (e.g. log file).
         :param
@@ -46,6 +48,7 @@ class S3Client(object):
             - filename:         string - The name the file will have when on S3. Should include the file extension
             - return_url:       boolean - Whether to return the path to the file on S3
             - mime_type:        string - the mime type the file should be saved as, ex: text/html or image/png
+            - chunk_at_size:    int - the size of whick the file should be split to multi-upload (default ~ 20 mb)
         :return
             - file_url:         string - The path to the file on S3. This is returned only is return_url is set to true
         """
@@ -59,12 +62,33 @@ class S3Client(object):
             mime_type = mimetypes.guess_type(filename) if mime_type is None else mime_type
             s3_file.set_metadata('Content-Type', mime_type)
 
-            # - Determine whether the file_to_store is an object or file path/string
-            file_type = type(file_to_store)
-            if file_type == str:
-                s3_file.set_contents_from_filename(file_to_store)
+            if os.path.getsize(file_to_store) > chunk_at_size:
+                file_count = 0
+                # - Split the file and get it chunky
+                split_file_dir = self._split_file(file_to_store)
+
+                # - Initiate the file to be uploaded in parts
+                multipart_file = self.bucket.initiate_multipart_upload(s3_file.key, None, False, s3_file.set_metadata)
+
+                # - Upload the file parts
+                for files in os.listdir(split_file_dir):
+                    file_count += 1
+                    file_part = open(os.path.join(split_file_dir, files), 'rb')
+                    multipart_file.upload_part_from_file(file_part, file_count)
+
+                # - Complete the upload
+                multipart_file.complete_upload()
+
+                # - Remove the folder from splitting the file
+                shutil.rmtree(split_file_dir)
+
             else:
-                s3_file.set_contents_from_file(file_to_store)
+                # - Determine whether the file_to_store is an object or file path/string
+                file_type = type(file_to_store)
+                if file_type == str:
+                    s3_file.set_contents_from_filename(file_to_store)
+                else:
+                    s3_file.set_contents_from_file(file_to_store)
 
             if return_url:
                 file_key = self.bucket.get_key(s3_file.key)
@@ -171,10 +195,10 @@ class S3Client(object):
             WARNING: You cannot split into more than 9999 files.
 
             :param
-                - from_file: the file to split up
-                - file_chunk_size: the size the file should be chunked to (default is ~ 5 mb for the Amazon S3 minimum)
+                - from_file:        string - the file to split up
+                - file_chunk_size:  int - the size the file should be chunked to (default ~ 5 mb for Amazon S3 minimum)
             :return:
-                - temp_dir: the temp folder location of the split file, use this to iterate through for the split files
+                - temp_dir:         string - temp folder location of split file, use to iterate through the split files
             """
         try:
             temp_dir = tempfile.mkdtemp()
