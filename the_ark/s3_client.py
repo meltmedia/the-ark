@@ -1,7 +1,8 @@
+import boto.s3.connection
 import mimetypes
+import tempfile
 from StringIO import StringIO
 from boto.s3.key import Key
-import boto.s3.connection
 
 
 class S3Client(object):
@@ -23,14 +24,14 @@ class S3Client(object):
             return
 
         try:
-            #- Amazon S3 credentials will use Boto's fall back config, looks for boto.cfg then environment variables
+            # - Amazon S3 credentials will use Boto's fall back config, looks for boto.cfg then environment variables
             self.s3_connection = boto.s3.connection.S3Connection(
                 is_secure=False)
             self.bucket = self.s3_connection.get_bucket(
                 self.bucket_name, validate=False)
 
         except Exception as s3_connection_exception:
-            #- Reset the variables on failure to allow a reconnect
+            # - Reset the variables on failure to allow a reconnect
             self.s3_connection = None
             self.bucket = None
             message = "Exception while connecting to S3: {0}".format(s3_connection_exception)
@@ -53,12 +54,12 @@ class S3Client(object):
         try:
             s3_file = Key(self.bucket)
             s3_file.key = self._generate_file_path(s3_path, filename)
-            #--- Set the Content type for the file being sent (so that it downloads properly)
-            #- content_type can be 'image/png', 'application/pdf', 'text/plain', etc.
+            # --- Set the Content type for the file being sent (so that it downloads properly)
+            # - content_type can be 'image/png', 'application/pdf', 'text/plain', etc.
             mime_type = mimetypes.guess_type(filename) if mime_type is None else mime_type
             s3_file.set_metadata('Content-Type', mime_type)
 
-            #- Determine whether the file_to_store is an object or file path/string
+            # - Determine whether the file_to_store is an object or file path/string
             file_type = type(file_to_store)
             if file_type == str:
                 s3_file.set_contents_from_filename(file_to_store)
@@ -161,6 +162,38 @@ class S3Client(object):
             if not most_recent_key or key.last_modified > most_recent_key.last_modified:
                 most_recent_key = key
         return most_recent_key
+
+    def _split_file(self, from_file, file_chunk_size=5242880):
+        """
+            Split a given file into smaller chunks named partXXXX into a temp at a default size of ~ 5 mb. The temp
+            folder should be deleted after use.
+
+            WARNING: You cannot split into more than 9999 files.
+
+            :param
+                - from_file: the file to split up
+                - file_chunk_size: the size the file should be chunked to (default is ~ 5 mb for the Amazon S3 minimum)
+            :return:
+                - temp_dir: the temp folder location of the split file, use this to iterate through for the split files
+            """
+        try:
+            temp_dir = tempfile.mkdtemp()
+            part_number = 0
+            input_file = open(from_file, 'rb')  # use binary mode on Windows
+            while 1:  # eof=empty string from read
+                chunk = input_file.read(file_chunk_size)  # get next part <= chunk size
+                if not chunk: break
+                part_number += 1
+                filename = os.path.join(temp_dir, ('part%04d' % part_number))
+                fileobject = open(filename, 'wb')
+                fileobject.write(chunk)
+                fileobject.close()  # or simply open(  ).write(  )
+            input_file.close()
+            assert part_number <= 9999  # join sort fails if 5 digits
+            return temp_dir
+        except Exception as e:
+            print "Could not split the file.\nError: {}\n".format(e)
+            raise e
 
 
 class S3ClientException(Exception):
