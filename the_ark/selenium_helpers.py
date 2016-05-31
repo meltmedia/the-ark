@@ -511,6 +511,20 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
+    def execute_script(self, script=None):
+        """
+        This will run JavaScript through the browser.
+        :param
+            -   script:   string - JavaScript to be sent to the browser.
+        """
+        try:
+            # Execute the script that was given.
+            self.driver.execute_script(script)
+        except Exception as unexpected_error:
+            message = "Unable to execute given script on page '{0}'.\n" \
+                      "<{1}>".format(self.driver.current_url, unexpected_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
     def scroll_to_element(self, css_selector=None, web_element=None, position_bottom=False, position_middle=False):
         """
         This will scroll to an element on a page. This element can be put at the top, the bottom, or the middle

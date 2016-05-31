@@ -455,6 +455,17 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(Exception, self.sh.hover_on_element, css_selector="+invalid a")
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_execute_script_valid(self, mock_execute_script):
+        valid_css_selector = ".valid a"
+        web_element = self.sh.get_element(valid_css_selector)
+        script = "var element = arguments{0}; element.scrollIntoView(false);".format(web_element)
+        self.sh.execute_script(script)
+        self.assertTrue(mock_execute_script.called)
+
+    def test_execute_script_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.execute_script, script="No script.")
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_to_element_bottom_valid(self, mock_scroll_bottom):
         valid_css_selector = ".valid a"
         self.sh.scroll_to_element(css_selector=valid_css_selector, position_bottom=True)
