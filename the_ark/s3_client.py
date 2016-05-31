@@ -49,7 +49,7 @@ class S3Client(object):
             - filename:         string - The name the file will have when on S3. Should include the file extension
             - return_url:       boolean - Whether to return the path to the file on S3
             - mime_type:        string - the mime type the file should be saved as, ex: text/html or image/png
-            - chunk_at_size:    int - the size of whick the file should be split to multi-upload (default ~ 20 mb)
+            - chunk_at_size:    int - the size of which the file should be split to multi-upload (default ~ 20 mb)
         :return
             - file_url:         string - The path to the file on S3. This is returned only is return_url is set to true
         """
@@ -64,7 +64,7 @@ class S3Client(object):
             s3_file.set_metadata('Content-Type', mime_type)
 
             # - Check to see if file that is getting uploaded is greater than chunk_at_size then upload cool multi style
-            if os.path.getsize(file_to_store) > chunk_at_size:
+            if os.path.getsize(file_to_store) > chunk_at_size and type(file_to_store) == str:
                 file_count = 0
                 # - Split the file and get it chunky
                 split_file_dir = self._split_file(file_to_store)
