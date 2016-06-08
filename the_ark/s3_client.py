@@ -63,8 +63,9 @@ class S3Client(object):
             mime_type = mimetypes.guess_type(filename) if mime_type is None else mime_type
             s3_file.set_metadata('Content-Type', mime_type)
 
-            # - Check to see if file that is getting uploaded is greater than chunk_at_size then upload cool multi style
+            # - Check if file is a buffer or disk file
             if type(file_to_store) == str:
+                # - Check if file that is getting uploaded is greater than chunk_at_size then upload cool multi style
                 if os.path.getsize(file_to_store) > chunk_at_size:
                     file_count = 0
                     # - Split the file and get it chunky
@@ -86,7 +87,7 @@ class S3Client(object):
                     # - Remove the folder from splitting the file
                     shutil.rmtree(split_file_dir)
 
-            # - The normal BS upload boo~~~~!
+            # - Upload the file as a whole
             else:
                 # - Determine whether the file_to_store is an object or file path/string
                 file_type = type(file_to_store)
