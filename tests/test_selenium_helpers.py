@@ -458,8 +458,8 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_execute_script_valid(self, mock_execute_script):
         valid_css_selector = ".valid a"
         web_element = self.sh.get_element(valid_css_selector)
-        script = "var element = arguments{0}; element.scrollIntoView(false);".format(web_element)
-        self.sh.execute_script(script)
+        self.sh.execute_script(script="var element = arguments[0]; element.scrollIntoView(false);",
+                               element_argument=web_element)
         self.assertTrue(mock_execute_script.called)
 
     def test_execute_script_unexpected_invalid(self):
@@ -594,12 +594,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         valid_css_selector = ".scrollable"
         web_element = self.sh.get_element(valid_css_selector)
         self.sh.get_element_current_scroll_position(web_element=web_element)
-        mock_element_scroll.assert_any_call("var element = arguments[0]; "
+        mock_element_scroll.assert_any_call("var element = {0}; "
                                             "scrollPosition = element.scrollLeft; "
-                                            "return scrollPosition;", web_element)
-        mock_element_scroll.assert_any_call("var element = arguments[0]; "
+                                            "return scrollPosition;".format(web_element))
+        mock_element_scroll.assert_any_call("var element = {0}; "
                                             "scrollPosition = element.scrollTop; "
-                                            "return scrollPosition;", web_element)
+                                            "return scrollPosition;".format(web_element))
 
     def test_get_web_element_current_scroll_position_both_valid(self):
         valid_css_selector = ".scrollable"
