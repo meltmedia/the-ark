@@ -523,7 +523,7 @@ class SeleniumHelpers:
         try:
             if script_arguments:
                 # Execute the script with a specific WebElement.
-                return self.driver.execute_script(script, (argument for argument in script_arguments))
+                return self.driver.execute_script(script, *script_arguments)
             else:
                 # Execute the script without a specific WebElement.
                 return self.driver.execute_script(script)
