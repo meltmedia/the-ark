@@ -156,7 +156,7 @@ class SeleniumHelpers:
         """
         This will get the width and/or height of the viewport. The reason for not using driver.get_window_size here
         instead is because it's not just getting the height of the viewport but the whole window (address bar,
-        favorites bar, etc.). In order to be accurate this uses the driver.execute_script with scripts to get the
+        favorites bar, etc.). In order to be accurate this uses the execute_script method with scripts to get the
         clientWidth and/or clientHeight.
         :param
             -   get_only_width: boolean - Whether or not to just return the width of the viewport.
@@ -166,8 +166,8 @@ class SeleniumHelpers:
             -   viewport_height:    integer - The number the height of the viewport is at.
         """
         try:
-            viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
-            viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
+            viewport_width = self.execute_script("return document.documentElement.clientWidth;")
+            viewport_height = self.execute_script("return document.documentElement.clientHeight;")
             if get_only_width and not get_only_height:
                 return viewport_width
             elif get_only_height and not get_only_width:
@@ -511,6 +511,27 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
+    def execute_script(self, script, *script_arguments):
+        """
+        This will run JavaScript through the browser.
+        :param
+            -   script: string - JavaScript to be sent through to browser.
+            -   argument: list - Arguments to be used in the script that is sent to the browser.
+        :return
+            -   script: string, int - Any value that the script could return for future consumption.
+        """
+        try:
+            if script_arguments:
+                # Execute the script with a specific WebElement.
+                return self.driver.execute_script(script, *script_arguments)
+            else:
+                # Execute the script without a specific WebElement.
+                return self.driver.execute_script(script)
+        except Exception as unexpected_error:
+            message = "Unable to execute given script on page '{0}'.\n" \
+                      "<{1}>".format(self.driver.current_url, unexpected_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
     def scroll_to_element(self, css_selector=None, web_element=None, position_bottom=False, position_middle=False):
         """
         This will scroll to an element on a page. This element can be put at the top, the bottom, or the middle
@@ -532,14 +553,16 @@ class SeleniumHelpers:
 
             if position_bottom or position_middle:
                 # Scroll the window so the bottom of the element will be at the bottom of the window.
-                self.driver.execute_script("var element = arguments[0]; element.scrollIntoView(false);", element)
+                self.execute_script("var element = arguments[0]; element.scrollIntoView(false);",
+                                    element)
                 if position_middle:
                     # Scroll the window so the element is in the middle of the window.
                     scroll_position = (self.driver.get_window_size()["height"] / 2)
-                    self.driver.execute_script("window.scrollBy(0, arguments[0]);", scroll_position)
+                    self.execute_script("window.scrollBy(0, arguments[0]);", scroll_position)
             else:
                 # Scroll the window so the top of the element will be at the top of the window.
-                self.driver.execute_script("var element = arguments[0]; element.scrollIntoView(true);", element)
+                self.execute_script("var element = arguments[0]; element.scrollIntoView(true);",
+                                    element)
 
         except SeleniumHelperExceptions as scroll_to_element_error:
             scroll_to_element_error.msg = "Unable to scroll to element. | " + scroll_to_element_error.msg
@@ -566,12 +589,12 @@ class SeleniumHelpers:
         """
         try:
             if scroll_top:
-                self.driver.execute_script("window.scrollTo(0, 0);")
+                self.execute_script("window.scrollTo(0, 0);")
             elif scroll_bottom:
-                total_height = self.driver.execute_script("var height = document.body.scrollHeight; return height")
-                self.driver.execute_script("window.scrollTo(0, arguments[0]);", total_height)
+                total_height = self.execute_script("var height = document.body.scrollHeight; return height")
+                self.execute_script("window.scrollTo(0, arguments[0]);", total_height)
             elif type(y_position) == int or type(x_position) == int:
-                self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
+                self.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
             else:
                 message = "Unable to scroll to position ('{0}', '{1}') on page '{2}'.".format(x_position, y_position,
                                                                                               self.driver.current_url)
@@ -595,8 +618,8 @@ class SeleniumHelpers:
             -   y_scroll_position:  integer - The amount that the window has been scrolled on the y axis.
         """
         try:
-            x_scroll_position = self.driver.execute_script("return window.scrollX;")
-            y_scroll_position = self.driver.execute_script("return window.scrollY;")
+            x_scroll_position = self.execute_script("return window.scrollX;")
+            y_scroll_position = self.execute_script("return window.scrollY;")
             if get_both_positions and not get_only_x_position:
                 return x_scroll_position, y_scroll_position
             elif get_only_x_position and not get_both_positions:
@@ -631,23 +654,23 @@ class SeleniumHelpers:
                 self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
             if scroll_top:
-                self.driver.execute_script("arguments[0].scrollTop = 0;", element)
+                self.execute_script("arguments[0].scrollTop = 0;", element)
             elif scroll_bottom:
-                element_max_height = self.driver.execute_script("var element = arguments[0]; "
-                                                                "var scrollHeight = element.scrollHeight; "
-                                                                "var clientHeight = element.clientHeight; "
-                                                                "var maxHeight = scrollHeight - clientHeight; "
-                                                                "return maxHeight;", element)
-                self.driver.execute_script("arguments[0].scrollTop = arguments[1];", element, element_max_height)
+                element_max_height = self.execute_script("var element = arguments[0]; "
+                                                         "var scrollHeight = element.scrollHeight; "
+                                                         "var clientHeight = element.clientHeight; "
+                                                         "var maxHeight = scrollHeight - clientHeight; "
+                                                         "return maxHeight;", element)
+                self.execute_script("arguments[0].scrollTop = arguments[1];", element, element_max_height)
             elif (y_position or x_position) > 0:
-                self.driver.execute_script("arguments[0].scrollTop = arguments[1];", element, y_position)
-                self.driver.execute_script("arguments[0].scrollLeft = arguments[1];", element, x_position)
+                self.execute_script("arguments[0].scrollTop = arguments[1];", element, y_position)
+                self.execute_script("arguments[0].scrollLeft = arguments[1];", element, x_position)
             else:
-                element_height = self.driver.execute_script("var element = arguments[0]; "
-                                                            "var elementHeight = element.offsetHeight; "
-                                                            "return elementHeight;", element)
-                self.driver.execute_script("arguments[0].scrollTop += (arguments[1] - arguments[2]);", element,
-                                           element_height, scroll_padding)
+                element_height = self.execute_script("var element = arguments[0]; "
+                                                     "var elementHeight = element.offsetHeight; "
+                                                     "return elementHeight;", element)
+                self.execute_script("arguments[0].scrollTop += (arguments[1] - arguments[2]);",
+                                    element, element_height, scroll_padding)
         except SeleniumHelperExceptions as scroll_element_error:
             scroll_element_error.msg = "Unable to scroll element. | " + scroll_element_error.msg
             raise scroll_element_error
@@ -682,12 +705,12 @@ class SeleniumHelpers:
             else:
                 self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
-            x_scroll_position = self.driver.execute_script("var element = arguments[0]; "
-                                                           "scrollPosition = element.scrollLeft; "
-                                                           "return scrollPosition;", element)
-            y_scroll_position = self.driver.execute_script("var element = arguments[0]; "
-                                                           "scrollPosition = element.scrollTop; "
-                                                           "return scrollPosition;", element)
+            x_scroll_position = self.execute_script("var element = arguments[0]; "
+                                                    "scrollPosition = element.scrollLeft; "
+                                                    "return scrollPosition;", element)
+            y_scroll_position = self.execute_script("var element = arguments[0]; "
+                                                    "scrollPosition = element.scrollTop; "
+                                                    "return scrollPosition;", element)
             if get_both_positions and not get_only_x_position:
                 return x_scroll_position, y_scroll_position
             elif get_only_x_position and not get_both_positions:
@@ -724,9 +747,9 @@ class SeleniumHelpers:
             else:
                 self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
-            scroll_position = self.driver.execute_script("var element = arguments[0]; "
-                                                         "scrollPosition = element.scrollTop; "
-                                                         "return scrollPosition;", element)
+            scroll_position = self.execute_script("var element = arguments[0]; "
+                                                  "scrollPosition = element.scrollTop; "
+                                                  "return scrollPosition;", element)
             if scroll_position != 0:
                 return False
             else:
@@ -761,14 +784,14 @@ class SeleniumHelpers:
             else:
                 self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
-            element_max_height = self.driver.execute_script("var element = arguments[0]; "
-                                                            "var scrollHeight = element.scrollHeight; "
-                                                            "var clientHeight = element.clientHeight; "
-                                                            "var maxHeight = scrollHeight - clientHeight;"
-                                                            "return maxHeight;", element)
-            scroll_position = self.driver.execute_script("var element = arguments[0]; "
-                                                         "var scrollPosition = element.scrollTop; "
-                                                         "return scrollPosition;", element)
+            element_max_height = self.execute_script("var element = arguments[0]; "
+                                                     "var scrollHeight = element.scrollHeight; "
+                                                     "var clientHeight = element.clientHeight; "
+                                                     "var maxHeight = scrollHeight - clientHeight; "
+                                                     "return maxHeight;", element)
+            scroll_position = self.execute_script("var element = arguments[0]; "
+                                                  "var scrollPosition = element.scrollTop; "
+                                                  "return scrollPosition;", element)
             if scroll_position != element_max_height:
                 return False
             else:
@@ -801,7 +824,7 @@ class SeleniumHelpers:
             else:
                 self.ensure_element_visible(css_selector=css_selector)
                 element = self.get_element(css_selector)
-            self.driver.execute_script("arguments[0].style.display = 'none';", element)
+            self.execute_script("arguments[0].style.display = 'none';", element)
         except SeleniumHelperExceptions as hide_error:
             hide_error.msg = "Unable to hide element. | " + hide_error.msg
             raise hide_error
@@ -827,7 +850,7 @@ class SeleniumHelpers:
                 element = web_element
             else:
                 element = self.get_element(css_selector)
-            self.driver.execute_script("arguments[0].style.display = 'block';", element)
+            self.execute_script("arguments[0].style.display = 'block';", element)
         except SeleniumHelperExceptions as show_error:
             show_error.msg = "Unable to show element. | " + show_error.msg
             raise show_error
