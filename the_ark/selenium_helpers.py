@@ -336,17 +336,15 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                web_element.click()
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                self.get_element(css_selector).click()
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
+            web_element.click()
         except SeleniumHelperExceptions as click_error:
             click_error.msg = "Unable to click element. | " + click_error.msg
             raise click_error
         except Exception as unexpected_error:
-            message = "An nexpected error occurred attempting to click the element on page '{0}'.\n" \
+            message = "An unexpected error occurred attempting to click the element on page '{0}'.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
                 message += " | CSS Selector: {0}".format(css_selector)
@@ -355,7 +353,7 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def click_location(self, css_selector="body", web_element=None, x_position=0, y_position=0):
+    def click_location(self, css_selector=None, web_element=None, x_position=0, y_position=0):
         """
         Click on a specific location on the page.
         :param
@@ -365,13 +363,10 @@ class SeleniumHelpers:
             -   x_position: integer - The position at which the mouse will be placed horizontally.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position)
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                ActionChains(self.driver).move_to_element_with_offset(self.get_element(css_selector), x_position,
-                                                                      y_position)
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
+            ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position)
         except SeleniumHelperExceptions as click_location_error:
             click_location_error.msg = "Unable to click the position ({0}, {1}). | ".format(x_position, y_position) + \
                                        click_location_error.msg
@@ -395,12 +390,10 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                ActionChains(self.driver).double_click(web_element)
-            else:
-                self.ensure_element_visible(css_selector)
-                ActionChains(self.driver).double_click(self.get_element(css_selector))
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
+            ActionChains(self.driver).double_click(web_element)
         except SeleniumHelperExceptions as double_click_error:
             double_click_error.msg = "Unable to double click element. | " + double_click_error.msg
             raise double_click_error
@@ -422,12 +415,10 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.click_an_element(web_element=web_element)
-                web_element.clear()
-            else:
-                self.click_an_element(css_selector=css_selector)
-                self.get_element(css_selector).clear()
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.click_an_element(web_element=web_element)
+            web_element.clear()
         except SeleniumHelperExceptions as clear_error:
             clear_error.msg = "Unable to clear element. | " + clear_error.msg
             raise clear_error
@@ -450,12 +441,10 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.clear_an_element(web_element=web_element)
-                web_element.send_keys(fill_text)
-            else:
-                self.clear_an_element(css_selector=css_selector)
-                self.get_element(css_selector).send_keys(fill_text)
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.clear_an_element(web_element=web_element)
+            web_element.send_keys(fill_text)
         except SeleniumHelperExceptions as fill_error:
             fill_error.msg = "Unable to fill element. | " + fill_error.msg
             raise fill_error
@@ -490,14 +479,11 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                hover = ActionChains(self.driver).move_to_element(web_element)
-                hover.perform()
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                hover = ActionChains(self.driver).move_to_element(self.get_element(css_selector))
-                hover.perform()
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
+            hover = ActionChains(self.driver).move_to_element(web_element)
+            hover.perform()
         except SeleniumHelperExceptions as hover_error:
             hover_error.msg = "Unable to hover over element. | " + hover_error.msg
             raise hover_error
@@ -544,17 +530,13 @@ class SeleniumHelpers:
             -   position_middle:    boolean - Whether or not the element will be in the middle of the page.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
-
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
             if position_bottom or position_middle:
                 # Scroll the window so the bottom of the element will be at the bottom of the window.
                 self.execute_script("var element = arguments[0]; element.scrollIntoView(false);",
-                                    element)
+                                    web_element)
                 if position_middle:
                     # Scroll the window so the element is in the middle of the window.
                     scroll_position = (self.driver.get_window_size()["height"] / 2)
@@ -562,7 +544,7 @@ class SeleniumHelpers:
             else:
                 # Scroll the window so the top of the element will be at the top of the window.
                 self.execute_script("var element = arguments[0]; element.scrollIntoView(true);",
-                                    element)
+                                    web_element)
 
         except SeleniumHelperExceptions as scroll_to_element_error:
             scroll_to_element_error.msg = "Unable to scroll to element. | " + scroll_to_element_error.msg
@@ -647,30 +629,27 @@ class SeleniumHelpers:
             -   scroll_bottom:  boolean - Whether or not the element will be scrolled to the bottom.
         """
         try:
-            if web_element:
-                element = web_element
-                self.ensure_element_visible(web_element=web_element)
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
             if scroll_top:
-                self.execute_script("arguments[0].scrollTop = 0;", element)
+                self.execute_script("arguments[0].scrollTop = 0;", web_element)
             elif scroll_bottom:
                 element_max_height = self.execute_script("var element = arguments[0]; "
                                                          "var scrollHeight = element.scrollHeight; "
                                                          "var clientHeight = element.clientHeight; "
                                                          "var maxHeight = scrollHeight - clientHeight; "
-                                                         "return maxHeight;", element)
-                self.execute_script("arguments[0].scrollTop = arguments[1];", element, element_max_height)
+                                                         "return maxHeight;", web_element)
+                self.execute_script("arguments[0].scrollTop = arguments[1];", web_element, element_max_height)
             elif (y_position or x_position) > 0:
-                self.execute_script("arguments[0].scrollTop = arguments[1];", element, y_position)
-                self.execute_script("arguments[0].scrollLeft = arguments[1];", element, x_position)
+                self.execute_script("arguments[0].scrollTop = arguments[1];", web_element, y_position)
+                self.execute_script("arguments[0].scrollLeft = arguments[1];", web_element, x_position)
             else:
                 element_height = self.execute_script("var element = arguments[0]; "
                                                      "var elementHeight = element.offsetHeight; "
-                                                     "return elementHeight;", element)
+                                                     "return elementHeight;", web_element)
                 self.execute_script("arguments[0].scrollTop += (arguments[1] - arguments[2]);",
-                                    element, element_height, scroll_padding)
+                                    web_element, element_height, scroll_padding)
         except SeleniumHelperExceptions as scroll_element_error:
             scroll_element_error.msg = "Unable to scroll element. | " + scroll_element_error.msg
             raise scroll_element_error
@@ -699,18 +678,15 @@ class SeleniumHelpers:
             -   y_scroll_position:  integer - The amount that the element has been scrolled on the y axis.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
             x_scroll_position = self.execute_script("var element = arguments[0]; "
                                                     "scrollPosition = element.scrollLeft; "
-                                                    "return scrollPosition;", element)
+                                                    "return scrollPosition;", web_element)
             y_scroll_position = self.execute_script("var element = arguments[0]; "
                                                     "scrollPosition = element.scrollTop; "
-                                                    "return scrollPosition;", element)
+                                                    "return scrollPosition;", web_element)
             if get_both_positions and not get_only_x_position:
                 return x_scroll_position, y_scroll_position
             elif get_only_x_position and not get_both_positions:
@@ -741,15 +717,12 @@ class SeleniumHelpers:
             -   at_top: boolean - Whether or not the scrollable element is at the top.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
             scroll_position = self.execute_script("var element = arguments[0]; "
                                                   "scrollPosition = element.scrollTop; "
-                                                  "return scrollPosition;", element)
+                                                  "return scrollPosition;", web_element)
             if scroll_position != 0:
                 return False
             else:
@@ -778,20 +751,17 @@ class SeleniumHelpers:
             -   at_bottom:  boolean - Whether or not the scrollable element is at the bottom.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
             element_max_height = self.execute_script("var element = arguments[0]; "
                                                      "var scrollHeight = element.scrollHeight; "
                                                      "var clientHeight = element.clientHeight; "
                                                      "var maxHeight = scrollHeight - clientHeight; "
-                                                     "return maxHeight;", element)
+                                                     "return maxHeight;", web_element)
             scroll_position = self.execute_script("var element = arguments[0]; "
                                                   "var scrollPosition = element.scrollTop; "
-                                                  "return scrollPosition;", element)
+                                                  "return scrollPosition;", web_element)
             if scroll_position != element_max_height:
                 return False
             else:
@@ -818,13 +788,10 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
-            self.execute_script("arguments[0].style.display = 'none';", element)
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element)
+            self.execute_script("arguments[0].style.display = 'none';", web_element)
         except SeleniumHelperExceptions as hide_error:
             hide_error.msg = "Unable to hide element. | " + hide_error.msg
             raise hide_error
@@ -846,11 +813,9 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                element = web_element
-            else:
-                element = self.get_element(css_selector)
-            self.execute_script("arguments[0].style.display = 'block';", element)
+            if css_selector:
+                web_element = self.get_element(css_selector)
+            self.execute_script("arguments[0].style.display = 'block';", web_element)
         except SeleniumHelperExceptions as show_error:
             show_error.msg = "Unable to show element. | " + show_error.msg
             raise show_error
