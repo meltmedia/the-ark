@@ -255,6 +255,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.ElementNotVisibleError, self.sh.ensure_element_visible,
                           web_element=web_element)
 
+    def test_visible_element_invalid(self):
+        self.assertRaises(selenium_helpers.ElementError, self.sh.ensure_element_visible, css_selector=".invalid")
+
     def test_visible_invalid(self):
         self.assertRaises(selenium_helpers.ElementNotVisibleError, self.sh.ensure_element_visible,
                           css_selector=".hidden")
