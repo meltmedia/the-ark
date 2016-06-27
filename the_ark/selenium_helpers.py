@@ -364,7 +364,7 @@ class SeleniumHelpers:
             if css_selector:
                 web_element = self.get_element(css_selector)
             self.ensure_element_visible(web_element=web_element)
-            ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position)
+            ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position).click().perform()
         except SeleniumHelperExceptions as click_location_error:
             click_location_error.msg = "Unable to click the position ({0}, {1}). | ".format(x_position, y_position) + \
                                        click_location_error.msg
