@@ -349,9 +349,9 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def click_location(self, css_selector=None, web_element=None, x_position=0, y_position=0):
+    def click_element_with_offset(self, css_selector=None, web_element=None, x_position=0, y_position=0):
         """
-        Click on a specific location on the page.
+        Click an element with an offset.  The element will be the center for the offset.
         :param
             -   css_selector:   string - The specific element that will be interacted with.
             -   web_element:    object - The WebElement that will be interacted with.
@@ -364,8 +364,9 @@ class SeleniumHelpers:
             self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
             ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position).click().perform()
         except SeleniumHelperExceptions as click_location_error:
-            click_location_error.msg = "Unable to click the position ({0}, {1}). | ".format(x_position, y_position) + \
-                                       click_location_error.msg
+            click_location_error.msg = "Unable to click the position ({0}, {1}). | " \
+                                       "Based off the CSS Selector: {2} or WebElement passed through. | "\
+                                           .format(x_position, y_position, css_selector) + click_location_error.msg
             raise click_location_error
         except Exception as unexpected_error:
             message = "Unable to click at the position ({0}, {1}) of the element on page '{2}'.\n" \
