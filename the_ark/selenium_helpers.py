@@ -351,7 +351,7 @@ class SeleniumHelpers:
 
     def click_element_with_offset(self, css_selector=None, web_element=None, x_position=0, y_position=0):
         """
-        Click an element with an offset.  The element will be the center for the offset.
+        Click an element with an offset. The offset is relative to the top-left corner of the specified element.
         :param
             -   css_selector:   string - The specific element that will be interacted with.
             -   web_element:    object - The WebElement that will be interacted with.
@@ -397,6 +397,35 @@ class SeleniumHelpers:
             message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
+
+    def move_cursor_to_location(self, x_position=0, y_position=0, click=False):
+        """
+        Move the cursor to a specific location on the page. This will first move the cursor to (0,0) on the page and
+        than move to the coordinates the user passes in. There is an option to click after the cursors moves to the
+        specified coordinates.
+        :param
+            -   y_position: integer - The position at which the mouse will be placed vertically.
+            -   x_position: integer - The position at which the mouse will be placed horizontally.
+            -   click: boolean - Whether or not a click will be performed after the the cursor is moved.
+        """
+        try:
+            # Starting the cursor off at the absolute (0,0) point on the page.
+            web_element = self.get_element("body")
+            ActionChains(self.driver).move_to_element_with_offset(web_element, 0, 0).perform()
+            if click:
+                # Moving the cursor to and clicking the specified coordinates provided.
+                ActionChains(self.driver).move_by_offset(x_position, y_position).click().perform()
+            else:
+                # Moving the cursor to the specified coordinates provided.
+                ActionChains(self.driver).move_by_offset(x_position, y_position).perform()
+        except SeleniumHelperExceptions as move_cursor_error:
+            move_cursor_error.msg = "Unable to move the cursor to ({0},{1}) on page " \
+                                    "'{2}'".format(x_position, y_position, self.driver.current_url)
+            raise move_cursor_error
+        except Exception as unexpected_error:
+            message = "Unable to move the cursor to ({0},{1}) on page '{2}'.\n" \
+                      "<{3}>".format(x_position, y_position, self.driver.current_url, unexpected_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def clear_an_element(self, css_selector=None, web_element=None):
         """
