@@ -223,9 +223,9 @@ class SeleniumHelpers:
             base64_image = self.driver.get_screenshot_as_base64()
             return base64_image
         except Exception as base64_error:
-            message = "Unable to get screenshot as base64 on: {0}\n<{1}>".format(self.driver.current_url, base64_error)
-            raise SeleniumHelperExceptions(msg=message, stacktrace=traceback.format_exc(),
-                                           current_url=self.driver.current_url)
+            message = "Unable to get screenshot as base64. The browser might have been closed.\n" \
+                      "<{0}>".format(base64_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def save_screenshot_as_file(self, file_path, file_name):
         """
@@ -237,12 +237,16 @@ class SeleniumHelpers:
         """
         try:
             self.driver.get_screenshot_as_file(file_path + file_name)
-        except Exception as screenshot_error:
+        except TypeError as screenshot_error:
             message = "Unable to save screenshot '{0}' to '{1}' on: {2}\n<{3}>".format(file_name, file_path,
                                                                                        self.driver.current_url,
                                                                                        screenshot_error)
             raise ScreenshotError(msg=message, stacktrace=traceback.format_exc(), current_url=self.driver.current_url,
                                   file_name=file_name, file_path=file_path)
+        except Exception as unexpected_error:
+            message = "Unable to save screenshot '{0}' to '{1}'. The browser might have been closed.\n" \
+                      "<{2}>".format(file_name, file_path, unexpected_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def close_window(self):
         """
