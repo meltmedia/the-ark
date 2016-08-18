@@ -418,14 +418,11 @@ class SeleniumHelpers:
             else:
                 # Moving the cursor to the specified coordinates provided.
                 ActionChains(self.driver).move_by_offset(x_position, y_position).perform()
-        except SeleniumHelperExceptions as move_cursor_error:
-            move_cursor_error.msg = "Unable to move the cursor to ({0},{1}) on page " \
-                                    "'{2}'".format(x_position, y_position, self.driver.current_url)
-            raise move_cursor_error
         except Exception as unexpected_error:
             message = "Unable to move the cursor to ({0},{1}) on page '{2}'.\n" \
                       "<{3}>".format(x_position, y_position, self.driver.current_url, unexpected_error)
-            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+            raise CursorLocationError(msg=message, stacktrace=traceback.format_exc(),
+                                      current_url=self.driver.current_url, x_position=x_position, y_position=y_position)
 
     def clear_an_element(self, css_selector=None, web_element=None):
         """
@@ -872,6 +869,15 @@ class ClickPositionError(SeleniumHelperExceptions):
         self.details["css_selector"] = self.css_selector
         self.details["y_position"] = self.y_position
         self.details["x_position"] = self.x_position
+
+
+class CursorLocationError(SeleniumHelperExceptions):
+    def __init__(self, msg, stacktrace, current_url, x_position, y_position):
+        super(CursorLocationError, self).__init__(msg=msg, stacktrace=stacktrace, current_url=current_url)
+        self.x_position = x_position
+        self.y_position = y_position
+        self.details["x_position"] = self.x_position
+        self.details["y_position"] = self.y_position
 
 
 class ScrollPositionError(SeleniumHelperExceptions):

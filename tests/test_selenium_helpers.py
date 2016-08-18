@@ -355,6 +355,19 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_double_click_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.double_click, css_selector="@hidden a")
 
+    @patch("selenium.webdriver.common.action_chains.ActionChains.move_by_offset")
+    def test_move_cursor_to_location_valid(self, mock_move):
+        self.sh.move_cursor_to_location(15, 15)
+        self.assertTrue(mock_move.called)
+
+    @patch("selenium.webdriver.common.action_chains.ActionChains.click")
+    def test_move_cursor_to_location_click_valid(self, mock_click):
+        self.sh.move_cursor_to_location(15, 15, click=True)
+        self.assertTrue(mock_click.called)
+
+    def test_move_cursor_to_location_invalid(self):
+        self.assertRaises(selenium_helpers.CursorLocationError, self.sh.move_cursor_to_location, x_position="")
+
     @patch("selenium.webdriver.remote.webelement.WebElement.clear")
     def test_clear_web_element_valid(self, mock_clear):
         valid_css_selector = ".valid input"
