@@ -401,7 +401,7 @@ class SeleniumHelpers:
     def move_cursor_to_location(self, x_position=0, y_position=0, click=False):
         """
         Move the cursor to a specific location on the page. This will first move the cursor to (0,0) on the page and
-        than move to the coordinates the user passes in. There is an option to click after the cursors moves to the
+        then move to the coordinates the user passes in. There is an option to click after the cursors moves to the
         specified coordinates.
         :param
             -   y_position: integer - The position at which the mouse will be placed vertically.
