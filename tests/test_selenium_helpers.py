@@ -312,26 +312,26 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(Exception, self.sh.click_an_element, css_selector="*valid a")
 
     @patch("selenium.webdriver.common.action_chains.ActionChains.move_to_element_with_offset")
-    def test_click_location_web_element_valid(self, mock_click_location):
+    def test_click_element_with_offset_web_element_valid(self, mock_click_element_with_offset):
         valid_css_selector = ".valid a"
         web_element = self.sh.get_element(valid_css_selector)
-        self.sh.click_location(web_element=web_element, x_position=30, y_position=30)
-        self.assertTrue(mock_click_location.called)
+        self.sh.click_element_with_offset(web_element=web_element, x_position=30, y_position=30)
+        self.assertTrue(mock_click_element_with_offset.called)
 
     @patch("selenium.webdriver.common.action_chains.ActionChains.move_to_element_with_offset")
-    def test_click_location_valid(self, mock_click_location):
+    def test_click_element_with_offset_valid(self, mock_click_element_with_offset):
         valid_css_selector = ".valid a"
-        self.sh.click_location(css_selector=valid_css_selector, x_position=30, y_position=30)
-        self.assertTrue(mock_click_location.called)
+        self.sh.click_element_with_offset(css_selector=valid_css_selector, x_position=30, y_position=30)
+        self.assertTrue(mock_click_element_with_offset.called)
 
-    def test_click_location_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_location, css_selector=".invalid a")
+    def test_click_element_with_offset_invalid(self):
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_element_with_offset, css_selector=".invalid a")
 
-    def test_web_element_click_location_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.click_location, web_element="*invalid")
+    def test_web_element_click_element_with_offset_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.click_element_with_offset, web_element="*invalid")
 
-    def test_click_location_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.click_location, css_selector="*valid a")
+    def test_click_element_with_offset_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.click_element_with_offset, css_selector="*valid a")
 
     @patch("selenium.webdriver.common.action_chains.ActionChains.double_click")
     def test_double_click_web_element_valid(self, mock_double_click):
@@ -354,6 +354,19 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_double_click_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.double_click, css_selector="@hidden a")
+
+    @patch("selenium.webdriver.common.action_chains.ActionChains.move_by_offset")
+    def test_move_cursor_to_location_valid(self, mock_move):
+        self.sh.move_cursor_to_location(15, 15)
+        self.assertTrue(mock_move.called)
+
+    @patch("selenium.webdriver.common.action_chains.ActionChains.click")
+    def test_move_cursor_to_location_click_valid(self, mock_click):
+        self.sh.move_cursor_to_location(15, 15, click=True)
+        self.assertTrue(mock_click.called)
+
+    def test_move_cursor_to_location_invalid(self):
+        self.assertRaises(selenium_helpers.CursorLocationError, self.sh.move_cursor_to_location, x_position="")
 
     @patch("selenium.webdriver.remote.webelement.WebElement.clear")
     def test_clear_web_element_valid(self, mock_clear):
