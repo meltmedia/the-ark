@@ -43,13 +43,13 @@ class ScreenCaptureTestCase(unittest.TestCase):
         self.assertEqual(self.sc.capture_page(), [True, True])
 
     @patch("the_ark.screen_capture.Screenshot._capture_single_viewport")
-    def test_paginated_capture_with_padding(self, capture_single_viewport):
+    @patch("the_ark.screen_capture.Screenshot._capture_paginated_page")
+    def test_paginated_capture_with_padding(self, capture_paginated_page, capture_single_viewport):
         capture_single_viewport.return_value = True
         self.sc.sh.driver.excecute_script.return_value = "1200"
-        # capture.return_value = True
         self.sc.paginated = True
         self.sc.capture_page(False, 300)
-        capture_single_viewport.assert_called(False, 300)
+        capture_paginated_page.assert_called_with(300)
 
     #--- Full Page
     @patch("the_ark.screen_capture.Screenshot._crop_and_stitch_image")
