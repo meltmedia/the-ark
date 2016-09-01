@@ -34,7 +34,7 @@ class SeleniumHelpers:
                                                                                      desired_capabilities["access_key"])
                 self.driver = webdriver.Remote(desired_capabilities=desired_capabilities, command_executor=sauce_url)
             elif desired_capabilities.get("mobile"):
-                self.driver = webdriver.Remote()
+                self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
             elif desired_capabilities.get("browserName").lower() == "chrome":
                 self.driver = webdriver.Chrome()
             elif desired_capabilities.get("browserName").lower() == "firefox":

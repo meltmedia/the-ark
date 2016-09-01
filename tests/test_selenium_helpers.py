@@ -55,7 +55,21 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         mock_firefox.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="firefox")
-        mock_firefox.assert_called_once_with()
+        mock_firefox.assert_called_once_with(firefox_binary=None)
+
+    # @patch("selenium.webdriver.Firefox", autospec=True)
+    # @patch("selenium.webdriver.firefox.firefox_binary.FirefoxBinary", autospec=True)
+    # def test_firefox_browser_with_binary(self, fire_binary, mock_firefox):
+    #     mock_driver = Mock(spec=mock_firefox)
+    #     mock_firefox.return_value = mock_driver
+    #
+    #     mock_binary = Mock(spec=fire_binary)
+    #     fire_binary.return_value = mock_binary
+    #
+    #     sh = selenium_helpers.SeleniumHelpers()
+    #     sh.create_driver(browserName="firefox", binary="/path/to_thing")
+    #
+    #     mock_firefox.assert_called_once_with(firefox_binary=mock_binary)
 
     @patch("selenium.webdriver.PhantomJS", autospec=True)
     def test_phantomjs_browser_valid(self, mock_phantomjs):
@@ -64,6 +78,14 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="phantomjs")
         mock_phantomjs.assert_called_once_with()
+
+    @patch("selenium.webdriver.PhantomJS", autospec=True)
+    def test_phantomjs_browser_valid(self, mock_phantomjs):
+        mock_driver = Mock(spec=mock_phantomjs)
+        mock_phantomjs.return_value = mock_driver
+        sh = selenium_helpers.SeleniumHelpers()
+        sh.create_driver(browserName="phantomjs", binary="/path/to_thing")
+        mock_phantomjs.assert_called_once_with("/path/to_thing")
 
     @patch("selenium.webdriver.Safari", autospec=True)
     def test_safari_browser_valid(self, mock_safari):
@@ -264,7 +286,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_valid(self):
         valid_css_selector = ".valid"
-        self.assertEqual(self.sh.get_element(valid_css_selector).location, {'y': 21, 'x': 48})
+        self.assertEqual(self.sh.get_element(valid_css_selector).location, {'y': 21.4375, 'x': 48})
 
     def test_get_invalid(self):
         self.assertRaises(selenium_helpers.ElementError, self.sh.get_element, ".invalid")
