@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as expected_condition
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 import traceback
 
 
@@ -37,9 +38,11 @@ class SeleniumHelpers:
             elif desired_capabilities.get("browserName").lower() == "chrome":
                 self.driver = webdriver.Chrome()
             elif desired_capabilities.get("browserName").lower() == "firefox":
-                self.driver = webdriver.Firefox()
+                binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
+                self.driver = webdriver.Firefox(firefox_binary=binary)
             elif desired_capabilities.get("browserName").lower() == "phantomjs":
-                self.driver = webdriver.PhantomJS()
+                binary_path = desired_capabilities.get("binary", "phantomjs")
+                self.driver = webdriver.PhantomJS(binary_path)
             elif desired_capabilities.get("browserName").lower() == "safari":
                 self.driver = webdriver.Safari()
             else:
@@ -758,7 +761,7 @@ class SeleniumHelpers:
             scroll_position = self.execute_script("var element = arguments[0]; "
                                                   "var scrollPosition = element.scrollTop; "
                                                   "return scrollPosition;", web_element)
-            if scroll_position != element_max_height:
+            if scroll_position < element_max_height - 1:
                 return False
             else:
                 return True
