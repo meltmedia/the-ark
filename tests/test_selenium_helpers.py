@@ -231,6 +231,29 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_switch_handle_invalid(self):
         self.assertRaises(selenium_helpers.DriverAttributeError, self.sh.switch_window_handle, specific_handle="test")
 
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_screenshot_as_base64")
+    def test_get_screenshot_base64_valid(self, mock_base64):
+        self.sh.get_screenshot_base64()
+        self.assertTrue(mock_base64.called)
+
+    def test_get_screehnshot_base64_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_screenshot_base64)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_screenshot_as_file")
+    def test_save_screenshot_as_file_valid(self, mock_save_screenshot):
+        self.sh.save_screenshot_as_file(file_path='{0}/etc/'.format(ROOT), file_name="save_screenshot_test.png")
+        self.assertTrue(mock_save_screenshot.called)
+
+    def test_save_screenshot_as_file_invalid(self):
+        self.assertRaises(selenium_helpers.ScreenshotError, self.sh.save_screenshot_as_file,
+                          file_path='{0}/etc/'.format(ROOT), file_name=2)
+
+    def test_save_screenshot_as_file_unexpected_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.save_screenshot_as_file,
+                          file_path='{0}/etc/'.format(ROOT), file_name="save_screenshot_test.png")
+
     @patch("selenium.webdriver.remote.webdriver.WebDriver.close")
     def test_close_window_valid(self, mock_close):
         sh = selenium_helpers.SeleniumHelpers()

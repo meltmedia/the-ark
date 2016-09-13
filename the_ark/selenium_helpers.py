@@ -216,6 +216,41 @@ class SeleniumHelpers:
             message = "Unable to switch window handles.\n<{0}>".format(window_handle_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
+    def get_screenshot_base64(self):
+        """
+        Get image data as base64 of the current page.
+        :return
+            -   base64_image:  base64 - Image data of the current page.
+        """
+        try:
+            base64_image = self.driver.get_screenshot_as_base64()
+            return base64_image
+        except Exception as base64_error:
+            message = "Unable to get screenshot as base64. The browser might have been closed.\n" \
+                      "<{0}>".format(base64_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def save_screenshot_as_file(self, file_path, file_name):
+        """
+        Capture a screenshot of the current page. The file path and file name are both required. The file_name needs to
+        include the file extension.
+        :param
+            -   file_path:  string - The path the image will be saved to.
+            -   file_name:  string = The name that the image will be saved with, including the extension.
+        """
+        try:
+            self.driver.get_screenshot_as_file(file_path + file_name)
+        except TypeError as screenshot_error:
+            message = "Unable to save screenshot '{0}' to '{1}' on: {2}\n<{3}>".format(file_name, file_path,
+                                                                                       self.driver.current_url,
+                                                                                       screenshot_error)
+            raise ScreenshotError(msg=message, stacktrace=traceback.format_exc(), current_url=self.driver.current_url,
+                                  file_name=file_name, file_path=file_path)
+        except Exception as unexpected_error:
+            message = "Unable to save screenshot '{0}' to '{1}'. The browser might have been closed.\n" \
+                      "<{2}>".format(file_name, file_path, unexpected_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
     def close_window(self):
         """
         This will close the active window of the driver.
@@ -890,6 +925,14 @@ class ScrollPositionError(SeleniumHelperExceptions):
         self.x_position = x_position
         self.details["y_position"] = self.y_position
         self.details["x_position"] = self.x_position
+
+class ScreenshotError(SeleniumHelperExceptions):
+    def __init__(self, msg, stacktrace, current_url, file_name, file_path):
+        super(ScreenshotError, self).__init__(msg=msg, stacktrace=stacktrace, current_url=current_url)
+        self.file_name = file_name
+        self.file_path = file_path
+        self.details["file_name"] = self.file_name
+        self.details["file_path"] = self.file_path
 
 
 class DriverExceptions(Exception):
