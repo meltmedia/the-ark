@@ -425,7 +425,7 @@ class SeleniumHelpers:
             if css_selector and not web_element:
                 web_element = self.get_element(css_selector)
             self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
-            ActionChains(self.driver).double_click(web_element)
+            ActionChains(self.driver).double_click(web_element).perform()
         except SeleniumHelperExceptions as double_click_error:
             double_click_error.msg = "Unable to double click element. | " + double_click_error.msg
             raise double_click_error
