@@ -235,7 +235,7 @@ class Screenshot:
         """
         #--- Capture the image
         #- Gather image byte data
-        image_data = self.sh.driver.get_screenshot_as_base64()
+        image_data = self.sh.get_screenshot_base64()
         #- Create an image canvas and write the byte data to it
         image = Image.open(StringIO(image_data.decode('base64')))
 
