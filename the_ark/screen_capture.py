@@ -2,6 +2,7 @@ import numpy
 from PIL import Image
 from the_ark.selenium_helpers import SeleniumHelperExceptions, ElementNotVisibleError, ElementError
 from StringIO import StringIO
+import time
 import traceback
 
 DEFAULT_SCROLL_PADDING = 100
@@ -155,10 +156,12 @@ class Screenshot:
         elif self.headers:
             #- Scroll to the top so that the headers are not covering content
             self.sh.scroll_window_to_position(0)
+            time.sleep(0.5)
             image_data = self._get_image_data()
         elif self.footers:
             #- Scroll to the bottom so that the footer items are not covering content
             self.sh.scroll_window_to_position(40000)
+            time.sleep(0.5)
             image_data = self._get_image_data()
         else:
             image_data = self._get_image_data()
@@ -214,6 +217,7 @@ class Screenshot:
 
             #- Scroll for the next one!
             self.sh.scroll_window_to_position(current_scroll_position + viewport_height - scroll_padding)
+            time.sleep(0.25)
             new_scroll_position = self.sh.get_window_current_scroll_position()
 
             #- Break if the scroll position did not change (because it was at the bottom)
