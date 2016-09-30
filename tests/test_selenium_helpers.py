@@ -55,7 +55,21 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         mock_firefox.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="firefox")
-        mock_firefox.assert_called_once_with()
+        mock_firefox.assert_called_once_with(firefox_binary=None)
+
+    # @patch("selenium.webdriver.Firefox", autospec=True)
+    # @patch("selenium.webdriver.firefox.firefox_binary.FirefoxBinary", autospec=True)
+    # def test_firefox_browser_with_binary(self, fire_binary, mock_firefox):
+    #     mock_driver = Mock(spec=mock_firefox)
+    #     mock_firefox.return_value = mock_driver
+    #
+    #     mock_binary = Mock(spec=fire_binary)
+    #     fire_binary.return_value = mock_binary
+    #
+    #     sh = selenium_helpers.SeleniumHelpers()
+    #     sh.create_driver(browserName="firefox", binary="/path/to_thing")
+    #
+    #     mock_firefox.assert_called_once_with(firefox_binary=mock_binary)
 
     @patch("selenium.webdriver.PhantomJS", autospec=True)
     def test_phantomjs_browser_valid(self, mock_phantomjs):
@@ -64,6 +78,14 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="phantomjs")
         mock_phantomjs.assert_called_once_with()
+
+    @patch("selenium.webdriver.PhantomJS", autospec=True)
+    def test_phantomjs_browser_valid(self, mock_phantomjs):
+        mock_driver = Mock(spec=mock_phantomjs)
+        mock_phantomjs.return_value = mock_driver
+        sh = selenium_helpers.SeleniumHelpers()
+        sh.create_driver(browserName="phantomjs", binary="/path/to_thing")
+        mock_phantomjs.assert_called_once_with("/path/to_thing")
 
     @patch("selenium.webdriver.Safari", autospec=True)
     def test_safari_browser_valid(self, mock_safari):
@@ -208,6 +230,29 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_switch_handle_invalid(self):
         self.assertRaises(selenium_helpers.DriverAttributeError, self.sh.switch_window_handle, specific_handle="test")
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_screenshot_as_base64")
+    def test_get_screenshot_base64_valid(self, mock_base64):
+        self.sh.get_screenshot_base64()
+        self.assertTrue(mock_base64.called)
+
+    def test_get_screehnshot_base64_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_screenshot_base64)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_screenshot_as_file")
+    def test_save_screenshot_as_file_valid(self, mock_save_screenshot):
+        self.sh.save_screenshot_as_file(file_path='{0}/etc/'.format(ROOT), file_name="save_screenshot_test.png")
+        self.assertTrue(mock_save_screenshot.called)
+
+    def test_save_screenshot_as_file_invalid(self):
+        self.assertRaises(selenium_helpers.ScreenshotError, self.sh.save_screenshot_as_file,
+                          file_path='{0}/etc/'.format(ROOT), file_name=2)
+
+    def test_save_screenshot_as_file_unexpected_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.save_screenshot_as_file,
+                          file_path='{0}/etc/'.format(ROOT), file_name="save_screenshot_test.png")
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.close")
     def test_close_window_valid(self, mock_close):
