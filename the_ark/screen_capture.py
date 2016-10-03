@@ -2,6 +2,7 @@ import numpy
 from PIL import Image
 from the_ark.selenium_helpers import SeleniumHelperExceptions, ElementNotVisibleError, ElementError
 from StringIO import StringIO
+import time
 import traceback
 
 DEFAULT_SCROLL_PADDING = 100
@@ -43,7 +44,7 @@ class Screenshot:
         self.pixel_match_offset = pixel_match_offset
         self.file_extenson = file_extenson
 
-    def capture_page(self, viewport_only=False):
+    def capture_page(self, viewport_only=False, padding=None):
         """
         Entry point for a screenshot of the whole page. This will send the screenshot off to the correct methods
         depending on whether you need paginated screenshots, just the current viewport area, or the whole page in
@@ -57,7 +58,7 @@ class Screenshot:
             if viewport_only:
                 return self._capture_single_viewport()
             elif self.paginated:
-                return self._capture_paginated_page()
+                return self._capture_paginated_page(padding)
             else:
                 return self._capture_full_page()
 
@@ -155,10 +156,12 @@ class Screenshot:
         elif self.headers:
             #- Scroll to the top so that the headers are not covering content
             self.sh.scroll_window_to_position(0)
+            time.sleep(0.5)
             image_data = self._get_image_data()
         elif self.footers:
             #- Scroll to the bottom so that the footer items are not covering content
             self.sh.scroll_window_to_position(40000)
+            time.sleep(0.5)
             image_data = self._get_image_data()
         else:
             image_data = self._get_image_data()
@@ -194,12 +197,13 @@ class Screenshot:
             except ElementError:
                 pass
 
-    def _capture_paginated_page(self):
+    def _capture_paginated_page(self, padding=None):
         """
         Captures the page viewport by viewport, leaving an overlap of pixels the height of the self.padding variable
         between each image
         """
         image_list = []
+        scroll_padding = padding if padding else self.scroll_padding
 
         #- Scroll page to the top
         self.sh.scroll_window_to_position(0)
@@ -212,7 +216,8 @@ class Screenshot:
             image_list.append(self._capture_single_viewport())
 
             #- Scroll for the next one!
-            self.sh.scroll_window_to_position(current_scroll_position + viewport_height - self.scroll_padding)
+            self.sh.scroll_window_to_position(current_scroll_position + viewport_height - scroll_padding)
+            time.sleep(0.25)
             new_scroll_position = self.sh.get_window_current_scroll_position()
 
             #- Break if the scroll position did not change (because it was at the bottom)

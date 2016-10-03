@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as expected_condition
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 import traceback
 
 
@@ -37,9 +38,11 @@ class SeleniumHelpers:
             elif desired_capabilities.get("browserName").lower() == "chrome":
                 self.driver = webdriver.Chrome()
             elif desired_capabilities.get("browserName").lower() == "firefox":
-                self.driver = webdriver.Firefox()
+                binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
+                self.driver = webdriver.Firefox(firefox_binary=binary)
             elif desired_capabilities.get("browserName").lower() == "phantomjs":
-                self.driver = webdriver.PhantomJS()
+                binary_path = desired_capabilities.get("binary", "phantomjs")
+                self.driver = webdriver.PhantomJS(binary_path)
             elif desired_capabilities.get("browserName").lower() == "safari":
                 self.driver = webdriver.Safari()
             else:
@@ -211,6 +214,41 @@ class SeleniumHelpers:
                 self.driver.switch_to.window(window_handles[-1])
         except Exception as window_handle_error:
             message = "Unable to switch window handles.\n<{0}>".format(window_handle_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def get_screenshot_base64(self):
+        """
+        Get image data as base64 of the current page.
+        :return
+            -   base64_image:  base64 - Image data of the current page.
+        """
+        try:
+            base64_image = self.driver.get_screenshot_as_base64()
+            return base64_image
+        except Exception as base64_error:
+            message = "Unable to get screenshot as base64. The browser might have been closed.\n" \
+                      "<{0}>".format(base64_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def save_screenshot_as_file(self, file_path, file_name):
+        """
+        Capture a screenshot of the current page. The file path and file name are both required. The file_name needs to
+        include the file extension.
+        :param
+            -   file_path:  string - The path the image will be saved to.
+            -   file_name:  string = The name that the image will be saved with, including the extension.
+        """
+        try:
+            self.driver.get_screenshot_as_file(file_path + file_name)
+        except TypeError as screenshot_error:
+            message = "Unable to save screenshot '{0}' to '{1}' on: {2}\n<{3}>".format(file_name, file_path,
+                                                                                       self.driver.current_url,
+                                                                                       screenshot_error)
+            raise ScreenshotError(msg=message, stacktrace=traceback.format_exc(), current_url=self.driver.current_url,
+                                  file_name=file_name, file_path=file_path)
+        except Exception as unexpected_error:
+            message = "Unable to save screenshot '{0}' to '{1}'. The browser might have been closed.\n" \
+                      "<{2}>".format(file_name, file_path, unexpected_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def close_window(self):
@@ -387,7 +425,7 @@ class SeleniumHelpers:
             if css_selector and not web_element:
                 web_element = self.get_element(css_selector)
             self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
-            ActionChains(self.driver).double_click(web_element)
+            ActionChains(self.driver).double_click(web_element).perform()
         except SeleniumHelperExceptions as double_click_error:
             double_click_error.msg = "Unable to double click element. | " + double_click_error.msg
             raise double_click_error
@@ -758,7 +796,7 @@ class SeleniumHelpers:
             scroll_position = self.execute_script("var element = arguments[0]; "
                                                   "var scrollPosition = element.scrollTop; "
                                                   "return scrollPosition;", web_element)
-            if scroll_position != element_max_height:
+            if scroll_position < element_max_height - 1:
                 return False
             else:
                 return True
@@ -887,6 +925,14 @@ class ScrollPositionError(SeleniumHelperExceptions):
         self.x_position = x_position
         self.details["y_position"] = self.y_position
         self.details["x_position"] = self.x_position
+
+class ScreenshotError(SeleniumHelperExceptions):
+    def __init__(self, msg, stacktrace, current_url, file_name, file_path):
+        super(ScreenshotError, self).__init__(msg=msg, stacktrace=stacktrace, current_url=current_url)
+        self.file_name = file_name
+        self.file_path = file_path
+        self.details["file_name"] = self.file_name
+        self.details["file_path"] = self.file_path
 
 
 class DriverExceptions(Exception):
