@@ -1,8 +1,8 @@
 the-ark
 ===================
 
-Install Instructions:
-: pip install TBD
+Install Instructions
+: pip install theark
 
 The Ark is a library of commonly used tools for automating a website. These tools include:
 
