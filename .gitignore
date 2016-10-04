@@ -1,7 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-
+.idea
 # C extensions
 *.so
 
@@ -33,6 +33,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
+cover/
 htmlcov/
 .tox/
 .coverage
@@ -52,3 +53,7 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# OS generated files
+.DS_Store
+.DS_Store?
