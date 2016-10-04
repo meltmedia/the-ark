@@ -2,9 +2,9 @@ the-ark
 ===================
 
 Install Instructions:
-: pip install theark
+: pip install TBD
 
-The Ark is a library of commonly used tools for automating a website.  These tools include:
+The Ark is a library of commonly used tools for automating a website. These tools include:
 
 Email Client
 : Quick way of sending test results to an email address or a list of email addresses
@@ -29,5 +29,7 @@ Screen Capture
 
 Selenium Helpers
 : A Selenium wrapper that simplifies basic Selenium commands and raises improved exceptions
+
+**The packages in the requirements.txt will need to be installed to get the most out of The Ark.**
 
 > Written with [StackEdit](https://stackedit.io/).
