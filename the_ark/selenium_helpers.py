@@ -579,14 +579,20 @@ class SeleniumHelpers:
             if css_selector and not web_element:
                 web_element = self.get_element(css_selector)
             self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
-            if position_bottom or position_middle:
+            if position_bottom:
                 # Scroll the window so the bottom of the element will be at the bottom of the window.
                 self.execute_script("var element = arguments[0]; element.scrollIntoView(false);",
                                     web_element)
-                if position_middle:
-                    # Scroll the window so the element is in the middle of the window.
-                    scroll_position = (self.driver.get_window_size()["height"] / 2)
-                    self.execute_script("window.scrollBy(0, arguments[0]);", scroll_position)
+            elif position_middle:
+                # Find the scroll position of the top of the element
+                element_position = self.execute_script("var element = arguments[0]; "
+                                                       "var height = element.offsetTop; "
+                                                       "return height", web_element)
+                # Determine the position that is half a screen height above the element
+                screen_padding = (self.driver.get_window_size()["height"] / 2)
+                scroll_position = element_position - screen_padding
+                # Scroll to that position
+                self.execute_script("window.scrollTo(0, arguments[0]);", scroll_position)
             else:
                 # Scroll the window so the top of the element will be at the top of the window.
                 self.execute_script("var element = arguments[0]; element.scrollIntoView(true);",
