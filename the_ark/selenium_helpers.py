@@ -347,16 +347,25 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def wait_for_element(self, css_selector, wait_time=15):
+    def wait_for_element(self, css_selector, wait_time=15, visible=False):
         """
         This will wait for a specific element to be present on the page within a specified amount of time, in seconds.
         :param
             -   css_selector:   string - The specific element that will be interacted with.
-            -   wait_time:  integer - The amount of time, in seconds, given to wait for an element to be present.
+            -   wait_time:      integer - The amount of time, in seconds, given to wait for an element to be present.
+            -   visible:        boolean - If true, wait for the element to be visible on the page; present otherwise
         """
         try:
-            WebDriverWait(self.driver, wait_time).until(expected_condition.presence_of_element_located((By.CSS_SELECTOR,
-                                                                                                        css_selector)))
+            if visible:
+                # Wait for element to be visible on the page
+                WebDriverWait(
+                    self.driver, wait_time).until(expected_condition.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                                    css_selector)))
+            else:
+                # Wait for element to be present on the page
+                WebDriverWait(
+                    self.driver, wait_time).until(expected_condition.presence_of_element_located((By.CSS_SELECTOR,
+                                                                                                  css_selector)))
         except common.exceptions.TimeoutException as timeout:
             message = "Element '{0}' does not exist on page '{1}' after waiting {2} seconds.\n" \
                       "<{3}>".format(css_selector, self.driver.current_url, wait_time, timeout)
