@@ -324,11 +324,21 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_list_of_elements_invalid(self):
         self.assertRaises(selenium_helpers.ElementError, self.sh.get_list_of_elements, ".invalid")
 
+    @patch("selenium.webdriver.support.expected_conditions.presence_of_element_located")
     @patch("selenium.webdriver.support.ui.WebDriverWait.until")
-    def test_wait_valid(self, mock_wait):
+    def test_wait_valid(self, mock_wait, mock_present):
         valid_css_selector = ".valid"
         self.sh.wait_for_element(valid_css_selector)
         self.assertTrue(mock_wait.called)
+        self.assertTrue(mock_present.called)
+
+    @patch("selenium.webdriver.support.expected_conditions.visibility_of_element_located")
+    @patch("selenium.webdriver.support.ui.WebDriverWait.until")
+    def test_wait_visible_valid(self, mock_wait, mock_visible):
+        valid_css_selector = ".valid"
+        self.sh.wait_for_element(valid_css_selector, visible=True)
+        self.assertTrue(mock_wait.called)
+        self.assertTrue(mock_visible.called)
 
     def test_wait_invalid(self):
         self.assertRaises(selenium_helpers.TimeoutError, self.sh.wait_for_element, ".invalid", 1)
