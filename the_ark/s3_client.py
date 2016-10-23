@@ -1,7 +1,10 @@
-import mimetypes
-from StringIO import StringIO
-from boto.s3.key import Key
 import boto.s3.connection
+import mimetypes
+import urllib
+import urlparse
+
+from boto.s3.key import Key
+from StringIO import StringIO
 
 
 class S3Client(object):
@@ -23,14 +26,14 @@ class S3Client(object):
             return
 
         try:
-            #- Amazon S3 credentials will use Boto's fall back config, looks for boto.cfg then environment variables
+            # - Amazon S3 credentials will use Boto's fall back config, looks for boto.cfg then environment variables
             self.s3_connection = boto.s3.connection.S3Connection(
                 is_secure=False)
             self.bucket = self.s3_connection.get_bucket(
                 self.bucket_name, validate=False)
 
         except Exception as s3_connection_exception:
-            #- Reset the variables on failure to allow a reconnect
+            # - Reset the variables on failure to allow a reconnect
             self.s3_connection = None
             self.bucket = None
             message = "Exception while connecting to S3: {0}".format(s3_connection_exception)
@@ -53,8 +56,8 @@ class S3Client(object):
         try:
             s3_file = Key(self.bucket)
             s3_file.key = self._generate_file_path(s3_path, filename)
-            #--- Set the Content type for the file being sent (so that it downloads properly)
-            #- content_type can be 'image/png', 'application/pdf', 'text/plain', etc.
+            # --- Set the Content type for the file being sent (so that it downloads properly)
+            # - content_type can be 'image/png', 'application/pdf', 'text/plain', etc.
             mime_type = mimetypes.guess_type(filename) if mime_type is None else mime_type
             s3_file.set_metadata('Content-Type', mime_type)
 
@@ -69,7 +72,18 @@ class S3Client(object):
                 file_key = self.bucket.get_key(s3_file.key)
                 file_key.set_acl('public-read')
                 file_url = file_key.generate_url(0, query_auth=False)
-                return file_url
+
+                # - Certain server side permissions might cause a x-amz-security-token parameter to be added to the url
+                # Split the url into its peices
+                scheme, netloc, path, params, query, fragment = urlparse.urlparse(file_url)
+                # Check whether the x-amz-security-token parameter was appended to the url and remove it
+                params = urlparse.parse_qs(query)
+                if 'x-amz-security-token' in params:
+                    del params['x-amz-security-token']
+                # Rebuild the params without the x-amz-security-token
+                query = urllib.urlencode(params)
+
+                return urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
 
         except Exception as store_file_exception:
             message = "Exception while storing file on S3: {0}".format(store_file_exception)
