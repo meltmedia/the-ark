@@ -61,7 +61,7 @@ class S3Client(object):
             mime_type = mimetypes.guess_type(filename) if mime_type is None else mime_type
             s3_file.set_metadata('Content-Type', mime_type)
 
-            #- Determine whether the file_to_store is an object or file path/string
+            # - Determine whether the file_to_store is an object or file path/string
             file_type = type(file_to_store)
             if file_type == str:
                 s3_file.set_contents_from_filename(file_to_store)
