@@ -2,6 +2,7 @@ import unittest
 from the_ark.s3_client import S3Client, S3ClientException
 from mock import Mock, patch
 from boto.s3.key import Key
+from cStringIO import StringIO
 
 __author__ = 'chaley'
 
@@ -9,7 +10,6 @@ bucket = "some bucket"
 
 
 class S3InitTestCase(unittest.TestCase):
-
     @patch('boto.s3.connection.S3Connection')
     def test_class_init(self, s3con):
         s3con.return_value = {}
@@ -24,7 +24,6 @@ class S3InitTestCase(unittest.TestCase):
 
 
 class S3MethodTestCase(unittest.TestCase):
-
     def setUp(self):
         self.client = S3Client(bucket)
         self.client.s3_connection = Mock()
@@ -97,7 +96,6 @@ class S3MethodTestCase(unittest.TestCase):
         with self.assertRaises(S3ClientException):
             self.client.get_file('stuff', 'more stuff')
 
-
     def test_get_file_boom(self):
         self.client.bucket.get_key.side_effect = Exception(
             'Here Comes the Boom!')
@@ -117,10 +115,10 @@ class S3MethodTestCase(unittest.TestCase):
         guess_type.return_value("image/png")
         set_contents.return_value(True)
         self.client.store_file(
-            'stuff', 1, return_url=True, filename="this file")
+            'stuff', "./tests/etc/all_black.png", return_url=True, filename="this file")
 
         self.client.store_file(
-            'stuff', 1, return_url=False, filename="this file")
+            'stuff', "./tests/etc/all_black.png", return_url=False, filename="this file")
 
     @patch('boto.s3.bucket.Bucket.list')
     def test_get_all_filenames_in_folder(self, list):
@@ -136,10 +134,48 @@ class S3MethodTestCase(unittest.TestCase):
         third.last_modified = 1
         key_list = [first, second, third]
 
-        most_recent_key = self.client.\
+        most_recent_key = self.client. \
             get_most_recent_file_from_s3_key_list(key_list)
         self.assertEqual(
             most_recent_key.last_modified, key_list[1].last_modified)
+
+    @patch('tempfile.mkdtemp')
+    @patch('os.path.getsize')
+    def test_split_file_boom(self, get_size, make_dir):
+        make_dir.side_effect = Exception('Here Comes the Boom?')
+        get_size.return_value = 9999999999999
+        with self.assertRaises(S3ClientException):
+            self.client.store_file(
+                'stuff', "./tests/etc/test.png", return_url=False, filename="this file")
+
+    @patch('mimetypes.guess_type')
+    @patch('boto.s3.key.Key.set_contents_from_file')
+    @patch('os.path.getsize')
+    def test_store_file_with_split(self, get_size, set_contents, guess_type):
+        guess_type.return_value("image/png")
+        set_contents.return_value(True)
+        get_size.return_value = 9999999999999
+        self.client.store_file(
+            'stuff', "./tests/etc/test.png", return_url=True, filename="this file")
+
+        self.client.store_file(
+            'stuff', "./tests/etc/test.png", return_url=False, filename="this file")
+
+    @patch('mimetypes.guess_type')
+    @patch('boto.s3.key.Key.set_contents_from_file')
+    def test_store_file_with_stringIO(self, set_contents, guess_type):
+        guess_type.return_value("image/png")
+        set_contents.return_value(True)
+        imageFile = StringIO()
+        with open("./tests/etc/test.png") as f:
+            imageFile.write(f.read())
+        imageFile.seek(0)
+        self.client.store_file(
+            'stuff', imageFile, return_url=True, filename="this file")
+
+        self.client.store_file(
+            'stuff', imageFile, return_url=False, filename="this file")
+
 
 if __name__ == '__main__':
     unittest.main()
