@@ -42,6 +42,15 @@ class ScreenCaptureTestCase(unittest.TestCase):
         self.sc.paginated = True
         self.assertEqual(self.sc.capture_page(), [True, True])
 
+    @patch("the_ark.screen_capture.Screenshot._capture_single_viewport")
+    @patch("the_ark.screen_capture.Screenshot._capture_paginated_page")
+    def test_paginated_capture_with_padding(self, capture_paginated_page, capture_single_viewport):
+        capture_single_viewport.return_value = True
+        self.sc.sh.driver.excecute_script.return_value = "1200"
+        self.sc.paginated = True
+        self.sc.capture_page(False, 300)
+        capture_paginated_page.assert_called_with(300)
+
     #--- Full Page
     @patch("the_ark.screen_capture.Screenshot._crop_and_stitch_image")
     @patch("the_ark.screen_capture.Screenshot._get_image_data")
@@ -91,6 +100,16 @@ class ScreenCaptureTestCase(unittest.TestCase):
         sh.create_driver(browserName="phantomjs")
         sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
         self.assertIsInstance(sc.capture_scrolling_element(".scrollable", False), list)
+
+    @patch("PIL.Image")
+    def test_mobile_device_capture(self, image_class):
+        sh = SeleniumHelpers()
+        sc = Screenshot(sh, scroll_padding=100)
+        sh.create_driver(browserName="phantomjs")
+        sh.desired_capabilities["mobile"] = True
+        sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+        image = sc._get_image_data()
+        self.assertFalse(image_class.crop.called)
 
     #===================================================================
     #--- Helper Functions

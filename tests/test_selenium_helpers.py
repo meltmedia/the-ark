@@ -55,7 +55,21 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         mock_firefox.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="firefox")
-        mock_firefox.assert_called_once_with()
+        mock_firefox.assert_called_once_with(firefox_binary=None)
+
+    # @patch("selenium.webdriver.Firefox", autospec=True)
+    # @patch("selenium.webdriver.firefox.firefox_binary.FirefoxBinary", autospec=True)
+    # def test_firefox_browser_with_binary(self, fire_binary, mock_firefox):
+    #     mock_driver = Mock(spec=mock_firefox)
+    #     mock_firefox.return_value = mock_driver
+    #
+    #     mock_binary = Mock(spec=fire_binary)
+    #     fire_binary.return_value = mock_binary
+    #
+    #     sh = selenium_helpers.SeleniumHelpers()
+    #     sh.create_driver(browserName="firefox", binary="/path/to_thing")
+    #
+    #     mock_firefox.assert_called_once_with(firefox_binary=mock_binary)
 
     @patch("selenium.webdriver.PhantomJS", autospec=True)
     def test_phantomjs_browser_valid(self, mock_phantomjs):
@@ -64,6 +78,14 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="phantomjs")
         mock_phantomjs.assert_called_once_with()
+
+    @patch("selenium.webdriver.PhantomJS", autospec=True)
+    def test_phantomjs_browser_valid(self, mock_phantomjs):
+        mock_driver = Mock(spec=mock_phantomjs)
+        mock_phantomjs.return_value = mock_driver
+        sh = selenium_helpers.SeleniumHelpers()
+        sh.create_driver(browserName="phantomjs", binary="/path/to_thing")
+        mock_phantomjs.assert_called_once_with("/path/to_thing")
 
     @patch("selenium.webdriver.Safari", autospec=True)
     def test_safari_browser_valid(self, mock_safari):
@@ -168,30 +190,13 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers()
         self.assertRaises(selenium_helpers.DriverURLError, sh.refresh_driver)
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
-    def test_get_viewport_size_width_valid(self, mock_width_script):
-        self.sh.get_viewport_size(get_only_width=True)
-        mock_width_script.assert_any_call("return document.documentElement.clientWidth")
-
     def test_get_viewport_size_width_value_valid(self):
         viewport_width = self.sh.get_viewport_size(get_only_width=True)
         self.assertEqual(viewport_width, 400)
 
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
-    def test_get_viewport_size_height_valid(self, mock_height_script):
-        self.sh.get_viewport_size(get_only_height=True)
-        mock_height_script.assert_any_call("return document.documentElement.clientHeight")
-
     def test_get_viewport_size_height_value_valid(self):
         viewport_height = self.sh.get_viewport_size(get_only_height=True)
         self.assertEqual(viewport_height, 300)
-
-    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
-    def test_get_viewport_size_valid(self, mock_script):
-        self.sh.get_viewport_size()
-        mock_script.assert_any_call("return document.documentElement.clientWidth")
-        mock_script.assert_any_call("return document.documentElement.clientHeight")
-        self.assertTrue(mock_script.call_count, 2)
 
     def test_get_viewport_size_values_valid(self):
         viewport_width, viewport_height = self.sh.get_viewport_size()
@@ -226,6 +231,29 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_switch_handle_invalid(self):
         self.assertRaises(selenium_helpers.DriverAttributeError, self.sh.switch_window_handle, specific_handle="test")
 
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_screenshot_as_base64")
+    def test_get_screenshot_base64_valid(self, mock_base64):
+        self.sh.get_screenshot_base64()
+        self.assertTrue(mock_base64.called)
+
+    def test_get_screehnshot_base64_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_screenshot_base64)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.get_screenshot_as_file")
+    def test_save_screenshot_as_file_valid(self, mock_save_screenshot):
+        self.sh.save_screenshot_as_file(file_path='{0}/etc/'.format(ROOT), file_name="save_screenshot_test.png")
+        self.assertTrue(mock_save_screenshot.called)
+
+    def test_save_screenshot_as_file_invalid(self):
+        self.assertRaises(selenium_helpers.ScreenshotError, self.sh.save_screenshot_as_file,
+                          file_path='{0}/etc/'.format(ROOT), file_name=2)
+
+    def test_save_screenshot_as_file_unexpected_invalid(self):
+        sh = selenium_helpers.SeleniumHelpers()
+        self.assertRaises(selenium_helpers.DriverAttributeError, sh.save_screenshot_as_file,
+                          file_path='{0}/etc/'.format(ROOT), file_name="save_screenshot_test.png")
+
     @patch("selenium.webdriver.remote.webdriver.WebDriver.close")
     def test_close_window_valid(self, mock_close):
         sh = selenium_helpers.SeleniumHelpers()
@@ -251,11 +279,11 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     @patch("selenium.webdriver.remote.webdriver.WebDriver.find_element_by_css_selector")
     def test_exist_valid(self, mock_find):
         valid_css_selector = ".valid"
-        self.sh.ensure_element_exists(valid_css_selector)
+        self.sh.element_exists(valid_css_selector)
         mock_find.assert_called_with(valid_css_selector)
 
     def test_exist_invalid(self):
-        self.assertRaises(selenium_helpers.ElementError, self.sh.ensure_element_exists, ".invalid")
+        self.assertEqual(self.sh.element_exists(".invalid"), False)
 
     def test_visible_web_element_valid(self):
         valid_css_selector = ".valid"
@@ -271,6 +299,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.sh.hide_element(web_element=web_element)
         self.assertRaises(selenium_helpers.ElementNotVisibleError, self.sh.ensure_element_visible,
                           web_element=web_element)
+
+    def test_visible_element_invalid(self):
+        self.assertRaises(selenium_helpers.ElementError, self.sh.ensure_element_visible, css_selector=".invalid")
 
     def test_visible_invalid(self):
         self.assertRaises(selenium_helpers.ElementNotVisibleError, self.sh.ensure_element_visible,
@@ -290,11 +321,24 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         valid_css_selector = ".valid-list li"
         self.assertEqual(len(self.sh.get_list_of_elements(valid_css_selector)), 3)
 
+    def test_get_list_of_elements_invalid(self):
+        self.assertRaises(selenium_helpers.ElementError, self.sh.get_list_of_elements, ".invalid")
+
+    @patch("selenium.webdriver.support.expected_conditions.presence_of_element_located")
     @patch("selenium.webdriver.support.ui.WebDriverWait.until")
-    def test_wait_valid(self, mock_wait):
+    def test_wait_valid(self, mock_wait, mock_present):
         valid_css_selector = ".valid"
         self.sh.wait_for_element(valid_css_selector)
         self.assertTrue(mock_wait.called)
+        self.assertTrue(mock_present.called)
+
+    @patch("selenium.webdriver.support.expected_conditions.visibility_of_element_located")
+    @patch("selenium.webdriver.support.ui.WebDriverWait.until")
+    def test_wait_visible_valid(self, mock_wait, mock_visible):
+        valid_css_selector = ".valid"
+        self.sh.wait_for_element(valid_css_selector, visible=True)
+        self.assertTrue(mock_wait.called)
+        self.assertTrue(mock_visible.called)
 
     def test_wait_invalid(self):
         self.assertRaises(selenium_helpers.TimeoutError, self.sh.wait_for_element, ".invalid", 1)
@@ -323,26 +367,26 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(Exception, self.sh.click_an_element, css_selector="*valid a")
 
     @patch("selenium.webdriver.common.action_chains.ActionChains.move_to_element_with_offset")
-    def test_click_location_web_element_valid(self, mock_click_location):
+    def test_click_element_with_offset_web_element_valid(self, mock_click_element_with_offset):
         valid_css_selector = ".valid a"
         web_element = self.sh.get_element(valid_css_selector)
-        self.sh.click_location(web_element=web_element, x_position=30, y_position=30)
-        self.assertTrue(mock_click_location.called)
+        self.sh.click_element_with_offset(web_element=web_element, x_position=30, y_position=30)
+        self.assertTrue(mock_click_element_with_offset.called)
 
     @patch("selenium.webdriver.common.action_chains.ActionChains.move_to_element_with_offset")
-    def test_click_location_valid(self, mock_click_location):
+    def test_click_element_with_offset_valid(self, mock_click_element_with_offset):
         valid_css_selector = ".valid a"
-        self.sh.click_location(css_selector=valid_css_selector, x_position=30, y_position=30)
-        self.assertTrue(mock_click_location.called)
+        self.sh.click_element_with_offset(css_selector=valid_css_selector, x_position=30, y_position=30)
+        self.assertTrue(mock_click_element_with_offset.called)
 
-    def test_click_location_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_location, css_selector=".invalid a")
+    def test_click_element_with_offset_invalid(self):
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_element_with_offset, css_selector=".invalid a")
 
-    def test_web_element_click_location_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.click_location, web_element="*invalid")
+    def test_web_element_click_element_with_offset_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.click_element_with_offset, web_element="*invalid")
 
-    def test_click_location_unexpected_invalid(self):
-        self.assertRaises(Exception, self.sh.click_location, css_selector="*valid a")
+    def test_click_element_with_offset_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.click_element_with_offset, css_selector="*valid a")
 
     @patch("selenium.webdriver.common.action_chains.ActionChains.double_click")
     def test_double_click_web_element_valid(self, mock_double_click):
@@ -365,6 +409,19 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_double_click_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.double_click, css_selector="@hidden a")
+
+    @patch("selenium.webdriver.common.action_chains.ActionChains.move_by_offset")
+    def test_move_cursor_to_location_valid(self, mock_move):
+        self.sh.move_cursor_to_location(15, 15)
+        self.assertTrue(mock_move.called)
+
+    @patch("selenium.webdriver.common.action_chains.ActionChains.click")
+    def test_move_cursor_to_location_click_valid(self, mock_click):
+        self.sh.move_cursor_to_location(15, 15, click=True)
+        self.assertTrue(mock_click.called)
+
+    def test_move_cursor_to_location_invalid(self):
+        self.assertRaises(selenium_helpers.CursorLocationError, self.sh.move_cursor_to_location, x_position="")
 
     @patch("selenium.webdriver.remote.webelement.WebElement.clear")
     def test_clear_web_element_valid(self, mock_clear):
@@ -450,6 +507,16 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_hover_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.hover_on_element, css_selector="+invalid a")
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_execute_script_valid(self, mock_execute_script):
+        valid_css_selector = ".valid a"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.execute_script("var element = arguments[0]; element.scrollIntoView(false);", web_element)
+        self.assertTrue(mock_execute_script.called)
+
+    def test_execute_script_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.execute_script, script="No script.")
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_to_element_bottom_valid(self, mock_scroll_bottom):

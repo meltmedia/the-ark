@@ -3,6 +3,8 @@ import mimetypes
 import os
 import shutil
 import tempfile
+import urllib
+import urlparse
 
 from boto.s3.key import Key
 from StringIO import StringIO
@@ -98,7 +100,18 @@ class S3Client(object):
                 file_key = self.bucket.get_key(s3_file.key)
                 file_key.set_acl('public-read')
                 file_url = file_key.generate_url(0, query_auth=False)
-                return file_url
+
+                # - Certain server side permissions might cause a x-amz-security-token parameter to be added to the url
+                # Split the url into its peices
+                scheme, netloc, path, params, query, fragment = urlparse.urlparse(file_url)
+                # Check whether the x-amz-security-token parameter was appended to the url and remove it
+                params = urlparse.parse_qs(query)
+                if 'x-amz-security-token' in params:
+                    del params['x-amz-security-token']
+                # Rebuild the params without the x-amz-security-token
+                query = urllib.urlencode(params)
+
+                return urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
 
         except Exception as store_file_exception:
             message = "Exception while storing file on S3: {0}".format(store_file_exception)

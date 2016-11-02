@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as expected_condition
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 import traceback
 
 
@@ -19,6 +20,7 @@ class SeleniumHelpers:
         """
         self.log = logging.getLogger(self.__class__.__name__)
         self.driver = None
+        self.desired_capabilities = {}
 
     def create_driver(self, **desired_capabilities):
         """
@@ -36,15 +38,21 @@ class SeleniumHelpers:
             elif desired_capabilities.get("browserName").lower() == "chrome":
                 self.driver = webdriver.Chrome()
             elif desired_capabilities.get("browserName").lower() == "firefox":
-                self.driver = webdriver.Firefox()
+                binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
+                self.driver = webdriver.Firefox(firefox_binary=binary)
             elif desired_capabilities.get("browserName").lower() == "phantomjs":
-                self.driver = webdriver.PhantomJS()
+                binary_path = desired_capabilities.get("binary", "phantomjs")
+                self.driver = webdriver.PhantomJS(binary_path)
             elif desired_capabilities.get("browserName").lower() == "safari":
                 self.driver = webdriver.Safari()
             else:
                 message = "No driver has been created. Pass through the needed desired capabilities in order to " \
                           "create a driver. | Desired Capabilities: {0}".format(desired_capabilities)
                 raise DriverAttributeError(msg=message)
+
+            # Set the desired_capabilities variable on the class if the browser creation was successful
+            self.desired_capabilities = desired_capabilities
+
             return self.driver
         except Exception as driver_creation_error:
             message = "There was an issue creating a driver with the specified desired capabilities: {0}\n" \
@@ -68,7 +76,7 @@ class SeleniumHelpers:
             else:
                 self.driver.set_window_size(self.driver.get_window_size()["width"], height)
         except Exception as resize_error:
-            message = "Unable to resize the browser with the give width ({0}) and/or height ({1}) value(s)\n" \
+            message = "Unable to resize the browser with the given width ({0}) and/or height ({1}) value(s)\n" \
                       "<{2}>".format(width, height, resize_error)
             raise DriverSizeError(msg=message, stacktrace=traceback.format_exc(), width=width, height=height)
 
@@ -151,7 +159,7 @@ class SeleniumHelpers:
         """
         This will get the width and/or height of the viewport. The reason for not using driver.get_window_size here
         instead is because it's not just getting the height of the viewport but the whole window (address bar,
-        favorites bar, etc.). In order to be accurate this uses the driver.execute_script with scripts to get the
+        favorites bar, etc.). In order to be accurate this uses the execute_script method with scripts to get the
         clientWidth and/or clientHeight.
         :param
             -   get_only_width: boolean - Whether or not to just return the width of the viewport.
@@ -161,8 +169,8 @@ class SeleniumHelpers:
             -   viewport_height:    integer - The number the height of the viewport is at.
         """
         try:
-            viewport_width = self.driver.execute_script("return document.documentElement.clientWidth")
-            viewport_height = self.driver.execute_script("return document.documentElement.clientHeight")
+            viewport_width = self.execute_script("return document.documentElement.clientWidth;")
+            viewport_height = self.execute_script("return document.documentElement.clientHeight;")
             if get_only_width and not get_only_height:
                 return viewport_width
             elif get_only_height and not get_only_width:
@@ -208,6 +216,41 @@ class SeleniumHelpers:
             message = "Unable to switch window handles.\n<{0}>".format(window_handle_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
+    def get_screenshot_base64(self):
+        """
+        Get image data as base64 of the current page.
+        :return
+            -   base64_image:  base64 - Image data of the current page.
+        """
+        try:
+            base64_image = self.driver.get_screenshot_as_base64()
+            return base64_image
+        except Exception as base64_error:
+            message = "Unable to get screenshot as base64. The browser might have been closed.\n" \
+                      "<{0}>".format(base64_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def save_screenshot_as_file(self, file_path, file_name):
+        """
+        Capture a screenshot of the current page. The file path and file name are both required. The file_name needs to
+        include the file extension.
+        :param
+            -   file_path:  string - The path the image will be saved to.
+            -   file_name:  string = The name that the image will be saved with, including the extension.
+        """
+        try:
+            self.driver.get_screenshot_as_file(file_path + file_name)
+        except TypeError as screenshot_error:
+            message = "Unable to save screenshot '{0}' to '{1}' on: {2}\n<{3}>".format(file_name, file_path,
+                                                                                       self.driver.current_url,
+                                                                                       screenshot_error)
+            raise ScreenshotError(msg=message, stacktrace=traceback.format_exc(), current_url=self.driver.current_url,
+                                  file_name=file_name, file_path=file_path)
+        except Exception as unexpected_error:
+            message = "Unable to save screenshot '{0}' to '{1}'. The browser might have been closed.\n" \
+                      "<{2}>".format(file_name, file_path, unexpected_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
     def close_window(self):
         """
         This will close the active window of the driver.
@@ -230,7 +273,7 @@ class SeleniumHelpers:
                       "<{0}>".format(quit_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
-    def ensure_element_exists(self, css_selector):
+    def element_exists(self, css_selector):
         """
         This will ensure that an element exists on the page under test, if not an exception will be raised.
         :param
@@ -238,11 +281,9 @@ class SeleniumHelpers:
         """
         try:
             self.driver.find_element_by_css_selector(css_selector)
+            return True
         except common.exceptions.NoSuchElementException as no_such:
-            message = "Element '{0}' does not exist on page '{1}'.\n" \
-                      "<{2}>".format(css_selector, self.driver.current_url, no_such)
-            raise ElementError(msg=message, stacktrace=traceback.format_exc(),
-                               current_url=self.driver.current_url, css_selector=css_selector)
+            return False
 
     def ensure_element_visible(self, css_selector=None, web_element=None):
         """
@@ -254,14 +295,15 @@ class SeleniumHelpers:
         if web_element:
             element_visible = web_element.is_displayed()
         else:
-            self.ensure_element_exists(css_selector)
-            element_visible = self.driver.find_element_by_css_selector(css_selector).is_displayed()
-        if not element_visible:
-            message = "The element is not visible on page '{0}'.".format(self.driver.current_url)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
+            if self.element_exists(css_selector):
+                element_visible = self.driver.find_element_by_css_selector(css_selector).is_displayed()
             else:
-                message += " | Based off the WebElement passed through."
+                message = "Element '{0}' does not exist on page '{1}'.".format(css_selector, self.driver.current_url)
+                raise ElementError(msg=message, stacktrace=traceback.format_exc(),
+                                   current_url=self.driver.current_url, css_selector=css_selector)
+        if not element_visible:
+            message = "The element is not visible on page '{0}'. | CSS Selector: '{1}' or WebElement passed through."\
+                .format(self.driver.current_url, css_selector)
             raise ElementNotVisibleError(msg=message, stacktrace=traceback.format_exc(),
                                          current_url=self.driver.current_url, css_selector=css_selector)
         else:
@@ -297,20 +339,33 @@ class SeleniumHelpers:
         :return
             -   list_of_elements:   list - The full list of web elements from a parent selector (e.g. drop down menus)
         """
-        self.ensure_element_exists(css_selector)
-        list_of_elements = self.driver.find_elements_by_css_selector(css_selector)
-        return list_of_elements
+        if self.element_exists(css_selector):
+            list_of_elements = self.driver.find_elements_by_css_selector(css_selector)
+            return list_of_elements
+        else:
+            message = "Element '{0}' does not exist on page '{1}'.".format(css_selector, self.driver.current_url)
+            raise ElementError(msg=message, stacktrace=traceback.format_exc(),
+                               current_url=self.driver.current_url, css_selector=css_selector)
 
-    def wait_for_element(self, css_selector, wait_time=15):
+    def wait_for_element(self, css_selector, wait_time=15, visible=False):
         """
         This will wait for a specific element to be present on the page within a specified amount of time, in seconds.
         :param
             -   css_selector:   string - The specific element that will be interacted with.
-            -   wait_time:  integer - The amount of time, in seconds, given to wait for an element to be present.
+            -   wait_time:      integer - The amount of time, in seconds, given to wait for an element to be present.
+            -   visible:        boolean - If true, wait for the element to be visible on the page; present otherwise
         """
         try:
-            WebDriverWait(self.driver, wait_time).until(expected_condition.presence_of_element_located((By.CSS_SELECTOR,
-                                                                                                        css_selector)))
+            if visible:
+                # Wait for element to be visible on the page
+                WebDriverWait(
+                    self.driver, wait_time).until(expected_condition.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                                    css_selector)))
+            else:
+                # Wait for element to be present on the page
+                WebDriverWait(
+                    self.driver, wait_time).until(expected_condition.presence_of_element_located((By.CSS_SELECTOR,
+                                                                                                  css_selector)))
         except common.exceptions.TimeoutException as timeout:
             message = "Element '{0}' does not exist on page '{1}' after waiting {2} seconds.\n" \
                       "<{3}>".format(css_selector, self.driver.current_url, wait_time, timeout)
@@ -325,28 +380,25 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                web_element.click()
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                self.get_element(css_selector).click()
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            web_element.click()
         except SeleniumHelperExceptions as click_error:
-            click_error.msg = "Unable to click element. | " + click_error.msg
+            click_error.msg = "Unable to click element. | Based off the CSS Selector: '{0}' or WebElement " \
+                              "passed through.".format(css_selector)
             raise click_error
         except Exception as unexpected_error:
-            message = "An nexpected error occurred attempting to click the element on page '{0}'.\n" \
+            message = "An unexpected error occurred attempting to click the element on page '{0}'.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def click_location(self, css_selector="body", web_element=None, x_position=0, y_position=0):
+    def click_element_with_offset(self, css_selector=None, web_element=None, x_position=0, y_position=0):
         """
-        Click on a specific location on the page.
+        Click an element with an offset. The offset is relative to the top-left corner of the specified element.
         :param
             -   css_selector:   string - The specific element that will be interacted with.
             -   web_element:    object - The WebElement that will be interacted with.
@@ -354,24 +406,19 @@ class SeleniumHelpers:
             -   x_position: integer - The position at which the mouse will be placed horizontally.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position)
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                ActionChains(self.driver).move_to_element_with_offset(self.get_element(css_selector), x_position,
-                                                                      y_position)
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position).click().perform()
         except SeleniumHelperExceptions as click_location_error:
-            click_location_error.msg = "Unable to click the position ({0}, {1}). | ".format(x_position, y_position) + \
-                                       click_location_error.msg
+            click_location_error.msg = "Unable to click the position ({0}, {1}). | " \
+                                       "Based off the CSS Selector: '{2}' or WebElement passed through. | "\
+                                           .format(x_position, y_position, css_selector) + click_location_error.msg
             raise click_location_error
         except Exception as unexpected_error:
             message = "Unable to click at the position ({0}, {1}) of the element on page '{2}'.\n" \
                       "<{3}>".format(x_position, y_position, self.driver.current_url, unexpected_error)
-            if web_element:
-                message += " | Based off the WebElement passed through."
-            else:
-                message += " | CSS Selector: {0}".format(css_selector)
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ClickPositionError(msg=message, stacktrace=traceback.format_exc(),
                                      current_url=self.driver.current_url, css_selector=css_selector,
                                      y_position=y_position, x_position=x_position)
@@ -384,24 +431,45 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                ActionChains(self.driver).double_click(web_element)
-            else:
-                self.ensure_element_visible(css_selector)
-                ActionChains(self.driver).double_click(self.get_element(css_selector))
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            ActionChains(self.driver).double_click(web_element).perform()
         except SeleniumHelperExceptions as double_click_error:
             double_click_error.msg = "Unable to double click element. | " + double_click_error.msg
             raise double_click_error
         except Exception as unexpected_error:
             message = "Unable to double-click the element on page '{0}'.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
+
+    def move_cursor_to_location(self, x_position=0, y_position=0, click=False):
+        """
+        Move the cursor to a specific location on the page. This will first move the cursor to (0,0) on the page and
+        then move to the coordinates the user passes in. There is an option to click after the cursors moves to the
+        specified coordinates.
+        :param
+            -   y_position: integer - The position at which the mouse will be placed vertically.
+            -   x_position: integer - The position at which the mouse will be placed horizontally.
+            -   click: boolean - Whether or not a click will be performed after the the cursor is moved.
+        """
+        try:
+            # Starting the cursor off at the absolute (0,0) point on the page.
+            web_element = self.get_element("body")
+            ActionChains(self.driver).move_to_element_with_offset(web_element, 0, 0).perform()
+            if click:
+                # Moving the cursor to and clicking the specified coordinates provided.
+                ActionChains(self.driver).move_by_offset(x_position, y_position).click().perform()
+            else:
+                # Moving the cursor to the specified coordinates provided.
+                ActionChains(self.driver).move_by_offset(x_position, y_position).perform()
+        except Exception as unexpected_error:
+            message = "Unable to move the cursor to ({0},{1}) on page '{2}'.\n" \
+                      "<{3}>".format(x_position, y_position, self.driver.current_url, unexpected_error)
+            raise CursorLocationError(msg=message, stacktrace=traceback.format_exc(),
+                                      current_url=self.driver.current_url, x_position=x_position, y_position=y_position)
 
     def clear_an_element(self, css_selector=None, web_element=None):
         """
@@ -411,22 +479,17 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.click_an_element(web_element=web_element)
-                web_element.clear()
-            else:
-                self.click_an_element(css_selector=css_selector)
-                self.get_element(css_selector).clear()
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.click_an_element(web_element=web_element, css_selector=css_selector)
+            web_element.clear()
         except SeleniumHelperExceptions as clear_error:
             clear_error.msg = "Unable to clear element. | " + clear_error.msg
             raise clear_error
         except Exception as unexpected_error:
             message = "Unable to clear the element on page '{0}'.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -439,22 +502,17 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.clear_an_element(web_element=web_element)
-                web_element.send_keys(fill_text)
-            else:
-                self.clear_an_element(css_selector=css_selector)
-                self.get_element(css_selector).send_keys(fill_text)
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.clear_an_element(web_element=web_element, css_selector=css_selector)
+            web_element.send_keys(fill_text)
         except SeleniumHelperExceptions as fill_error:
             fill_error.msg = "Unable to fill element. | " + fill_error.msg
             raise fill_error
         except Exception as unexpected_error:
             message = "Unable to fill the element on page '{0}'.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -479,26 +537,41 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                hover = ActionChains(self.driver).move_to_element(web_element)
-                hover.perform()
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                hover = ActionChains(self.driver).move_to_element(self.get_element(css_selector))
-                hover.perform()
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            hover = ActionChains(self.driver).move_to_element(web_element)
+            hover.perform()
         except SeleniumHelperExceptions as hover_error:
             hover_error.msg = "Unable to hover over element. | " + hover_error.msg
             raise hover_error
         except Exception as unexpected_error:
             message = "Unable to hover over the element on page '{0}'.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
+
+    def execute_script(self, script, *script_arguments):
+        """
+        This will run JavaScript through the browser.
+        :param
+            -   script: string - JavaScript to be sent through to browser.
+            -   argument: list - Arguments to be used in the script that is sent to the browser.
+        :return
+            -   script: string, int - Any value that the script could return for future consumption.
+        """
+        try:
+            if script_arguments:
+                # Execute the script with a specific WebElement.
+                return self.driver.execute_script(script, *script_arguments)
+            else:
+                # Execute the script without a specific WebElement.
+                return self.driver.execute_script(script)
+        except Exception as unexpected_error:
+            message = "Unable to execute given script on page '{0}'.\n" \
+                      "<{1}>".format(self.driver.current_url, unexpected_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def scroll_to_element(self, css_selector=None, web_element=None, position_bottom=False, position_middle=False):
         """
@@ -512,23 +585,27 @@ class SeleniumHelpers:
             -   position_middle:    boolean - Whether or not the element will be in the middle of the page.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
-
-            if position_bottom or position_middle:
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            if position_bottom:
                 # Scroll the window so the bottom of the element will be at the bottom of the window.
-                self.driver.execute_script("var element = arguments[0]; element.scrollIntoView(false);", element)
-                if position_middle:
-                    # Scroll the window so the element is in the middle of the window.
-                    scroll_position = (self.driver.get_window_size()["height"] / 2)
-                    self.driver.execute_script("window.scrollBy(0, arguments[0]);", scroll_position)
+                self.execute_script("var element = arguments[0]; element.scrollIntoView(false);",
+                                    web_element)
+            elif position_middle:
+                # Find the scroll position of the top of the element
+                element_position = self.execute_script("var element = arguments[0]; "
+                                                       "var height = element.offsetTop; "
+                                                       "return height", web_element)
+                # Determine the position that is half a screen height above the element
+                screen_padding = (self.driver.get_window_size()["height"] / 2)
+                scroll_position = element_position - screen_padding
+                # Scroll to that position
+                self.execute_script("window.scrollTo(0, arguments[0]);", scroll_position)
             else:
                 # Scroll the window so the top of the element will be at the top of the window.
-                self.driver.execute_script("var element = arguments[0]; element.scrollIntoView(true);", element)
+                self.execute_script("var element = arguments[0]; element.scrollIntoView(true);",
+                                    web_element)
 
         except SeleniumHelperExceptions as scroll_to_element_error:
             scroll_to_element_error.msg = "Unable to scroll to element. | " + scroll_to_element_error.msg
@@ -536,10 +613,7 @@ class SeleniumHelpers:
         except Exception as unexpected_error:
             message = "Unable to scroll to the element on page '{0}'.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -555,12 +629,12 @@ class SeleniumHelpers:
         """
         try:
             if scroll_top:
-                self.driver.execute_script("window.scrollTo(0, 0);")
+                self.execute_script("window.scrollTo(0, 0);")
             elif scroll_bottom:
-                total_height = self.driver.execute_script("var height = document.body.scrollHeight; return height")
-                self.driver.execute_script("window.scrollTo(0, arguments[0]);", total_height)
+                total_height = self.execute_script("var height = document.body.scrollHeight; return height")
+                self.execute_script("window.scrollTo(0, arguments[0]);", total_height)
             elif type(y_position) == int or type(x_position) == int:
-                self.driver.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
+                self.execute_script("window.scrollTo(arguments[0], arguments[1]);", x_position, y_position)
             else:
                 message = "Unable to scroll to position ('{0}', '{1}') on page '{2}'.".format(x_position, y_position,
                                                                                               self.driver.current_url)
@@ -584,8 +658,8 @@ class SeleniumHelpers:
             -   y_scroll_position:  integer - The amount that the window has been scrolled on the y axis.
         """
         try:
-            x_scroll_position = self.driver.execute_script("return window.scrollX;")
-            y_scroll_position = self.driver.execute_script("return window.scrollY;")
+            x_scroll_position = self.execute_script("return window.scrollX;")
+            y_scroll_position = self.execute_script("return window.scrollY;")
             if get_both_positions and not get_only_x_position:
                 return x_scroll_position, y_scroll_position
             elif get_only_x_position and not get_both_positions:
@@ -613,40 +687,34 @@ class SeleniumHelpers:
             -   scroll_bottom:  boolean - Whether or not the element will be scrolled to the bottom.
         """
         try:
-            if web_element:
-                element = web_element
-                self.ensure_element_visible(web_element=web_element)
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
             if scroll_top:
-                self.driver.execute_script("arguments[0].scrollTop = 0;", element)
+                self.execute_script("arguments[0].scrollTop = 0;", web_element)
             elif scroll_bottom:
-                element_max_height = self.driver.execute_script("var element = arguments[0]; "
-                                                                "var scrollHeight = element.scrollHeight; "
-                                                                "var clientHeight = element.clientHeight; "
-                                                                "var maxHeight = scrollHeight - clientHeight; "
-                                                                "return maxHeight;", element)
-                self.driver.execute_script("arguments[0].scrollTop = arguments[1];", element, element_max_height)
+                element_max_height = self.execute_script("var element = arguments[0]; "
+                                                         "var scrollHeight = element.scrollHeight; "
+                                                         "var clientHeight = element.clientHeight; "
+                                                         "var maxHeight = scrollHeight - clientHeight; "
+                                                         "return maxHeight;", web_element)
+                self.execute_script("arguments[0].scrollTop = arguments[1];", web_element, element_max_height)
             elif (y_position or x_position) > 0:
-                self.driver.execute_script("arguments[0].scrollTop = arguments[1];", element, y_position)
-                self.driver.execute_script("arguments[0].scrollLeft = arguments[1];", element, x_position)
+                self.execute_script("arguments[0].scrollTop = arguments[1];", web_element, y_position)
+                self.execute_script("arguments[0].scrollLeft = arguments[1];", web_element, x_position)
             else:
-                element_height = self.driver.execute_script("var element = arguments[0]; "
-                                                            "var elementHeight = element.offsetHeight; "
-                                                            "return elementHeight;", element)
-                self.driver.execute_script("arguments[0].scrollTop += (arguments[1] - arguments[2]);", element,
-                                           element_height, scroll_padding)
+                element_height = self.execute_script("var element = arguments[0]; "
+                                                     "var elementHeight = element.offsetHeight; "
+                                                     "return elementHeight;", web_element)
+                self.execute_script("arguments[0].scrollTop += (arguments[1] - arguments[2]);",
+                                    web_element, element_height, scroll_padding)
         except SeleniumHelperExceptions as scroll_element_error:
             scroll_element_error.msg = "Unable to scroll element. | " + scroll_element_error.msg
             raise scroll_element_error
         except Exception as unexpected_error:
             message = "Unable to scroll the element on page '{0}'.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -665,18 +733,15 @@ class SeleniumHelpers:
             -   y_scroll_position:  integer - The amount that the element has been scrolled on the y axis.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
-            x_scroll_position = self.driver.execute_script("var element = arguments[0]; "
-                                                           "scrollPosition = element.scrollLeft; "
-                                                           "return scrollPosition;", element)
-            y_scroll_position = self.driver.execute_script("var element = arguments[0]; "
-                                                           "scrollPosition = element.scrollTop; "
-                                                           "return scrollPosition;", element)
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            x_scroll_position = self.execute_script("var element = arguments[0]; "
+                                                    "scrollPosition = element.scrollLeft; "
+                                                    "return scrollPosition;", web_element)
+            y_scroll_position = self.execute_script("var element = arguments[0]; "
+                                                    "scrollPosition = element.scrollTop; "
+                                                    "return scrollPosition;", web_element)
             if get_both_positions and not get_only_x_position:
                 return x_scroll_position, y_scroll_position
             elif get_only_x_position and not get_both_positions:
@@ -690,10 +755,7 @@ class SeleniumHelpers:
         except Exception as unexpected_error:
             message = "Unable to determine the scroll position of the element on page '{0}'.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -707,15 +769,12 @@ class SeleniumHelpers:
             -   at_top: boolean - Whether or not the scrollable element is at the top.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
-            scroll_position = self.driver.execute_script("var element = arguments[0]; "
-                                                         "scrollPosition = element.scrollTop; "
-                                                         "return scrollPosition;", element)
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            scroll_position = self.execute_script("var element = arguments[0]; "
+                                                  "scrollPosition = element.scrollTop; "
+                                                  "return scrollPosition;", web_element)
             if scroll_position != 0:
                 return False
             else:
@@ -727,10 +786,7 @@ class SeleniumHelpers:
         except Exception as unexpected_error:
             message = "Unable to determine if the scroll position of the element on page '{0}' is at the top.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -744,21 +800,18 @@ class SeleniumHelpers:
             -   at_bottom:  boolean - Whether or not the scrollable element is at the bottom.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
-            element_max_height = self.driver.execute_script("var element = arguments[0]; "
-                                                            "var scrollHeight = element.scrollHeight; "
-                                                            "var clientHeight = element.clientHeight; "
-                                                            "var maxHeight = scrollHeight - clientHeight;"
-                                                            "return maxHeight;", element)
-            scroll_position = self.driver.execute_script("var element = arguments[0]; "
-                                                         "var scrollPosition = element.scrollTop; "
-                                                         "return scrollPosition;", element)
-            if scroll_position != element_max_height:
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            element_max_height = self.execute_script("var element = arguments[0]; "
+                                                     "var scrollHeight = element.scrollHeight; "
+                                                     "var clientHeight = element.clientHeight; "
+                                                     "var maxHeight = scrollHeight - clientHeight; "
+                                                     "return maxHeight;", web_element)
+            scroll_position = self.execute_script("var element = arguments[0]; "
+                                                  "var scrollPosition = element.scrollTop; "
+                                                  "return scrollPosition;", web_element)
+            if scroll_position < element_max_height - 1:
                 return False
             else:
                 return True
@@ -769,10 +822,7 @@ class SeleniumHelpers:
         except Exception as unexpected_error:
             message = "Unable to determine if the scroll position of the element on page '{0}' is at the bottom."\
                       "\n<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -784,23 +834,17 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                self.ensure_element_visible(web_element=web_element)
-                element = web_element
-            else:
-                self.ensure_element_visible(css_selector=css_selector)
-                element = self.get_element(css_selector)
-            self.driver.execute_script("arguments[0].style.display = 'none';", element)
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            self.execute_script("arguments[0].style.display = 'none';", web_element)
         except SeleniumHelperExceptions as hide_error:
             hide_error.msg = "Unable to hide element. | " + hide_error.msg
             raise hide_error
         except Exception as unexpected_error:
             message = "Unable to hide element on page '{0}', it may already hidden.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
-            if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
-            else:
-                message += " | Based off the WebElement passed through."
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
@@ -812,11 +856,9 @@ class SeleniumHelpers:
             -   web_element:    object - The WebElement that will be interacted with.
         """
         try:
-            if web_element:
-                element = web_element
-            else:
-                element = self.get_element(css_selector)
-            self.driver.execute_script("arguments[0].style.display = 'block';", element)
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.execute_script("arguments[0].style.display = 'block';", web_element)
         except SeleniumHelperExceptions as show_error:
             show_error.msg = "Unable to show element. | " + show_error.msg
             raise show_error
@@ -824,7 +866,7 @@ class SeleniumHelpers:
             message = "Unable to show element on page '{0}', that element may not exist.\n" \
                       "<{1}>".format(self.driver.current_url, unexpected_error)
             if css_selector:
-                message += " | CSS Selector: {0}".format(css_selector)
+                message += " | CSS Selector: '{0}'".format(css_selector)
             else:
                 message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
@@ -882,6 +924,15 @@ class ClickPositionError(SeleniumHelperExceptions):
         self.details["x_position"] = self.x_position
 
 
+class CursorLocationError(SeleniumHelperExceptions):
+    def __init__(self, msg, stacktrace, current_url, x_position, y_position):
+        super(CursorLocationError, self).__init__(msg=msg, stacktrace=stacktrace, current_url=current_url)
+        self.x_position = x_position
+        self.y_position = y_position
+        self.details["x_position"] = self.x_position
+        self.details["y_position"] = self.y_position
+
+
 class ScrollPositionError(SeleniumHelperExceptions):
     def __init__(self, msg, stacktrace, current_url, y_position, x_position):
         super(ScrollPositionError, self).__init__(msg=msg, stacktrace=stacktrace, current_url=current_url)
@@ -889,6 +940,14 @@ class ScrollPositionError(SeleniumHelperExceptions):
         self.x_position = x_position
         self.details["y_position"] = self.y_position
         self.details["x_position"] = self.x_position
+
+class ScreenshotError(SeleniumHelperExceptions):
+    def __init__(self, msg, stacktrace, current_url, file_name, file_path):
+        super(ScreenshotError, self).__init__(msg=msg, stacktrace=stacktrace, current_url=current_url)
+        self.file_name = file_name
+        self.file_path = file_path
+        self.details["file_name"] = self.file_name
+        self.details["file_path"] = self.file_path
 
 
 class DriverExceptions(Exception):
