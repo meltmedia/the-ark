@@ -102,7 +102,7 @@ class S3Client(object):
                 file_url = file_key.generate_url(0, query_auth=False)
 
                 # - Certain server side permissions might cause a x-amz-security-token parameter to be added to the url
-                # Split the url into its peices
+                # Split the url into its pieces
                 scheme, netloc, path, params, query, fragment = urlparse.urlparse(file_url)
                 # Check whether the x-amz-security-token parameter was appended to the url and remove it
                 params = urlparse.parse_qs(query)
