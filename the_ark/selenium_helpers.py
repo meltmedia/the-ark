@@ -673,7 +673,7 @@ class SeleniumHelpers:
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def scroll_an_element(self, css_selector=None, web_element=None, y_position=0, x_position=0, scroll_padding=0,
-                          scroll_top=False, scroll_bottom=False):
+                          scroll_top=False, scroll_bottom=False, scroll_left=False, scroll_right=False):
         """
         This will scroll an element on a page (e.g. An ISI modal).  The user can have it scroll to the top of the
         element, the bottom of the element, a specific position in the element, or by the height of the scrollable area
@@ -686,6 +686,8 @@ class SeleniumHelpers:
             -   scroll_padding: integer - The amount of padding that will be used when scroll by the element's height.
             -   scroll_top: boolean - Whether or not the element will be scrolled to the top.
             -   scroll_bottom:  boolean - Whether or not the element will be scrolled to the bottom.
+            -   scroll_left:  boolean - Whether or not the element will be scrolled to the left.
+            -   scroll_right:  boolean - Whether or not the element will be scrolled to the right.
         """
         try:
             if css_selector and not web_element:
@@ -700,6 +702,15 @@ class SeleniumHelpers:
                                                          "var maxHeight = scrollHeight - clientHeight; "
                                                          "return maxHeight;", web_element)
                 self.execute_script("arguments[0].scrollTop = arguments[1];", web_element, element_max_height)
+            elif scroll_left:
+                self.execute_script("arguments[0].scrollLeft = 0;", web_element)
+            elif scroll_right:
+                element_max_width = self.execute_script("var element = arguments[0]; "
+                                                        "var scrollWidth = element.scrollWidth; "
+                                                        "var clientWidth = element.clientWidth; "
+                                                        "var maxWidth = scrollWidth - clientWidth; "
+                                                        "return maxWidth;", web_element)
+                self.execute_script("arguments[0].scrollTop = arguments[1];", web_element, element_max_width)
             elif y_position or x_position:
                 self.execute_script("arguments[0].scrollTop = arguments[1];", web_element, y_position)
                 self.execute_script("arguments[0].scrollLeft = arguments[1];", web_element, x_position)
