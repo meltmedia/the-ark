@@ -636,6 +636,24 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertTrue(mock_scroll_element_bottom.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_scroll_element_horizontal_valid(self, mock_scroll_element_horizontal):
+        valid_css_selector = ".image-scroll"
+        self.sh.scroll_an_element(css_selector=valid_css_selector, scroll_horizontal=True)
+        self.assertTrue(mock_scroll_element_horizontal.called)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_scroll_element_left_valid(self, mock_scroll_element_horizontal):
+        valid_css_selector = ".image-scroll"
+        self.sh.scroll_an_element(css_selector=valid_css_selector, scroll_left=True)
+        self.assertTrue(mock_scroll_element_horizontal.called)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
+    def test_scroll_element_right_valid(self, mock_scroll_element_horizontal):
+        valid_css_selector = ".image-scroll"
+        self.sh.scroll_an_element(css_selector=valid_css_selector, scroll_right=True)
+        self.assertTrue(mock_scroll_element_horizontal.called)
+
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_element_y_position_valid(self, mock_scroll_element_vertical):
         valid_css_selector = ".scrollable"
         self.sh.scroll_an_element(css_selector=valid_css_selector, y_position=50)
@@ -749,6 +767,34 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_is_element_scroll_position_at_bottom_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.get_is_element_scroll_position_at_bottom, css_selector="*not-scrollable")
+
+    def test_is_web_element_scroll_position_at_most_right_true_valid(self):
+        valid_css_selector = ".image-scroll"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.scroll_an_element(web_element=web_element, scroll_right=True)
+        self.assertTrue(self.sh.get_is_element_scroll_position_at_most_right(web_element=web_element))
+
+    def test_is_element_scroll_position_at_most_right_true_valid(self):
+        valid_css_selector = ".image-scroll"
+        self.sh.scroll_an_element(css_selector=valid_css_selector, scroll_right=True)
+        self.assertTrue(self.sh.get_is_element_scroll_position_at_most_right(css_selector=valid_css_selector))
+
+    def test_is_element_scroll_position_at_most_right_false_valid(self):
+        valid_css_selector = ".image-scroll"
+        self.assertFalse(self.sh.get_is_element_scroll_position_at_most_right(css_selector=valid_css_selector))
+
+    def test_is_element_scroll_position_at_most_right_invalid(self):
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions,
+                          self.sh.get_is_element_scroll_position_at_most_right,
+                          css_selector=".not-scrollable")
+
+    def test_is_web_element_scroll_position_at_most_right_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.get_is_element_scroll_position_at_most_right,
+                          web_element="*not-scrollable")
+
+    def test_is_element_scroll_position_at_most_right_unexpected_invalid(self):
+        self.assertRaises(Exception, self.sh.get_is_element_scroll_position_at_most_right,
+                          css_selector="*not-scrollable")
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_hide_web_element_valid(self, mock_hide):

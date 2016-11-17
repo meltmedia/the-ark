@@ -673,7 +673,8 @@ class SeleniumHelpers:
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def scroll_an_element(self, css_selector=None, web_element=None, y_position=0, x_position=0, scroll_padding=0,
-                          scroll_top=False, scroll_bottom=False, scroll_left=False, scroll_right=False):
+                          scroll_top=False, scroll_bottom=False, scroll_left=False, scroll_right=False,
+                          scroll_horizontal=False):
         """
         This will scroll an element on a page (e.g. An ISI modal).  The user can have it scroll to the top of the
         element, the bottom of the element, a specific position in the element, or by the height of the scrollable area
@@ -688,6 +689,7 @@ class SeleniumHelpers:
             -   scroll_bottom:  boolean - Whether or not the element will be scrolled to the bottom.
             -   scroll_left:  boolean - Whether or not the element will be scrolled to the left.
             -   scroll_right:  boolean - Whether or not the element will be scrolled to the right.
+            -   scroll_horizontal:  boolean - Whether or not the element will be scrolled to the horizontally.
         """
         try:
             if css_selector and not web_element:
@@ -710,10 +712,16 @@ class SeleniumHelpers:
                                                         "var clientWidth = element.clientWidth; "
                                                         "var maxWidth = scrollWidth - clientWidth; "
                                                         "return maxWidth;", web_element)
-                self.execute_script("arguments[0].scrollTop = arguments[1];", web_element, element_max_width)
+                self.execute_script("arguments[0].scrollLeft = arguments[1];", web_element, element_max_width)
             elif y_position or x_position:
                 self.execute_script("arguments[0].scrollTop = arguments[1];", web_element, y_position)
                 self.execute_script("arguments[0].scrollLeft = arguments[1];", web_element, x_position)
+            elif scroll_horizontal:
+                element_width = self.execute_script("var element = arguments[0]; "
+                                                    "var elementWidth = element.offsetWidth; "
+                                                    "return elementWidth;", web_element)
+                self.execute_script("arguments[0].scrollLeft += (arguments[1] - arguments[2]);",
+                                    web_element, element_width, scroll_padding)
             else:
                 element_height = self.execute_script("var element = arguments[0]; "
                                                      "var elementHeight = element.offsetHeight; "
@@ -833,6 +841,42 @@ class SeleniumHelpers:
             raise scroll_at_bottom_error
         except Exception as unexpected_error:
             message = "Unable to determine if the scroll position of the element on page '{0}' is at the bottom."\
+                      "\n<{1}>".format(self.driver.current_url, unexpected_error)
+            message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
+            raise ElementError(msg=message, stacktrace=traceback.format_exc(),
+                               current_url=self.driver.current_url, css_selector=css_selector)
+
+    def get_is_element_scroll_position_at_most_right(self, css_selector=None, web_element=None):
+        """
+        Check to see if the scroll position is at the most right of the scrollable element.
+        :param
+            -   css_selector:   string - The specific element that will be interacted with.
+            -   web_element:    object - The WebElement that will be interacted with.
+        :return
+            -   at_right:  boolean - Whether or not the scrollable element is at the most right.
+        """
+        try:
+            if css_selector and not web_element:
+                web_element = self.get_element(css_selector)
+            self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
+            element_max_width = self.execute_script("var element = arguments[0]; "
+                                                    "var scrollWidth = element.scrollWidth; "
+                                                    "var clientWidth = element.clientWidth; "
+                                                    "var maxWidth = scrollWidth - clientWidth; "
+                                                    "return maxWidth;", web_element)
+            scroll_position = self.execute_script("var element = arguments[0]; "
+                                                  "var scrollPosition = element.scrollLeft; "
+                                                  "return scrollPosition;", web_element)
+            if scroll_position < element_max_width - 1:
+                return False
+            else:
+                return True
+        except SeleniumHelperExceptions as scroll_at_right_error:
+            scroll_at_right_error.msg = "Unable to determine if element is scrolled to the most right. | " + \
+                                         scroll_at_right_error.msg
+            raise scroll_at_right_error
+        except Exception as unexpected_error:
+            message = "Unable to determine if the scroll position of the element on page '{0}' is at the most right." \
                       "\n<{1}>".format(self.driver.current_url, unexpected_error)
             message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
