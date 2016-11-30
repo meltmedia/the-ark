@@ -18,6 +18,7 @@ DEFAULT_DOMAIN = "meltmedia.com"
 DEFAULT_START_DATE = str((datetime.now() - timedelta(weeks=52 * 20)).date())
 DEFAULT_END_DATE = str((datetime.now() - timedelta(weeks=52 * 100)).date())
 DEFAULT_DATE_FORMAT = "%m/%d/%Y"
+SPECIAL_CHARACTER_LIST = ["!", "@", "#", "$", "&", "*"]
 
 
 def dispatch_field(field_data, test_number=1):
@@ -251,13 +252,11 @@ def generate_password(test_number=1, required=True):
         -   string:         The randomly generated password string
     """
     try:
-        characters = ["!", "@", "#", "$", "&", "*"]
         first_letter  = generate_string(1, 2).upper()
         number =  generate_integer(1,2)
-        body = generate_index(1,5)
-
-        character_position = random.randint(0, len(characters) - 1)
-        character = characters[character_position]
+        body = generate_string(5,6)
+        character_position = random.randint(0, len(SPECIAL_CHARACTER_LIST) - 1)
+        character = SPECIAL_CHARACTER_LIST[character_position]
 
         password = "{0}{1}{2}{3}".format(first_letter, body, number, character)
 

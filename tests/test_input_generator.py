@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
 from the_ark.field_handlers import DROP_DOWN_FIELD, CHECK_BOX_FIELD, RADIO_FIELD, SELECT_FIELD, BUTTON_FIELD, \
-    STRING_FIELD, PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD, All_FIELD_TYPES
+    STRING_FIELD, PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD, PASSWORD_FIELD, All_FIELD_TYPES
 from the_ark import input_generator as ig
 from the_ark.input_generator import InputGeneratorException
 from mock import patch
@@ -93,6 +93,17 @@ class InputGeneratorTestCase(unittest.TestCase):
         email_method.return_value = "test@gmail.com"
         ig.dispatch_field(field_data, 1)
         email_method.assert_called_once_with(field_data["domain"], 1, False)
+
+    #- Dispatch Password
+    def test_dispatch_password_generator_length(self):
+        field_data = {"type": PASSWORD_FIELD}
+        returned_password = ig.dispatch_field(field_data)
+        self.assertTrue(len(returned_password) >= 6)
+
+    def test_dispatch_password_generator_special_character(self):
+        field_data = {"type": PASSWORD_FIELD}
+        returned_password = ig.dispatch_field(field_data)
+        self.assertTrue(any(character in returned_password for character in ig.SPECIAL_CHARACTER_LIST))
 
     #- Dispatch Phone Number
     @patch("the_ark.input_generator.generate_phone")
