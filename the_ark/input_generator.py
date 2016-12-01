@@ -252,12 +252,11 @@ def generate_password(test_number=1, required=True):
         -   string:         The randomly generated password string
     """
     try:
-        first_letter  = generate_string(1, 2).upper()
-        number =  generate_integer(1,2)
-        body = generate_string(5,6)
+        first_letter = generate_string(1, 2).upper()
+        number = generate_integer(1, 2)
+        body = generate_string(5, 6)
         character_position = random.randint(0, len(SPECIAL_CHARACTER_LIST) - 1)
         character = SPECIAL_CHARACTER_LIST[character_position]
-
         password = "{0}{1}{2}{3}".format(first_letter, body, number, character)
 
         return password

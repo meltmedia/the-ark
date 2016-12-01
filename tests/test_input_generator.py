@@ -105,6 +105,12 @@ class InputGeneratorTestCase(unittest.TestCase):
         returned_password = ig.dispatch_field(field_data)
         self.assertTrue(any(character in returned_password for character in ig.SPECIAL_CHARACTER_LIST))
 
+    @patch("the_ark.input_generator.generate_string")
+    def test_dispatch_password_generator_error(self, string_method):
+        string_method.side_effect = Exception('Boom!')
+        with self.assertRaises(ig.InputGeneratorException):
+            ig.generate_password()
+
     #- Dispatch Phone Number
     @patch("the_ark.input_generator.generate_phone")
     def test_dispatch_phone_field_defaults(self, phone_method):
@@ -112,6 +118,7 @@ class InputGeneratorTestCase(unittest.TestCase):
         phone_method.return_value = "9878767654"
         ig.dispatch_field(field_data, 1)
         phone_method.assert_called_once_with(False, False, False, False, 1, False)
+
 
     @patch("the_ark.input_generator.generate_phone")
     def test_dispatch_phone_field_override_variables(self, phone_method):
