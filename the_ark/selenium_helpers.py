@@ -878,16 +878,30 @@ class SeleniumHelpers:
             :param
                 -   name:   string - Name of the cookie you want to pass in .
                 -   value:    string - Valye of the cookie.
-            """
+       """
         try:
-            tup = (name, value)
-            cookie = {"name": tup[0], "value": tup[1]}
+            cookie = {"name": name, "value": value}
             self.driver.add_cookie(cookie)
         except SeleniumHelperExceptions as cookie_error:
             cookie_error.msg = "Unable to create cookie. | " + cookie_error.msg
             raise cookie_error
         except Exception as unexpected_error:
-            unexpected_error.msg = "this is hitting the Expection"
+            unexpected_error.msg = "this is hitting the Expection forc= creating cookies"
+
+    def delete_cookie(self, name=None):
+        """
+            This will show a specified element.
+            :param
+                -   name:   string - Name of the cookie you want to delete .
+       """
+        try:
+            self.driver.delete_cookie(name)
+        except SeleniumHelperExceptions as cookie_error:
+            cookie_error.msg = "Unable to delete cookie. | " + cookie_error.msg
+            raise cookie_error
+        except Exception as unexpected_error:
+            unexpected_error.msg = "this is hitting the Expection for deleting cookies"
+
 
 class SeleniumHelperExceptions(common.exceptions.WebDriverException):
     def __init__(self, msg, stacktrace, current_url):
