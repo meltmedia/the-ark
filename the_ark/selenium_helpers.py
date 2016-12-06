@@ -1,6 +1,7 @@
 import logging
 
 import requests
+import urlparse
 from selenium import common
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -880,13 +881,14 @@ class SeleniumHelpers:
                 -   value:    string - Valye of the cookie.
        """
         try:
-            cookie = {"name": name, "value": value}
-            self.driver.add_cookie(cookie)
-        except SeleniumHelperExceptions as cookie_error:
-            cookie_error.msg = "Unable to create cookie. | " + cookie_error.msg
-            raise cookie_error
-        except Exception as unexpected_error:
-            unexpected_error.msg = "this is hitting the Expection forc= creating cookies"
+            url = self.get_current_url()
+            url_parse = urlparse.urlparse(url)
+            domain =  ".{}".format(url_parse.netloc.split(".", 1)[-1])
+            path = url_parse.path
+            self.driver.add_cookie({"name": name, "value":value, "domain": domain,"path": path})
+        except Exception as cookie_error:
+            message = "There was an issue creating a a cookie: {0}".format(cookie_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def delete_cookie(self, name=None):
         """
@@ -896,11 +898,9 @@ class SeleniumHelpers:
        """
         try:
             self.driver.delete_cookie(name)
-        except SeleniumHelperExceptions as cookie_error:
-            cookie_error.msg = "Unable to delete cookie. | " + cookie_error.msg
-            raise cookie_error
-        except Exception as unexpected_error:
-            unexpected_error.msg = "this is hitting the Expection for deleting cookies"
+        except Exception as cookie_error:
+            message = "There was an issue deleting a a cookie: {0}".format(cookie_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
 
 class SeleniumHelperExceptions(common.exceptions.WebDriverException):

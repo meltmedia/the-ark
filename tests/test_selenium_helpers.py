@@ -155,19 +155,25 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_window_size)
 
     def test_add_coookie_is_valid(self):
-        sh= selenium_helpers.SeleniumHelpers()
         self.sh.add_cookie("qa", "test")
         self.assertTrue(self.driver.get_cookie("qa"), True)
 
     def test_add_cookie_is_false(self):
-        sh = selenium_helpers.SeleniumHelpers()
         self.sh.add_cookie("qa", "test")
         self.assertTrue(self.driver.get_cookie("no_cookie") == None)
 
+    def test_add_cookie_expection(self):
+        with self.assertRaises(selenium_helpers.DriverAttributeError):
+            self.sh.add_cookie(["qa", "test"], "test")
+
     def test_delete_cookie_is_valid(self):
-        sh = selenium_helpers.SeleniumHelpers()
         self.sh.add_cookie("qa", "test")
-        self.assertEquals(sh.delete_cookie("qa"), None)
+        self.sh.delete_cookie("qa")
+        self.assertEquals(self.driver.get_cookies(), [])
+
+    def test_delete_cookie_expection(self):
+        with self.assertRaises(selenium_helpers.DriverAttributeError):
+            self.sh.delete_cookie(["qa", "test"])
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.get")
     def test_load_url_bypass_valid(self, mock_get):
