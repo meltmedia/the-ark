@@ -1,7 +1,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
 from field_handlers import DROP_DOWN_FIELD, CHECK_BOX_FIELD, RADIO_FIELD, SELECT_FIELD, BUTTON_FIELD, STRING_FIELD, \
-    PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD, All_FIELD_TYPES, FIELD_IDENTIFIER
+    PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD, All_FIELD_TYPES, FIELD_IDENTIFIER, PASSWORD_FIELD
 import random
 import string
 import time
@@ -18,6 +18,7 @@ DEFAULT_DOMAIN = "meltmedia.com"
 DEFAULT_START_DATE = str((datetime.now() - timedelta(weeks=52 * 20)).date())
 DEFAULT_END_DATE = str((datetime.now() - timedelta(weeks=52 * 100)).date())
 DEFAULT_DATE_FORMAT = "%m/%d/%Y"
+SPECIAL_CHARACTER_LIST = ["!", "@", "#", "$", "&", "*"]
 
 
 def dispatch_field(field_data, test_number=1):
@@ -46,6 +47,9 @@ def dispatch_field(field_data, test_number=1):
         elif field_data[FIELD_IDENTIFIER].lower() == EMAIL_FIELD:
             domain = field_data.get("domain") or DEFAULT_DOMAIN
             return generate_email(domain, test_number, required)
+
+        elif field_data[FIELD_IDENTIFIER].lower() == PASSWORD_FIELD:
+            return generate_password(test_number, required)
 
         elif field_data[FIELD_IDENTIFIER].lower() == PHONE_FIELD:
             decimal = field_data.get("decimal") or False
@@ -234,6 +238,31 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=1, required=True):
 
     except Exception as e_text:
         message = "Unhandled Exception caught while generating an Email: {0}".format(e_text)
+        raise InputGeneratorException(message)
+
+
+def generate_password(test_number=1, required=True):
+    """ Generates a random password with a capitol letter first and ends with a special character
+    :param
+        -   test_number:    An int that specifies which submission number this generation is being used for. This will
+                            help determine whether the field has been populated previously and whether to leave it blank
+        -   required:       A bool specifying whether the field for which input if being generated is required on the
+                            form on which the input will be input
+    :returns
+        -   string:         The randomly generated password string
+    """
+    try:
+        first_letter = generate_string(1, 2).upper()
+        number = generate_integer(1, 2)
+        body = generate_string(5, 6)
+        character_position = random.randint(0, len(SPECIAL_CHARACTER_LIST) - 1)
+        character = SPECIAL_CHARACTER_LIST[character_position]
+        password = "{0}{1}{2}{3}".format(first_letter, body, number, character)
+
+        return password
+
+    except Exception as e_text:
+        message = "Unhandled Exception caught while generating an Password: {0}".format(e_text)
         raise InputGeneratorException(message)
 
 

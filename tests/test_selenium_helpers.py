@@ -154,6 +154,27 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers()
         self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_window_size)
 
+    def test_add_coookie_is_valid(self):
+        self.sh.add_cookie("qa", "test")
+        self.assertTrue(self.driver.get_cookie("qa"), True)
+
+    def test_add_cookie_is_false(self):
+        self.sh.add_cookie("qa", "test")
+        self.assertTrue(self.driver.get_cookie("no_cookie") == None)
+
+    def test_add_cookie_expection(self):
+        with self.assertRaises(selenium_helpers.DriverAttributeError):
+            self.sh.add_cookie(["qa", "test"], "test")
+
+    def test_delete_cookie_is_valid(self):
+        self.sh.add_cookie("qa", "test")
+        self.sh.delete_cookie("qa")
+        self.assertEquals(self.driver.get_cookies(), [])
+
+    def test_delete_cookie_expection(self):
+        with self.assertRaises(selenium_helpers.DriverAttributeError):
+            self.sh.delete_cookie(["qa", "test"])
+
     @patch("selenium.webdriver.remote.webdriver.WebDriver.get")
     def test_load_url_bypass_valid(self, mock_get):
         self.sh.load_url("www.google.com", bypass_status_code_check=True)
@@ -324,11 +345,21 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_list_of_elements_invalid(self):
         self.assertRaises(selenium_helpers.ElementError, self.sh.get_list_of_elements, ".invalid")
 
+    @patch("selenium.webdriver.support.expected_conditions.presence_of_element_located")
     @patch("selenium.webdriver.support.ui.WebDriverWait.until")
-    def test_wait_valid(self, mock_wait):
+    def test_wait_valid(self, mock_wait, mock_present):
         valid_css_selector = ".valid"
         self.sh.wait_for_element(valid_css_selector)
         self.assertTrue(mock_wait.called)
+        self.assertTrue(mock_present.called)
+
+    @patch("selenium.webdriver.support.expected_conditions.visibility_of_element_located")
+    @patch("selenium.webdriver.support.ui.WebDriverWait.until")
+    def test_wait_visible_valid(self, mock_wait, mock_visible):
+        valid_css_selector = ".valid"
+        self.sh.wait_for_element(valid_css_selector, visible=True)
+        self.assertTrue(mock_wait.called)
+        self.assertTrue(mock_visible.called)
 
     def test_wait_invalid(self):
         self.assertRaises(selenium_helpers.TimeoutError, self.sh.wait_for_element, ".invalid", 1)

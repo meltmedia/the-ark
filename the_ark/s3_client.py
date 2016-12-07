@@ -1,7 +1,13 @@
-import mimetypes
-from StringIO import StringIO
-from boto.s3.key import Key
 import boto.s3.connection
+import mimetypes
+import os
+import shutil
+import tempfile
+import urllib
+import urlparse
+
+from boto.s3.key import Key
+from StringIO import StringIO
 
 
 class S3Client(object):
@@ -23,20 +29,20 @@ class S3Client(object):
             return
 
         try:
-            #- Amazon S3 credentials will use Boto's fall back config, looks for boto.cfg then environment variables
+            # - Amazon S3 credentials will use Boto's fall back config, looks for boto.cfg then environment variables
             self.s3_connection = boto.s3.connection.S3Connection(
                 is_secure=False)
             self.bucket = self.s3_connection.get_bucket(
                 self.bucket_name, validate=False)
 
         except Exception as s3_connection_exception:
-            #- Reset the variables on failure to allow a reconnect
+            # - Reset the variables on failure to allow a reconnect
             self.s3_connection = None
             self.bucket = None
             message = "Exception while connecting to S3: {0}".format(s3_connection_exception)
             raise S3ClientException(message)
 
-    def store_file(self, s3_path, file_to_store, filename, return_url=False, mime_type=None):
+    def store_file(self, s3_path, file_to_store, filename, return_url=False, mime_type=None, chunk_at_size=20000000):
         """
         Pushes the desired file up to S3 (e.g. log file).
         :param
@@ -45,6 +51,7 @@ class S3Client(object):
             - filename:         string - The name the file will have when on S3. Should include the file extension
             - return_url:       boolean - Whether to return the path to the file on S3
             - mime_type:        string - the mime type the file should be saved as, ex: text/html or image/png
+            - chunk_at_size:    int - the size of which the file should be split to multi-upload (default ~ 20 mb)
         :return
             - file_url:         string - The path to the file on S3. This is returned only is return_url is set to true
         """
@@ -53,23 +60,58 @@ class S3Client(object):
         try:
             s3_file = Key(self.bucket)
             s3_file.key = self._generate_file_path(s3_path, filename)
-            #--- Set the Content type for the file being sent (so that it downloads properly)
-            #- content_type can be 'image/png', 'application/pdf', 'text/plain', etc.
+            # --- Set the Content type for the file being sent (so that it downloads properly)
+            # - content_type can be 'image/png', 'application/pdf', 'text/plain', etc.
             mime_type = mimetypes.guess_type(filename) if mime_type is None else mime_type
             s3_file.set_metadata('Content-Type', mime_type)
 
-            #- Determine whether the file_to_store is an object or file path/string
-            file_type = type(file_to_store)
-            if file_type == str:
-                s3_file.set_contents_from_filename(file_to_store)
+            # - Check if file is a buffer or disk file and if file that is getting uploaded is greater than
+            # chunk_at_size then upload cool multi style
+            if type(file_to_store) == str and os.path.getsize(file_to_store) > chunk_at_size:
+                file_count = 0
+                # - Split the file and get it chunky
+                split_file_dir = self._split_file(file_to_store)
+
+                # - Initiate the file to be uploaded in parts
+                multipart_file = self.bucket.initiate_multipart_upload(key_name=s3_file.key, metadata=s3_file.metadata)
+
+                # - Upload the file parts
+                for files in os.listdir(split_file_dir):
+                    file_count += 1
+                    file_part = open(os.path.join(split_file_dir, files), 'rb')
+                    multipart_file.upload_part_from_file(file_part, file_count)
+
+                # - Complete the upload
+                multipart_file.complete_upload()
+
+                # - Remove the folder from splitting the file
+                shutil.rmtree(split_file_dir)
+
+            # - Upload the file as a whole
             else:
-                s3_file.set_contents_from_file(file_to_store)
+                # - Determine whether the file_to_store is an object or file path/string
+                file_type = type(file_to_store)
+                if file_type == str:
+                    s3_file.set_contents_from_filename(file_to_store)
+                else:
+                    s3_file.set_contents_from_file(file_to_store)
 
             if return_url:
                 file_key = self.bucket.get_key(s3_file.key)
                 file_key.set_acl('public-read')
                 file_url = file_key.generate_url(0, query_auth=False)
-                return file_url
+
+                # - Certain server side permissions might cause a x-amz-security-token parameter to be added to the url
+                # Split the url into its pieces
+                scheme, netloc, path, params, query, fragment = urlparse.urlparse(file_url)
+                # Check whether the x-amz-security-token parameter was appended to the url and remove it
+                params = urlparse.parse_qs(query)
+                if 'x-amz-security-token' in params:
+                    del params['x-amz-security-token']
+                # Rebuild the params without the x-amz-security-token
+                query = urllib.urlencode(params)
+
+                return urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
 
         except Exception as store_file_exception:
             message = "Exception while storing file on S3: {0}".format(store_file_exception)
@@ -161,6 +203,38 @@ class S3Client(object):
             if not most_recent_key or key.last_modified > most_recent_key.last_modified:
                 most_recent_key = key
         return most_recent_key
+
+    def _split_file(self, from_file, file_chunk_size=5242880):
+        """
+            Split a given file into smaller chunks named partXXXX into a temp at a default size of ~ 5 mb. The temp
+            folder should be deleted after use.
+
+            WARNING: You cannot split into more than 9999 files.
+
+            :param
+                - from_file:        string - the file to split up
+                - file_chunk_size:  int - the size the file should be chunked to (default ~ 5 mb for Amazon S3 minimum)
+            :return:
+                - temp_dir:         string - temp folder location of split file, use to iterate through the split files
+            """
+        try:
+            temp_dir = tempfile.mkdtemp()
+            part_number = 0
+            input_file = open(from_file, 'rb')  # use binary mode on Windows
+            while 1:  # eof=empty string from read
+                chunk = input_file.read(file_chunk_size)  # get next part <= chunk size
+                if not chunk: break
+                part_number += 1
+                filename = os.path.join(temp_dir, ('part%04d' % part_number))
+                fileobject = open(filename, 'wb')
+                fileobject.write(chunk)
+                fileobject.close()  # or simply open(  ).write(  )
+            input_file.close()
+            assert part_number <= 9999  # join sort fails if 5 digits
+            return temp_dir
+        except Exception as e:
+            print "Could not split the file.\nError: {}\n".format(e)
+            raise e
 
 
 class S3ClientException(Exception):

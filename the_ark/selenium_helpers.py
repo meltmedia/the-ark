@@ -1,6 +1,7 @@
 import logging
 
 import requests
+import urlparse
 from selenium import common
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -347,16 +348,25 @@ class SeleniumHelpers:
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
 
-    def wait_for_element(self, css_selector, wait_time=15):
+    def wait_for_element(self, css_selector, wait_time=15, visible=False):
         """
         This will wait for a specific element to be present on the page within a specified amount of time, in seconds.
         :param
             -   css_selector:   string - The specific element that will be interacted with.
-            -   wait_time:  integer - The amount of time, in seconds, given to wait for an element to be present.
+            -   wait_time:      integer - The amount of time, in seconds, given to wait for an element to be present.
+            -   visible:        boolean - If true, wait for the element to be visible on the page; present otherwise
         """
         try:
-            WebDriverWait(self.driver, wait_time).until(expected_condition.presence_of_element_located((By.CSS_SELECTOR,
-                                                                                                        css_selector)))
+            if visible:
+                # Wait for element to be visible on the page
+                WebDriverWait(
+                    self.driver, wait_time).until(expected_condition.visibility_of_element_located((By.CSS_SELECTOR,
+                                                                                                    css_selector)))
+            else:
+                # Wait for element to be present on the page
+                WebDriverWait(
+                    self.driver, wait_time).until(expected_condition.presence_of_element_located((By.CSS_SELECTOR,
+                                                                                                  css_selector)))
         except common.exceptions.TimeoutException as timeout:
             message = "Element '{0}' does not exist on page '{1}' after waiting {2} seconds.\n" \
                       "<{3}>".format(css_selector, self.driver.current_url, wait_time, timeout)
@@ -425,7 +435,7 @@ class SeleniumHelpers:
             if css_selector and not web_element:
                 web_element = self.get_element(css_selector)
             self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
-            ActionChains(self.driver).double_click(web_element)
+            ActionChains(self.driver).double_click(web_element).perform()
         except SeleniumHelperExceptions as double_click_error:
             double_click_error.msg = "Unable to double click element. | " + double_click_error.msg
             raise double_click_error
@@ -579,14 +589,20 @@ class SeleniumHelpers:
             if css_selector and not web_element:
                 web_element = self.get_element(css_selector)
             self.ensure_element_visible(web_element=web_element, css_selector=css_selector)
-            if position_bottom or position_middle:
+            if position_bottom:
                 # Scroll the window so the bottom of the element will be at the bottom of the window.
                 self.execute_script("var element = arguments[0]; element.scrollIntoView(false);",
                                     web_element)
-                if position_middle:
-                    # Scroll the window so the element is in the middle of the window.
-                    scroll_position = (self.driver.get_window_size()["height"] / 2)
-                    self.execute_script("window.scrollBy(0, arguments[0]);", scroll_position)
+            elif position_middle:
+                # Find the scroll position of the top of the element
+                element_position = self.execute_script("var element = arguments[0]; "
+                                                       "var height = element.offsetTop; "
+                                                       "return height", web_element)
+                # Determine the position that is half a screen height above the element
+                screen_padding = (self.driver.get_window_size()["height"] / 2)
+                scroll_position = element_position - screen_padding
+                # Scroll to that position
+                self.execute_script("window.scrollTo(0, arguments[0]);", scroll_position)
             else:
                 # Scroll the window so the top of the element will be at the top of the window.
                 self.execute_script("var element = arguments[0]; element.scrollIntoView(true);",
@@ -856,6 +872,35 @@ class SeleniumHelpers:
                 message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
+
+    def add_cookie(self, name=None, value=None):
+        """
+            This will show a specified element.
+            :param
+                -   name:   string - Name of the cookie you want to pass in .
+                -   value:    string - Valye of the cookie.
+       """
+        try:
+            url = self.get_current_url()
+            url_parse = urlparse.urlparse(url)
+            domain =  ".{}".format(url_parse.netloc.split(".", 1)[-1])
+            path = url_parse.path
+            self.driver.add_cookie({"name": name, "value":value, "domain": domain,"path": path})
+        except Exception as cookie_error:
+            message = "There was an issue creating a a cookie: {0}".format(cookie_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def delete_cookie(self, name=None):
+        """
+            This will show a specified element.
+            :param
+                -   name:   string - Name of the cookie you want to delete .
+       """
+        try:
+            self.driver.delete_cookie(name)
+        except Exception as cookie_error:
+            message = "There was an issue deleting a a cookie: {0}".format(cookie_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
 
 class SeleniumHelperExceptions(common.exceptions.WebDriverException):
