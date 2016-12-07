@@ -1,6 +1,7 @@
 import logging
 
 import requests
+import urlparse
 from selenium import common
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -871,6 +872,35 @@ class SeleniumHelpers:
                 message += " | Based off the WebElement passed through."
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                current_url=self.driver.current_url, css_selector=css_selector)
+
+    def add_cookie(self, name=None, value=None):
+        """
+            This will show a specified element.
+            :param
+                -   name:   string - Name of the cookie you want to pass in .
+                -   value:    string - Valye of the cookie.
+       """
+        try:
+            url = self.get_current_url()
+            url_parse = urlparse.urlparse(url)
+            domain =  ".{}".format(url_parse.netloc.split(".", 1)[-1])
+            path = url_parse.path
+            self.driver.add_cookie({"name": name, "value":value, "domain": domain,"path": path})
+        except Exception as cookie_error:
+            message = "There was an issue creating a a cookie: {0}".format(cookie_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def delete_cookie(self, name=None):
+        """
+            This will show a specified element.
+            :param
+                -   name:   string - Name of the cookie you want to delete .
+       """
+        try:
+            self.driver.delete_cookie(name)
+        except Exception as cookie_error:
+            message = "There was an issue deleting a a cookie: {0}".format(cookie_error)
+            raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
 
 class SeleniumHelperExceptions(common.exceptions.WebDriverException):
