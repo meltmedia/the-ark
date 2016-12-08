@@ -9,6 +9,7 @@ DEFAULT_SCROLL_PADDING = 100
 SCREENSHOT_FILE_EXTENSION = "png"
 DEFAULT_PIXEL_MATCH_OFFSET = 100
 
+
 class Screenshot:
     """
     A helper class for taking screenshots using a Selenium Helper instance
@@ -35,7 +36,7 @@ class Screenshot:
             - file_extenson:    string - If provided, this extension will be used while creating the image. This must
                                         be an extension that is usable with PIL
         """
-        #- Set parameters as class variables
+        # Set parameters as class variables
         self.sh = selenium_helper
         self.paginated = paginated
         self.headers = header_ids
@@ -92,17 +93,17 @@ class Screenshot:
             self.sh.scroll_an_element(css_selector, scroll_top=True)
 
             while True:
-                #- Capture the image
+                # Capture the image
                 if viewport_only:
                     image_list.append(self._capture_single_viewport())
                 else:
                     image_list.append(self._capture_full_page())
 
                 if self.sh.get_is_element_scroll_position_at_bottom(css_selector):
-                    #- Stop capturing once you're at the bottom
+                    # Stop capturing once you're at the bottom
                     break
                 else:
-                    #- Scroll down for the next one!
+                    # Scroll down for the next one!
                     self.sh.scroll_an_element(css_selector, scroll_padding=padding)
 
             return image_list
@@ -136,30 +137,30 @@ class Screenshot:
             - StringIO: A StingIO object containing the captured image
         """
         if self.headers and self.footers:
-            #- Capture viewport size window of the headers
+            # Capture viewport size window of the headers
             self.sh.scroll_window_to_position(0)
             self._hide_elements(self.footers)
             header_image = self._get_image_data(True)
 
-            #--- Capture the page from the bottom without headers
+            # - Capture the page from the bottom without headers
             self._show_elements(self.footers)
             #TODO: Update when scroll position updates to have a scroll to bottom option
             self.sh.scroll_window_to_position(40000)
             self._hide_elements(self.headers)
             footer_image = self._get_image_data()
 
-            #- Show all header elements again
+            # Show all header elements again
             self._show_elements(self.headers)
 
-            #- Send the two images off to get merged into one
+            # Send the two images off to get merged into one
             image_data = self._crop_and_stitch_image(header_image, footer_image)
         elif self.headers:
-            #- Scroll to the top so that the headers are not covering content
+            # Scroll to the top so that the headers are not covering content
             self.sh.scroll_window_to_position(0)
             time.sleep(0.5)
             image_data = self._get_image_data()
         elif self.footers:
-            #- Scroll to the bottom so that the footer items are not covering content
+            # Scroll to the bottom so that the footer items are not covering content
             self.sh.scroll_window_to_position(40000)
             time.sleep(0.5)
             image_data = self._get_image_data()
@@ -177,7 +178,7 @@ class Screenshot:
         for selector in css_selectors:
             try:
                 self.sh.hide_element(selector)
-            #- Continue to the next item is this one did not exist or was already not visible
+            # Continue to the next item is this one did not exist or was already not visible
             except ElementNotVisibleError:
                 pass
             except ElementError:
@@ -189,11 +190,11 @@ class Screenshot:
         :param
             - css_selectors:    list - A list of the elements you would like to make visible
         """
-        #- Show footer items again
+        # Show footer items again
         for selector in css_selectors:
             try:
                 self.sh.show_element(selector)
-            #- Continue to the next item is this one did not exist
+            # Continue to the next item is this one did not exist
             except ElementError:
                 pass
 
@@ -205,22 +206,22 @@ class Screenshot:
         image_list = []
         scroll_padding = padding if padding else self.scroll_padding
 
-        #- Scroll page to the top
+        # Scroll page to the top
         self.sh.scroll_window_to_position(0)
 
         current_scroll_position = 0
         viewport_height = self.sh.driver.execute_script("return document.documentElement.clientHeight")
 
         while True:
-            #- Capture the image
+            # Capture the image
             image_list.append(self._capture_single_viewport())
 
-            #- Scroll for the next one!
+            # Scroll for the next one!
             self.sh.scroll_window_to_position(current_scroll_position + viewport_height - scroll_padding)
             time.sleep(0.25)
             new_scroll_position = self.sh.get_window_current_scroll_position()
 
-            #- Break if the scroll position did not change (because it was at the bottom)
+            # Break if the scroll position did not change (because it was at the bottom)
             if new_scroll_position == current_scroll_position:
                 break
             else:
@@ -237,26 +238,26 @@ class Screenshot:
         :return
             - image:    Image() - The image canvas of the captured data
         """
-        #--- Capture the image
-        #- Gather image byte data
+        # - Capture the image
+        # Gather image byte data
         image_data = self.sh.get_screenshot_base64()
-        #- Create an image canvas and write the byte data to it
+        # Create an image canvas and write the byte data to it
         image = Image.open(StringIO(image_data.decode('base64')))
 
         if self.sh.desired_capabilities.get("mobile"):
             return image
         elif viewport_only:
-            #-- Crop the image to just the visible area
-            #- Top of the viewport
+            # - Crop the image to just the visible area
+            # Top of the viewport
             current_scroll_position = self.sh.get_window_current_scroll_position()
 
-            #- Viewport Dimensions
+            # Viewport Dimensions
             viewport_width, viewport_height = self.sh.get_viewport_size()
 
-            #- Calculate the visible area
+            # Calculate the visible area
             crop_box = (0, current_scroll_position, viewport_width, current_scroll_position + viewport_height)
 
-            #- Crop everything of the image but the visible area
+            # Crop everything of the image but the visible area
             cropped_image = image.crop(crop_box)
             return cropped_image
         else:
@@ -275,63 +276,63 @@ class Screenshot:
             - stitched_image:   Image() - The resulting image of the crop and stitching of the header and footer images
         """
         try:
-            #- Create Pixel Row arrays from each image
+            # Create Pixel Row arrays from each image
             header_array = numpy.asarray(header_image)
             footer_array = numpy.asarray(footer_image)
 
-            #--- Find a place in both images that match then crop and stitch them at that location
+            # - Find a place in both images that match then crop and stitch them at that location
             crop_row = 0
             header_image_height = header_image.height
-            #- Set the offset to the height of the image if the height is less than the offset
+            # Set the offset to the height of the image if the height is less than the offset
             if self.pixel_match_offset > header_image_height:
                 self.pixel_match_offset = header_image_height
 
-            #-- Find the pixel row in the footer image that matches the bottom row in the header image
-            #- Grab the last 100 rows of header_image
+            # - Find the pixel row in the footer image that matches the bottom row in the header image
+            # Grab the last 100 rows of header_image
             header_last_hundred_rows = header_array[header_image_height - self.pixel_match_offset: header_image_height]
 
-            #- Iterates throughout the check, will match the height of the row being checked in the image.
+            # Iterates throughout the check, will match the height of the row being checked in the image.
             for i, footer_row in enumerate(footer_array):
-                #- Jump out if the crop row has been set
+                # Jump out if the crop row has been set
                 if crop_row != 0:
                     break
 
-                #- Check if the current row being inspected matches the header row 100 pixels above the bottom
+                # Check if the current row being inspected matches the header row 100 pixels above the bottom
                 if numpy.array_equal(footer_row, header_last_hundred_rows[0]):
-                    #- It is a match!
+                    # It is a match!
                     for y, row in enumerate(header_last_hundred_rows):
-                        #- Check that the 100 footer rows above the matching row also match the bottom 100 of
-                        #  the header image we grabbed at the start of this check
+                        # Check that the 100 footer rows above the matching row also match the bottom 100 of
+                        # the header image we grabbed at the start of this check
                         if numpy.array_equal(footer_array[i + y], header_last_hundred_rows[y]):
-                            #- Check whether we've found 100 matching rows or not
+                            # Check whether we've found 100 matching rows or not
                             if y == self.pixel_match_offset - 1:
-                                #- Yes! All 100 matched. Set the crop row to this row
+                                # Yes! All 100 matched. Set the crop row to this row
                                 crop_row = i + self.pixel_match_offset
                                 break
 
-            #- If no rows matched, crop at height of header image
+            # If no rows matched, crop at height of header image
             if crop_row == 0:
                 crop_row = header_image_height
 
-            #-- Crop the top of the footer image off above the line that matches the header image's bottom row
-            #- Create the crop box that outlines what to remove from the footer image
+            # - Crop the top of the footer image off above the line that matches the header image's bottom row
+            # Create the crop box that outlines what to remove from the footer image
             footer_image_width = footer_image.size[0]
             footer_image_height = footer_image.size[1]
             crop_box = (0, crop_row, footer_image_width, footer_image_height)
-            #- Perform the crop
+            # Perform the crop
             cropped_footer_image = footer_image.crop(crop_box)
 
-            #- Grab the new height of the footer image
+            # Grab the new height of the footer image
             cropped_footer_image_height = cropped_footer_image.size[1]
 
-            #- Create a blank image canvas that is as tall the footer and header images combined
+            # Create a blank image canvas that is as tall the footer and header images combined
             total_height = header_image_height + cropped_footer_image_height
             stitched_image = Image.new("RGB", (footer_image_width, total_height))
 
-            #-- Paste the header and footer images onto the canvas
-            #- Paste the header image at the top
+            # - Paste the header and footer images onto the canvas
+            # Paste the header image at the top
             stitched_image.paste(header_image, (0, 0))
-            #- Paste the footer image directly below the header image
+            # Paste the footer image directly below the header image
             stitched_image.paste(cropped_footer_image, (0, header_image_height))
 
             return stitched_image
@@ -349,11 +350,11 @@ class Screenshot:
         :return
             - image_file:   StingIO() - The stringIO object containing the saved image
         """
-        #- Instantiate the file object
+        # Instantiate the file object
         image_file = StringIO()
-        #- Save the image canvas to the file as the given file type
+        # Save the image canvas to the file as the given file type
         image.save(image_file, self.file_extenson.upper())
-        #- Set the file marker back to the beginning
+        # Set the file marker back to the beginning
         image_file.seek(0)
 
         return image_file

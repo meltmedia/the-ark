@@ -883,9 +883,9 @@ class SeleniumHelpers:
         try:
             url = self.get_current_url()
             url_parse = urlparse.urlparse(url)
-            domain =  ".{}".format(url_parse.netloc.split(".", 1)[-1])
+            domain = ".{}".format(url_parse.netloc.split(".", 1)[-1])
             path = url_parse.path
-            self.driver.add_cookie({"name": name, "value":value, "domain": domain,"path": path})
+            self.driver.add_cookie({"name": name, "value": value, "domain": domain, "path": path})
         except Exception as cookie_error:
             message = "There was an issue creating a a cookie: {0}".format(cookie_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
