@@ -160,7 +160,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_add_cookie_is_false(self):
         self.sh.add_cookie("qa", "test")
-        self.assertTrue(self.driver.get_cookie("no_cookie"), None)
+        self.assertTrue(self.driver.get_cookie("no_cookie") is None)
 
     def test_add_cookie_expection(self):
         with self.assertRaises(selenium_helpers.DriverAttributeError):

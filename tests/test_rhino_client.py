@@ -42,9 +42,9 @@ class UtilsTestCase(unittest.TestCase):
 
         self.assertEqual(True, self.rhino_client_obj.posted)
 
-    def test_post_fail(self):
-        request_json = Mock()
-        request_json.side_effect = Exception('Boom!')
+    @patch('requests.post')
+    def test_post_fail(self, requests_post):
+        requests_post.side_effect = Exception('Boom!')
 
         self.assertRaises(Exception, self.rhino_client_obj.post)
 
