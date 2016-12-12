@@ -11,7 +11,7 @@ class Actions:
         self.sh = selenium_helper
         self.iteration = 0
 
-    def dispatch_actions(self, action_list, element=None):
+    def dispatch_list_of_actions(self, action_list, element=None):
         """
         Dispatch a list of actions into their proper methods. The "action" key in the action object needs to match the
         name of the action method you plan to call. This should be verified before sending in here by validating the
@@ -20,25 +20,17 @@ class Actions:
         :param action_list: A list of action objects that passed a schema check against the action_schema
         :param element: A webdriver element that is used when performing for_each actions
         """
-        action_type = ""
-        try:
-            for action in action_list:
-                action_type = action[ACTION_KEY]
-                # Dispatch the action to the appropriate method in the Action Class
-                try:
-                    getattr(self, action_type)(action, element)
-                except Exception as actions_error:
-                    # TODO: concoct a way to get the path for the current page from here
-                    raise ActionException("An error occurred while performing a '{}' "
-                                          "action on {} | {}".format(action_type,
-                                                                     self.sh.get_current_url or "No-URL",
-                                                                     actions_error))
+        for action in action_list:
+            self.dispatch_action(action, element)
 
-        except AttributeError as attr_error:
-            message = "An AttributeError Exception was raised while performing a '{}' action! Check the spelling " \
-                      "of the action and/or update the configuration schema to include a check " \
-                      "for the proper naming of this action. Error: {}".format(action_type, attr_error)
-            raise ActionException(message)
+    def dispatch_action(self, action, element=None):
+        """
+        Dispatch a single action object
+        """
+        action_type = "Not-Instantiated"
+        try:
+            action_type = action[ACTION_KEY]
+            getattr(self, action_type)(action, element)
 
         except KeyError as key_error:
             message = "A KeyError Exception for the key named '{}' was raised while performing a '{}' action! " \
@@ -46,9 +38,23 @@ class Actions:
                       "to include a check for the proper key's existence".format(key_error, action_type)
             raise ActionException(message)
 
+        except AttributeError as attr_error:
+            message = "An AttributeError Exception was raised while performing a '{}' action! Check the spelling " \
+                      "of the action and/or update the configuration schema to include a check " \
+                      "for the proper naming of this action. Error: {}".format(action_type, attr_error)
+            raise ActionException(message)
+
+        except Exception as actions_error:
+            raise ActionException("An error occurred while performing a '{}' "
+                                  "action on {} | {}".format(action_type, self.sh.get_current_url or "No-URL",
+                                                             actions_error))
+
     def load_url(self, action, element=None):
         """
         Load a new url.
+        If only a "path" is given then that path will be added to the current domain.
+        If only a "url" is given it will load directly to that url
+        If both a "url" and a "path" are given then the path will be added to the end of that url and attempted to load
         """
         path = action.get(PATH_KEY)
         url = action.get(URL_KEY)
@@ -64,18 +70,36 @@ class Actions:
         self.sh.load_url(url, action.get(BYPASS_404_KEY))
 
     def click(self, action, element=None):
+        """
+        Click an element.
+        If an element is given then that element will be clicked
+        If no element is given then the "css_selector" value in the action object will be used to find an element.
+        """
         if element and action.get(ELEMENT_KEY):
             self.sh.click_an_element(web_element=element)
         else:
             self.sh.click_an_element(action[CSS_SELECTOR_KEY])
 
     def hover(self, action, element=None):
+        """
+        Hover the mouse over an element.
+        If an element is given then that element will be hovered
+        If no element is given then the "css_selector" value in the action object will be used to find an element.
+        """
         if element and action.get(ELEMENT_KEY):
             self.sh.hover_on_element(web_element=element)
         else:
             self.sh.hover_on_element(action[CSS_SELECTOR_KEY])
 
     def enter_text(self, action, element=None):
+        """
+        Enter text into an input field.
+        If an "input_type" is given, the input_generator will generate an input of that type and fill the field.
+        Otherwise the action object's "input" value will be entered.
+
+        If an element is given then that element will be filled
+        If no element is given then the "css_selector" value in the action object will be used to find an element.
+        """
         text = "Not-Set"
         if action.get(INPUT_TYPE_KEY):
             input_type = action.get(INPUT_TYPE_KEY)
@@ -98,12 +122,22 @@ class Actions:
             self.sh.fill_an_element(text, action[CSS_SELECTOR_KEY])
 
     def scroll_window_to_position(self, action, element=None):
+        """
+        Scrolls the window to a specific scroll position. This position is absolute and not relative to the current
+        scroll position of the browser window.
+        You can scroll up/down or sideways. As well as directly to the top or bottom of the page.
+        """
         self.sh.scroll_window_to_position(action.get(Y_POSITION_KEY, 0),
                                           action.get(X_POSITION_KEY, 0),
                                           action.get(POSITION_TOP_KEY, 0),
                                           action.get(POSITION_BOTTOM_KEY, 0))
 
     def scroll_window_to_element(self, action, element=None):
+        """
+        Scrolls the window to a specific element on the page.
+        You can specify whether you'd like the element to appear at the top, middle, or bottom of the screen after the
+        scroll has taken place
+        """
         if element and action.get(ELEMENT_KEY):
             self.sh.scroll_to_element(web_element=element,
                                       position_bottom=action.get(POSITION_BOTTOM_KEY),
@@ -185,7 +219,7 @@ class Actions:
         for element in elements:
             if not action.get(DO_NOT_INCREMENT_KEY):
                 self.iteration += 1
-            self.dispatch_actions(action[ACTION_LIST_KEY], element=element)
+            self.dispatch_list_of_actions(action[ACTION_LIST_KEY], element=element)
 
         if not action.get(CHILD_KEY):
             self.iteration = 0
