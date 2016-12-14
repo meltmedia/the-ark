@@ -119,6 +119,55 @@ class Screenshot:
                                       stacktrace=traceback.format_exc(),
                                       details={"css_selector": css_selector})
 
+    def capture_horizontal_scrolling_element(self, css_selector, viewport_only=True, scroll_padding=None):
+        """
+        This method will scroll an element horizontally one width (with padding) and take a screenshot each scroll until
+        the element has been scrolled to the right. You can choose to capture the whole page (helpful when the
+        scrollable element is taller than the viewport) or just the viewport area.
+
+        :param
+            - css_selector:     string - The css selector for the element that you plan to scroll
+            - viewport_only:    bool   - Whether to capture just the viewport's visible area or not (each screenshot
+                                       after scrolling)
+            - scroll_padding:   int    - Overwrites the default scroll padding for the class. This can be used when the
+                                       element, or site, have greatly different scroll padding numbers
+        :return
+            - StringIO:     list - A list containing multiple StringIO image objects
+        """
+        padding = scroll_padding if scroll_padding else self.scroll_padding
+
+        try:
+            image_list = []
+            # Scroll the element to the top
+            self.sh.scroll_an_element(css_selector, scroll_left=True)
+
+            while True:
+                # - Capture the image
+                if viewport_only:
+                    image_list.append(self._capture_single_viewport())
+                else:
+                    image_list.append(self._capture_full_page())
+
+                if self.sh.get_is_element_scroll_position_at_most_right(css_selector):
+                    # - Stop capturing once you're at the most right
+                    break
+                else:
+                    # - Scroll right for the next one!
+                    self.sh.scroll_an_element(css_selector, scroll_padding=padding, scroll_horizontal=True)
+
+            return image_list
+
+        except SeleniumHelperExceptions as selenium_error:
+            message = "A selenium issue arose while trying to capture the scrolling element"
+            error = SeleniumError(message, selenium_error)
+            raise error
+        except Exception as e:
+            message = "Unhandled exception while taking the scrolling screenshot " \
+                      "of the element '{0}' | {1}".format(css_selector, e)
+            raise ScreenshotException(message,
+                                      stacktrace=traceback.format_exc(),
+                                      details={"css_selector": css_selector})
+
     def _capture_single_viewport(self):
         """
         Grabs an image of the page and then craps it to just the visible / viewport area

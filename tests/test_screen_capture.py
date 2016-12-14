@@ -101,6 +101,21 @@ class ScreenCaptureTestCase(unittest.TestCase):
         sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
         self.assertIsInstance(sc.capture_scrolling_element(".scrollable", False), list)
 
+    # --- Horizontal Scrolling Element
+    def test_horizontal_scrolling_element_with_viewport_only(self):
+        sh = SeleniumHelpers()
+        sc = Screenshot(sh, scroll_padding=10, file_extenson="bmp")
+        sh.create_driver(browserName="phantomjs")
+        sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+        self.assertIsInstance(sc.capture_horizontal_scrolling_element(".image-scroll"), list)
+
+    def test_horizontal_scrolling_element_with_full_page_capture(self):
+        sh = SeleniumHelpers()
+        sc = Screenshot(sh, scroll_padding=10)
+        sh.create_driver(browserName="phantomjs")
+        sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+        self.assertIsInstance(sc.capture_horizontal_scrolling_element(".image-scroll", False), list)
+
     @patch("PIL.Image")
     def test_mobile_device_capture(self, image_class):
         sh = SeleniumHelpers()
@@ -251,10 +266,29 @@ class ScreenCaptureTestCase(unittest.TestCase):
         self.assertIn("selenium issue", selenium_error.exception.msg)
 
     @patch("the_ark.selenium_helpers.SeleniumHelpers.scroll_an_element")
-    def test__scrolling_screenshot_element_screenshot_error(self, scroll_an_element):
+    def test_scrolling_screenshot_element_screenshot_error(self, scroll_an_element):
         scroll_an_element.side_effect = Exception("Boo!")
         css_selector = ".class"
         with self.assertRaises(ScreenshotException) as selenium_error:
             self.sc.capture_scrolling_element(css_selector)
+        self.assertIn("Unhandled", selenium_error.exception.msg)
+        self.assertIn(css_selector, selenium_error.exception.msg)
+
+    def test_horizontal_scrolling_screenshot_element_selenium_error(self):
+        sh = SeleniumHelpers()
+        sc = Screenshot(sh)
+        sh.create_driver(browserName="phantomjs")
+        sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+
+        with self.assertRaises(SeleniumError) as selenium_error:
+            sc.capture_horizontal_scrolling_element(".class")
+        self.assertIn("selenium issue", selenium_error.exception.msg)
+
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.scroll_an_element")
+    def test_horizontal_scrolling_screenshot_element_screenshot_error(self, scroll_an_element):
+        scroll_an_element.side_effect = Exception("Boo!")
+        css_selector = ".class"
+        with self.assertRaises(ScreenshotException) as selenium_error:
+            self.sc.capture_horizontal_scrolling_element(css_selector)
         self.assertIn("Unhandled", selenium_error.exception.msg)
         self.assertIn(css_selector, selenium_error.exception.msg)
