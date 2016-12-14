@@ -2,8 +2,9 @@ import time
 import urlparse
 
 from the_ark import input_generator
-from the_ark.resources.action_constants import *
 from the_ark.field_handlers import STRING_FIELD, EMAIL_FIELD, PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD
+from the_ark.resources.action_constants import *
+from the_ark.selenium_helpers import SeleniumHelperExceptions
 
 
 class Actions:
@@ -20,8 +21,11 @@ class Actions:
         :param action_list: A list of action objects that passed a schema check against the action_schema
         :param element: A webdriver element that is used when performing for_each actions
         """
-        for action in action_list:
-            self.dispatch_action(action, element)
+        try:
+            for action in action_list:
+                self.dispatch_action(action, element)
+        except TypeError as e:
+            raise ActionException("Please ensure you pass through a list type in the action_list paramater | {}".format(e))
 
     def dispatch_action(self, action, element=None):
         """
@@ -32,8 +36,12 @@ class Actions:
             action_type = action[ACTION_KEY]
             getattr(self, action_type)(action, element)
 
+        except SeleniumHelperExceptions as selenium_error:
+            message = "A Selenium error was caught while performing a '{}' action".format(selenium_error, action_type)
+            raise ActionException(message)
+
         except KeyError as key_error:
-            message = "A KeyError Exception for the key named '{}' was raised while performing a '{}' action! " \
+            message = "A KeyError Exception for the key named {} was raised while performing a '{}' action! " \
                       "Check the spelling of the key and/or update the configuration schema" \
                       "to include a check for the proper key's existence".format(key_error, action_type)
             raise ActionException(message)
@@ -100,7 +108,6 @@ class Actions:
         If an element is given then that element will be filled
         If no element is given then the "css_selector" value in the action object will be used to find an element.
         """
-        text = "Not-Set"
         if action.get(INPUT_TYPE_KEY):
             input_type = action.get(INPUT_TYPE_KEY)
             if input_type == STRING_FIELD:
@@ -113,6 +120,9 @@ class Actions:
                 text = input_generator.generate_phone()
             elif input_type == DATE_FIELD:
                 text = input_generator.generate_date()
+            else:
+                raise ActionException("The given input type of '{}' is not a known type and we could not generate text "
+                                      "for this action".format(input_type))
         else:
             text = action[INPUT_KEY]
 
@@ -244,4 +254,3 @@ class ActionException(Exception):
         exception_msg += "Message: {0}".format(self.msg)
 
         return exception_msg
-

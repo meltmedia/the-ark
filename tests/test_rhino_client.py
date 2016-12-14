@@ -44,7 +44,9 @@ class UtilsTestCase(unittest.TestCase):
 
     @patch('requests.post')
     def test_post_fail(self, requests_post):
-        requests_post.side_effect = Exception('Boom!')
+        request_json = Mock()
+        request_json.status_code = 400
+        requests_post.return_value = request_json
 
         self.assertRaises(Exception, self.rhino_client_obj.post)
 
