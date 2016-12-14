@@ -48,9 +48,9 @@ class EmailClientTestCase(unittest.TestCase):
         self.assertIn("TO", error_message.exception.msg)
         self.assertIn(bad_email, error_message.exception.msg)
 
-    #===================================================================
-    #--- Email Client Exceptions
-    #===================================================================
+    # ===================================================================
+    # --- Email Client Exceptions
+    # ===================================================================
     def test_field_handler_exception_to_string_without_details(self):
         field_handler = EmailClientException("Message text")
         error_string = field_handler.__str__()

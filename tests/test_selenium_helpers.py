@@ -160,7 +160,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_add_cookie_is_false(self):
         self.sh.add_cookie("qa", "test")
-        self.assertTrue(self.driver.get_cookie("no_cookie") == None)
+        self.assertTrue(self.driver.get_cookie("no_cookie") is None)
 
     def test_add_cookie_expection(self):
         with self.assertRaises(selenium_helpers.DriverAttributeError):
@@ -401,7 +401,8 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertTrue(mock_click_element_with_offset.called)
 
     def test_click_element_with_offset_invalid(self):
-        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_element_with_offset, css_selector=".invalid a")
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.click_element_with_offset,
+                          css_selector=".invalid a")
 
     def test_web_element_click_element_with_offset_unexpected_invalid(self):
         self.assertRaises(Exception, self.sh.click_element_with_offset, web_element="*invalid")

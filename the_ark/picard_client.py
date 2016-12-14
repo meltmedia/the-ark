@@ -18,14 +18,14 @@ class PicardClient(object):
 
         r = requests.post(schema_url, form_data, headers=headers, **kwargs)
 
-        #- Able to reach Picard, but request failed
+        # Able to reach Picard, but request failed
         if r.status_code == 400:
             raise PicardClientException(r.text)
-        #- Unable to reach picard
+        # Unable to reach picard
         if r.status_code is not 200:
             raise PicardClientException("Unable to Post to Picard")
 
-        #- Received a valid response from Picard. Return the data received.
+        # Received a valid response from Picard. Return the data received.
         return json.loads(r.text)
 
     def create_headers(self, referer="qa.picardclient.com"):

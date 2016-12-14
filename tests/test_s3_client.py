@@ -85,9 +85,9 @@ class S3MethodTestCase(unittest.TestCase):
 
     @patch('the_ark.s3_client.S3Client.verify_file')
     def test_get_file(self, verify):
-        file = Mock()
+        mock_file = Mock()
         verify.return_value = True
-        self.client.bucket.get_key.return_value = file
+        self.client.bucket.get_key.return_value = mock_file
         self.client.get_file('stuff', 'more stuff')
 
         self.client.bucket.get_key.assert_called_once_with(
@@ -95,9 +95,9 @@ class S3MethodTestCase(unittest.TestCase):
 
     @patch('the_ark.s3_client.S3Client.verify_file')
     def test_get_file_with_no_file(self, verify):
-        file = Mock()
+        mock_file = Mock()
         verify.return_value = False
-        self.client.bucket.get_key.return_value = file
+        self.client.bucket.get_key.return_value = mock_file
         with self.assertRaises(S3ClientException):
             self.client.get_file('stuff', 'more stuff')
 
@@ -140,8 +140,8 @@ class S3MethodTestCase(unittest.TestCase):
         self.assertEqual(returned_url, s3_link_url)
 
     @patch('boto.s3.bucket.Bucket.list')
-    def test_get_all_filenames_in_folder(self, list):
-        list.return_value = []
+    def test_get_all_filenames_in_folder(self, mock_list):
+        mock_list.return_value = []
         self.client.get_all_filenames_in_folder('path')
 
     def test_get_most_recent_file_from_s3_key_list(self):
@@ -191,15 +191,15 @@ class S3MethodTestCase(unittest.TestCase):
                                  url_parse_sec_token.params, url_parse_sec_token.query, url_parse_sec_token.fragment
         guess_type.return_value("image/png")
         set_contents.return_value(True)
-        imageFile = StringIO()
+        image_file = StringIO()
         with open("./tests/etc/test.png") as f:
-            imageFile.write(f.read())
-        imageFile.seek(0)
+            image_file.write(f.read())
+        image_file.seek(0)
         self.client.store_file(
-            'stuff', imageFile, return_url=True, filename="this file")
+            'stuff', image_file, return_url=True, filename="this file")
 
         self.client.store_file(
-            'stuff', imageFile, return_url=False, filename="this file")
+            'stuff', image_file, return_url=False, filename="this file")
 
 
 if __name__ == '__main__':
