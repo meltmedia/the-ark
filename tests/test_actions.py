@@ -1,5 +1,4 @@
 import unittest
-import urlparse
 
 from the_ark.actions import Actions, ActionException
 from the_ark.field_handlers import STRING_FIELD, EMAIL_FIELD, PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD
