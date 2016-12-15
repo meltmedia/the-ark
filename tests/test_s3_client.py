@@ -3,6 +3,7 @@ import urlparse
 from the_ark.s3_client import S3Client, S3ClientException
 from mock import Mock, patch
 from boto.s3.key import Key
+from cStringIO import StringIO
 
 __author__ = 'chaley'
 
@@ -14,7 +15,6 @@ url_parse_sec_token = urlparse.urlparse(s3_security_link_url)
 
 
 class S3InitTestCase(unittest.TestCase):
-
     @patch('boto.s3.connection.S3Connection')
     def test_class_init(self, s3con):
         s3con.return_value = {}
@@ -29,7 +29,6 @@ class S3InitTestCase(unittest.TestCase):
 
 
 class S3MethodTestCase(unittest.TestCase):
-
     def setUp(self):
         self.client = S3Client(bucket)
         self.client.s3_connection = Mock()
@@ -86,9 +85,9 @@ class S3MethodTestCase(unittest.TestCase):
 
     @patch('the_ark.s3_client.S3Client.verify_file')
     def test_get_file(self, verify):
-        file = Mock()
+        mock_file = Mock()
         verify.return_value = True
-        self.client.bucket.get_key.return_value = file
+        self.client.bucket.get_key.return_value = mock_file
         self.client.get_file('stuff', 'more stuff')
 
         self.client.bucket.get_key.assert_called_once_with(
@@ -96,9 +95,9 @@ class S3MethodTestCase(unittest.TestCase):
 
     @patch('the_ark.s3_client.S3Client.verify_file')
     def test_get_file_with_no_file(self, verify):
-        file = Mock()
+        mock_file = Mock()
         verify.return_value = False
-        self.client.bucket.get_key.return_value = file
+        self.client.bucket.get_key.return_value = mock_file
         with self.assertRaises(S3ClientException):
             self.client.get_file('stuff', 'more stuff')
 
@@ -119,28 +118,30 @@ class S3MethodTestCase(unittest.TestCase):
     @patch('mimetypes.guess_type')
     @patch('boto.s3.key.Key.set_contents_from_file')
     def test_store_file(self, set_contents, guess_type, url_parse):
-        url_parse.return_value = url_parse_base.scheme, url_parse_base.netloc, url_parse_base.path, url_parse_base.params, url_parse_base.query, url_parse_base.fragment
+        url_parse.return_value = url_parse_base.scheme, url_parse_base.netloc, url_parse_base.path, \
+                                 url_parse_base.params, url_parse_base.query, url_parse_base.fragment
         guess_type.return_value("image/png")
         set_contents.return_value(True)
         self.client.store_file(
-            'stuff', 1, return_url=True, filename="this file")
+            'stuff', "./tests/etc/all_black.png", return_url=True, filename="this file")
 
         self.client.store_file(
-            'stuff', 1, return_url=False, filename="this file")
+            'stuff', "./tests/etc/all_black.png", return_url=False, filename="this file")
 
     @patch('urlparse.urlparse')
     @patch('mimetypes.guess_type')
     @patch('boto.s3.key.Key.set_contents_from_file')
     def test_store_file_with_security_token(self, set_contents, guess_type, url_parse):
-        url_parse.return_value = url_parse_sec_token.scheme, url_parse_sec_token.netloc, url_parse_sec_token.path, url_parse_sec_token.params, url_parse_sec_token.query, url_parse_sec_token.fragment
+        url_parse.return_value = url_parse_sec_token.scheme, url_parse_sec_token.netloc, url_parse_sec_token.path, \
+                                 url_parse_sec_token.params, url_parse_sec_token.query, url_parse_sec_token.fragment
         guess_type.return_value("image/png")
         set_contents.return_value(True)
         returned_url = self.client.store_file('stuff', 1, return_url=True, filename="this file")
         self.assertEqual(returned_url, s3_link_url)
 
     @patch('boto.s3.bucket.Bucket.list')
-    def test_get_all_filenames_in_folder(self, list):
-        list.return_value = []
+    def test_get_all_filenames_in_folder(self, mock_list):
+        mock_list.return_value = []
         self.client.get_all_filenames_in_folder('path')
 
     def test_get_most_recent_file_from_s3_key_list(self):
@@ -152,10 +153,54 @@ class S3MethodTestCase(unittest.TestCase):
         third.last_modified = 1
         key_list = [first, second, third]
 
-        most_recent_key = self.client.\
+        most_recent_key = self.client. \
             get_most_recent_file_from_s3_key_list(key_list)
         self.assertEqual(
             most_recent_key.last_modified, key_list[1].last_modified)
+
+    @patch('tempfile.mkdtemp')
+    @patch('os.path.getsize')
+    def test_split_file_boom(self, get_size, make_dir):
+        make_dir.side_effect = Exception('Here Comes the Boom?')
+        get_size.return_value = 9999999999999
+        with self.assertRaises(S3ClientException):
+            self.client.store_file(
+                'stuff', "./tests/etc/test.png", return_url=False, filename="this file")
+
+    @patch('urlparse.urlparse')
+    @patch('mimetypes.guess_type')
+    @patch('boto.s3.key.Key.set_contents_from_file')
+    @patch('os.path.getsize')
+    def test_store_file_with_split(self, get_size, set_contents, guess_type, url_parse):
+        url_parse.return_value = url_parse_sec_token.scheme, url_parse_sec_token.netloc, url_parse_sec_token.path, \
+                                 url_parse_sec_token.params, url_parse_sec_token.query, url_parse_sec_token.fragment
+        guess_type.return_value("image/png")
+        set_contents.return_value(True)
+        get_size.return_value = 9999999999999
+        self.client.store_file(
+            'stuff', "./tests/etc/test.png", return_url=True, filename="this file")
+
+        self.client.store_file(
+            'stuff', "./tests/etc/test.png", return_url=False, filename="this file")
+
+    @patch('urlparse.urlparse')
+    @patch('mimetypes.guess_type')
+    @patch('boto.s3.key.Key.set_contents_from_file')
+    def test_store_file_with_stringIO(self, set_contents, guess_type, url_parse):
+        url_parse.return_value = url_parse_sec_token.scheme, url_parse_sec_token.netloc, url_parse_sec_token.path, \
+                                 url_parse_sec_token.params, url_parse_sec_token.query, url_parse_sec_token.fragment
+        guess_type.return_value("image/png")
+        set_contents.return_value(True)
+        image_file = StringIO()
+        with open("./tests/etc/test.png") as f:
+            image_file.write(f.read())
+        image_file.seek(0)
+        self.client.store_file(
+            'stuff', image_file, return_url=True, filename="this file")
+
+        self.client.store_file(
+            'stuff', image_file, return_url=False, filename="this file")
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,6 +5,7 @@ from the_ark import picard_client
 
 picard_client_obj = None
 
+
 class UtilsTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -35,6 +36,3 @@ class UtilsTestCase(unittest.TestCase):
 
         r.status_code = 303
         self.assertRaises(picard_client.PicardClientException, self.picard_client_obj.send_to_picard, '', '', '')
-
-
-

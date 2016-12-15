@@ -23,17 +23,17 @@ class ScreenCaptureTestCase(unittest.TestCase):
     def instantiate_screenshot_class(self, selenium_helper):
         self.sc = Screenshot(selenium_helper)
 
-    #===================================================================
-    #--- Screenshot Types
-    #===================================================================
-    #--- Viewport Only
+    # ===================================================================
+    # --- Screenshot Types
+    # ===================================================================
+    # - Viewport Only
     @patch("the_ark.screen_capture.Screenshot._get_image_data")
     def test_capture_single_viewport(self, image_data):
         image_data.return_value = Image.open(SCREENSHOT_TEST_PNG)
         returned_image = self.sc.capture_page(True)
         self.assertIsInstance(returned_image, StringIO)
 
-    #--- Paginated
+    # - Paginated
     @patch("the_ark.screen_capture.Screenshot._capture_single_viewport")
     def test_paginated_capture(self, capture_single_viewport):
         capture_single_viewport.return_value = True
@@ -51,7 +51,7 @@ class ScreenCaptureTestCase(unittest.TestCase):
         self.sc.capture_page(False, 300)
         capture_paginated_page.assert_called_with(300)
 
-    #--- Full Page
+    # - Full Page
     @patch("the_ark.screen_capture.Screenshot._crop_and_stitch_image")
     @patch("the_ark.screen_capture.Screenshot._get_image_data")
     @patch("the_ark.screen_capture.Screenshot._show_elements")
@@ -86,7 +86,7 @@ class ScreenCaptureTestCase(unittest.TestCase):
         returned_image = self.sc.capture_page()
         self.assertIsInstance(returned_image, StringIO)
 
-    #--- Scrolling Element
+    # - Scrolling Element
     def test_scrolling_element_with_viewport_only(self):
         sh = SeleniumHelpers()
         sc = Screenshot(sh, scroll_padding=100, file_extenson="bmp")
@@ -101,6 +101,21 @@ class ScreenCaptureTestCase(unittest.TestCase):
         sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
         self.assertIsInstance(sc.capture_scrolling_element(".scrollable", False), list)
 
+    # --- Horizontal Scrolling Element
+    def test_horizontal_scrolling_element_with_viewport_only(self):
+        sh = SeleniumHelpers()
+        sc = Screenshot(sh, scroll_padding=10, file_extenson="bmp")
+        sh.create_driver(browserName="phantomjs")
+        sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+        self.assertIsInstance(sc.capture_horizontal_scrolling_element(".image-scroll"), list)
+
+    def test_horizontal_scrolling_element_with_full_page_capture(self):
+        sh = SeleniumHelpers()
+        sc = Screenshot(sh, scroll_padding=10)
+        sh.create_driver(browserName="phantomjs")
+        sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+        self.assertIsInstance(sc.capture_horizontal_scrolling_element(".image-scroll", False), list)
+
     @patch("PIL.Image")
     def test_mobile_device_capture(self, image_class):
         sh = SeleniumHelpers()
@@ -111,10 +126,10 @@ class ScreenCaptureTestCase(unittest.TestCase):
         image = sc._get_image_data()
         self.assertFalse(image_class.crop.called)
 
-    #===================================================================
-    #--- Helper Functions
-    #===================================================================
-    #--- Hide Elements
+    # ===================================================================
+    # --- Helper Functions
+    # ===================================================================
+    # - Hide Elements
     def test_hide_elements(self):
         sh = SeleniumHelpers()
         sc = Screenshot(sh)
@@ -146,7 +161,7 @@ class ScreenCaptureTestCase(unittest.TestCase):
 
         sc._hide_elements(["li.badClass"])
 
-    #--- Show Elements
+    # - Show Elements
     def test_show_elements(self):
         sh = SeleniumHelpers()
         sc = Screenshot(sh)
@@ -168,7 +183,7 @@ class ScreenCaptureTestCase(unittest.TestCase):
 
         sc._show_elements(["li.badClass"])
 
-    #--- Crop and Stitch
+    # - Crop and Stitch
     def test_crop_and_stitch(self):
         header = Image.open(SCREENSHOT_TEST_PNG)
         footer = Image.open(SCREENSHOT_TEST_PNG)
@@ -193,13 +208,13 @@ class ScreenCaptureTestCase(unittest.TestCase):
 
         sh1 = SeleniumHelpers()
         sc1 = Screenshot(sh1)
-        returned_image = self.sc._crop_and_stitch_image(header, footer)
+        self.sc._crop_and_stitch_image(header, footer)
         self.assertEqual(sc1.pixel_match_offset, DEFAULT_PIXEL_MATCH_OFFSET)
 
         test_pixel_value = 20
         sh2 = SeleniumHelpers()
         sc2 = Screenshot(sh2, pixel_match_offset=test_pixel_value)
-        returned_image = self.sc._crop_and_stitch_image(header, footer)
+        self.sc._crop_and_stitch_image(header, footer)
         self.assertEqual(sc2.pixel_match_offset, test_pixel_value)
 
     @patch("numpy.array_equal")
@@ -217,9 +232,9 @@ class ScreenCaptureTestCase(unittest.TestCase):
         returned_image = self.sc._crop_and_stitch_image(header, footer)
         self.assertIsInstance(returned_image, Image.Image)
 
-    #===================================================================
-    #--- Exceptions
-    #===================================================================
+    # ===================================================================
+    # --- Exceptions
+    # ===================================================================
     @patch("the_ark.screen_capture.Screenshot._capture_full_page")
     def test_screenshot_page_selenium_error(self, capture_full_page):
         capture_full_page.side_effect = ElementError("Boo!", "stacktrace", "google", ".class")
@@ -251,10 +266,29 @@ class ScreenCaptureTestCase(unittest.TestCase):
         self.assertIn("selenium issue", selenium_error.exception.msg)
 
     @patch("the_ark.selenium_helpers.SeleniumHelpers.scroll_an_element")
-    def test__scrolling_screenshot_element_screenshot_error(self, scroll_an_element):
+    def test_scrolling_screenshot_element_screenshot_error(self, scroll_an_element):
         scroll_an_element.side_effect = Exception("Boo!")
         css_selector = ".class"
         with self.assertRaises(ScreenshotException) as selenium_error:
             self.sc.capture_scrolling_element(css_selector)
+        self.assertIn("Unhandled", selenium_error.exception.msg)
+        self.assertIn(css_selector, selenium_error.exception.msg)
+
+    def test_horizontal_scrolling_screenshot_element_selenium_error(self):
+        sh = SeleniumHelpers()
+        sc = Screenshot(sh)
+        sh.create_driver(browserName="phantomjs")
+        sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+
+        with self.assertRaises(SeleniumError) as selenium_error:
+            sc.capture_horizontal_scrolling_element(".class")
+        self.assertIn("selenium issue", selenium_error.exception.msg)
+
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.scroll_an_element")
+    def test_horizontal_scrolling_screenshot_element_screenshot_error(self, scroll_an_element):
+        scroll_an_element.side_effect = Exception("Boo!")
+        css_selector = ".class"
+        with self.assertRaises(ScreenshotException) as selenium_error:
+            self.sc.capture_horizontal_scrolling_element(css_selector)
         self.assertIn("Unhandled", selenium_error.exception.msg)
         self.assertIn(css_selector, selenium_error.exception.msg)

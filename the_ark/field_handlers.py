@@ -13,12 +13,12 @@ CHECK_BOX_FIELD = "check_box"
 RADIO_FIELD = "radio"
 SELECT_FIELD = "select"
 BUTTON_FIELD = "button"
-TEXT_FIELD_TYPES = [STRING_FIELD, PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD]
+PASSWORD_FIELD = "password"
+TEXT_FIELD_TYPES = [STRING_FIELD, PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD, PASSWORD_FIELD]
 All_FIELD_TYPES = [DROP_DOWN_FIELD, CHECK_BOX_FIELD, RADIO_FIELD, SELECT_FIELD, BUTTON_FIELD] + TEXT_FIELD_TYPES
 
 
-class FieldHandler():
-
+class FieldHandler:
     def __init__(self, selenium_helper):
         """
         This class contains methods which can be used to handle each field type.
@@ -64,7 +64,7 @@ class FieldHandler():
                 self.handle_radio_button(field["enum"], field["input"])
 
             if field[FIELD_IDENTIFIER].lower() == SELECT_FIELD:
-                #- Default first_valid to False as it is the default.
+                # Default first_valid to False as it is the default.
                 first_valid = field.get("first_valid") or False
                 self.handle_select(field["css_selector"], field["input"], first_valid)
 
@@ -107,9 +107,9 @@ class FieldHandler():
                                              first. This is typically most relevant to e-mail and password fields.
         """
         try:
-            #--- Handle the field
+            # - Handle the field
             self.sh.fill_an_element(css_selector=css_selector, fill_text=input_text)
-            #- Fill in the confirm field as well, if provided
+            # Fill in the confirm field as well, if provided
             if confirm_css_selector:
                 self.sh.fill_an_element(css_selector=confirm_css_selector, fill_text=input_text)
 
@@ -138,7 +138,7 @@ class FieldHandler():
         """
         current_test_index = "N/A"
         try:
-            #--- Handle the field
+            # - Handle the field
             for index in input_indexes:
                 current_test_index = index
                 self.sh.click_an_element(css_selector=enums[index]["css_selector"])
@@ -170,7 +170,7 @@ class FieldHandler():
                                 then used to determine which css_selector is clicked.
         """
         try:
-            #--- Handle the field
+            # - Handle the field
             self.sh.click_an_element(css_selector=enums[input_index]["css_selector"])
 
         except KeyError as key:
@@ -200,7 +200,7 @@ class FieldHandler():
             - first_valid       bool - True if the first option under the select tag is a valid selection.
         """
         try:
-            #- Create an index offset to manage the difference in Zero Base numbering between lists and :nth-child()
+            # Create an index offset to manage the difference in Zero Base numbering between lists and :nth-child()
             index_offset = 2
             if first_valid:
                 index_offset = 1
@@ -232,10 +232,10 @@ class FieldHandler():
                                     will be selected from the drop down
         """
         try:
-            #--- Handle the field
-            #- Click the parent element to reveal the options
+            # - Handle the field
+            # Click the parent element to reveal the options
             self.sh.click_an_element(css_selector=css_selector)
-            #- Click the option that corresponds with the css_selector in the given index of the enum
+            # Click the option that corresponds with the css_selector in the given index of the enum
             self.sh.click_an_element(css_selector=enums[input_index]["css_selector"])
 
         except KeyError as key:

@@ -1,7 +1,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
 from field_handlers import DROP_DOWN_FIELD, CHECK_BOX_FIELD, RADIO_FIELD, SELECT_FIELD, BUTTON_FIELD, STRING_FIELD, \
-    PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD, All_FIELD_TYPES, FIELD_IDENTIFIER
+    PHONE_FIELD, ZIP_CODE_FIELD, DATE_FIELD, INTEGER_FIELD, EMAIL_FIELD, All_FIELD_TYPES, FIELD_IDENTIFIER, PASSWORD_FIELD
 import random
 import string
 import time
@@ -18,6 +18,7 @@ DEFAULT_DOMAIN = "meltmedia.com"
 DEFAULT_START_DATE = str((datetime.now() - timedelta(weeks=52 * 20)).date())
 DEFAULT_END_DATE = str((datetime.now() - timedelta(weeks=52 * 100)).date())
 DEFAULT_DATE_FORMAT = "%m/%d/%Y"
+SPECIAL_CHARACTER_LIST = ["!", "@", "#", "$", "&", "*"]
 
 
 def dispatch_field(field_data, test_number=1):
@@ -47,6 +48,9 @@ def dispatch_field(field_data, test_number=1):
             domain = field_data.get("domain") or DEFAULT_DOMAIN
             return generate_email(domain, test_number, required)
 
+        elif field_data[FIELD_IDENTIFIER].lower() == PASSWORD_FIELD:
+            return generate_password(test_number, required)
+
         elif field_data[FIELD_IDENTIFIER].lower() == PHONE_FIELD:
             decimal = field_data.get("decimal") or False
             parenthesis = field_data.get("parenthesis") or False
@@ -65,7 +69,7 @@ def dispatch_field(field_data, test_number=1):
             return generate_check_box(len(field_data["enum"]), test_number, required)
 
         else:
-            #- Date Field! (no elif here cause unittest coverage didn't like the branch not having an end)
+            # Date Field! (no elif here cause unittest coverage didn't like the branch not having an end)
             start_date = field_data.get("start_date") or DEFAULT_START_DATE
             end_date = field_data.get("end_date") or DEFAULT_END_DATE
             date_format = field_data.get("date_format") or DEFAULT_DATE_FORMAT
@@ -106,9 +110,9 @@ def set_leave_blank(test_number, required):
     """
     leave_blank = False
 
-    #- If the field is not required, do logic to determine whether to leave it blank upon fill
+    # If the field is not required, do logic to determine whether to leave it blank upon fill
     if required is False:
-        #- Always fill in the field on the first test...
+        # Always fill in the field on the first test...
         if test_number != 1:
             # ... but give 25% chance to leave blank otherwise
             leave_blank = True if random.random() < .25 else False
@@ -144,13 +148,13 @@ def generate_string(min_length=DEFAULT_STRING_MIN, max_length=DEFAULT_STRING_MAX
         -   string:         The randomly generated or blank string
     """
     try:
-        #- Ensure the minimum and maximum values create a valid range
+        # Ensure the minimum and maximum values create a valid range
         check_min_vs_max(min_length, max_length)
 
-        #- Instantiate the required and leave_blank variables based on the field object and test number
+        # Instantiate the required and leave_blank variables based on the field object and test number
         leave_blank = set_leave_blank(test_number, required)
 
-        #- Set the return to a blank string if leave_blank is true. Otherwise create a string
+        # Set the return to a blank string if leave_blank is true. Otherwise create a string
         if leave_blank:
             random_string = ""
         else:
@@ -180,17 +184,17 @@ def generate_integer(min_int=DEFAULT_INTEGER_MIN, max_int=DEFAULT_INTEGER_MAX,
         -   integer:        The randomly generated, or blank string
     """
     try:
-        #- Ensure the minimum and maximum values create a valid range
+        # Ensure the minimum and maximum values create a valid range
         check_min_vs_max(min_int, max_int)
 
-        #- Instantiate the required and leave_blank variables based on the field object and test number
+        # Instantiate the required and leave_blank variables based on the field object and test number
         leave_blank = set_leave_blank(test_number, required)
 
-        #- Set the return to a blank string if leave_blank is true. Otherwise create an integer
+        # Set the return to a blank string if leave_blank is true. Otherwise create an integer
         if leave_blank:
             integer = ""
         else:
-            #- Create the integer value between the min and max and with the padding provided
+            # Create the integer value between the min and max and with the padding provided
             integer = "{0:0{1}d}".format(random.randint(min_int, max_int), padding)
 
         return integer
@@ -212,16 +216,16 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=1, required=True):
         -   string:         The randomly generated, or blank email string
     """
     try:
-        #- Instantiate variables
+        # Instantiate variables
         leave_blank = set_leave_blank(test_number, required)
         email = ""
 
-        #- Set the return to a blank string if leave_blank is true. Otherwise create an email
+        # Set the return to a blank string if leave_blank is true. Otherwise create an email
         if leave_blank:
             return ""
         else:
-            #--- Create an email in the firstname.lastname@domain format.
-            #-   The first and last names are generated using the generate_string method
+            # - Create an email in the firstname.lastname@domain format.
+            #   The first and last names are generated using the generate_string method
             first_name = generate_string(6, 10)
             last_name = generate_string(6, 10)
 
@@ -234,6 +238,31 @@ def generate_email(domain=DEFAULT_DOMAIN, test_number=1, required=True):
 
     except Exception as e_text:
         message = "Unhandled Exception caught while generating an Email: {0}".format(e_text)
+        raise InputGeneratorException(message)
+
+
+def generate_password(test_number=1, required=True):
+    """ Generates a random password with a capitol letter first and ends with a special character
+    :param
+        -   test_number:    An int that specifies which submission number this generation is being used for. This will
+                            help determine whether the field has been populated previously and whether to leave it blank
+        -   required:       A bool specifying whether the field for which input if being generated is required on the
+                            form on which the input will be input
+    :returns
+        -   string:         The randomly generated password string
+    """
+    try:
+        first_letter = generate_string(1, 2).upper()
+        number = generate_integer(1, 2)
+        body = generate_string(5, 6)
+        character_position = random.randint(0, len(SPECIAL_CHARACTER_LIST) - 1)
+        character = SPECIAL_CHARACTER_LIST[character_position]
+        password = "{0}{1}{2}{3}".format(first_letter, body, number, character)
+
+        return password
+
+    except Exception as e_text:
+        message = "Unhandled Exception caught while generating an Password: {0}".format(e_text)
         raise InputGeneratorException(message)
 
 
@@ -259,42 +288,42 @@ def generate_phone(decimals=False, parenthesis=False, dash=False, space=False, t
     try:
         leave_blank = set_leave_blank(test_number, required)
 
-        #- Set the return to a blank string if leave_blank is true. Otherwise create a phone number
+        # Set the return to a blank string if leave_blank is true. Otherwise create a phone number
         if leave_blank:
             phone_number = ""
         else:
-            #--- Generate the Area Code portion of the phone number
-            #- Area Code should not start with 0's or 1's
+            # - Generate the Area Code portion of the phone number
+            # Area Code should not start with 0's or 1's
             area_code = "".join(str(random.randint(2, 9)) for x in range(0, 3))
 
-            #--- Generate the number portion of the phone number
-            #- The first three digits of the number should not start with 0's or 1's
+            # - Generate the number portion of the phone number
+            # The first three digits of the number should not start with 0's or 1's
             start = "".join(str(random.randint(2, 9)) for x in range(0, 3))
             finish = "".join(str(random.randint(0, 9)) for y in range(0, 4))
 
-            #--- Format the number
-            #- Use only the decimal formatting if the user specified they wanted decimals
+            # - Format the number
+            # Use only the decimal formatting if the user specified they wanted decimals
             if decimals:
                 phone_number = "{0}.{1}.{2}".format(area_code, start, finish)
             else:
-                #- Surround the area code in parenthesis if parenthesis parameter is True
+                # Surround the area code in parenthesis if parenthesis parameter is True
                 area_code = "({0})".format(area_code) if parenthesis else area_code
 
-                #- Format the "number" portion of the phone number
-                #  Dash takes precedence over space
+                # Format the "number" portion of the phone number
+                # Dash takes precedence over space
                 if dash:
                     if not space and not parenthesis:
                         number = "-{0}-{1}".format(start, finish)
                     else:
-                        #- Add the dash between the start and finish of the number if dash parameter is True
+                        # Add the dash between the start and finish of the number if dash parameter is True
                         number = "{0}-{1}".format(start, finish)
                 elif space:
-                    #- Add a space if space parameter is True, but dash is False
+                    # Add a space if space parameter is True, but dash is False
                     number = "{0} {1}".format(start, finish)
                 else:
                     number = "{0}{1}".format(start, finish)
 
-                #- Stitch the area code and number together
+                # Stitch the area code and number together
                 if space:
                     phone_number = "{0} {1}".format(area_code, number)
                 else:
@@ -320,14 +349,14 @@ def generate_zip_code(test_number=1, required=True):
     try:
         leave_blank = set_leave_blank(test_number, required)
 
-        #- Set the return to a blank string if leave_blank is true. Otherwise create a zip code
+        # Set the return to a blank string if leave_blank is true. Otherwise create a zip code
         if leave_blank:
             zip_code = ""
         else:
-            #--- Generate the ZIP Code
-            #- Prevent the first number from being 0 so that it is not truncated when the output is viewed in Excel
+            # - Generate the ZIP Code
+            # Prevent the first number from being 0 so that it is not truncated when the output is viewed in Excel
             first = str(random.randint(1, 9))
-            #- The last four digits are between 0 and 9
+            # The last four digits are between 0 and 9
             zip_code = first + "".join(str(random.randint(0, 9)) for z in range(0, 4))
 
         return zip_code
@@ -357,25 +386,25 @@ def generate_index(num_of_options=DEFAULT_INDEX_OPTIONS, test_number=1, required
     try:
         leave_blank = set_leave_blank(test_number, required)
 
-        #- Set test_number to a default of 1 unless a value was passed in.
+        # Set test_number to a default of 1 unless a value was passed in.
         test_number = 1 if not test_number else test_number
 
         random_choice = None
         all_options_used = True if test_number > num_of_options else False
 
-        #--- Always choose a random index if all options have already been sent once
+        # - Always choose a random index if all options have already been sent once
         if all_options_used:
             random_choice = True
 
-        #--- Generate the input index to use when filling out this field
+        # - Generate the input index to use when filling out this field
         if leave_blank:
-            #- Set the return to a blank string if leave_blank is true.
+            # Set the return to a blank string if leave_blank is true.
             input_index = ""
         elif random_choice or always_random:
-            #- Select a random index if the field is "random" or if all options have already been selected previously
+            # Select a random index if the field is "random" or if all options have already been selected previously
             input_index = random.randint(0, num_of_options - 1)
         else:
-            #- Select the modulo unless the test_number and number of options is the same, then select the last index
+            # Select the modulo unless the test_number and number of options is the same, then select the last index
             if test_number == num_of_options:
                 input_index = num_of_options - 1
             else:
@@ -408,12 +437,12 @@ def generate_check_box(num_of_options=1, test_number=1, required=True):
         random_choice = None
         all_options_used = True if test_number > num_of_options else False
 
-        #- 25% chance of leaving the field blank if it is not required and all options have already been used
+        # 25% chance of leaving the field blank if it is not required and all options have already been used
         if required is False and all_options_used:
             if random.random() < .25:
                 leave_blank = True
 
-        #- Always select a random index if all options have already been used
+        # Always select a random index if all options have already been used
         if all_options_used:
             random_choice = True
 
@@ -422,18 +451,19 @@ def generate_check_box(num_of_options=1, test_number=1, required=True):
         if leave_blank:
             pass
         elif random_choice and num_of_options > 1:
-            #--- Add at least one item to the input list
+            # - Add at least one item to the input list
             index = random.randint(0, num_of_options - 1)
             input_indexes.append(index)
-            #--- 50/50 chance of adding another input index to the list
+
+            # - 50/50 chance of adding another input index to the list
             while random.random() <= .5 and len(input_indexes) < num_of_options:
-                #- Cycle through indexes until finding one that is not already being used
+                # Cycle through indexes until finding one that is not already being used
                 while index in input_indexes:
                     index = random.randint(0, num_of_options - 1)
-                #- Add the index to the list
+                # Add the index to the list
                 input_indexes.append(index)
         else:
-            #- Select the modulo unless the test_number and number of options is the same, then select the last index
+            # Select the modulo unless the test_number and number of options is the same, then select the last index
             if test_number == num_of_options:
                 input_indexes.append(num_of_options - 1)
             else:
