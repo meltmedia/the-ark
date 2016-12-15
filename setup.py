@@ -11,14 +11,14 @@ def readme():
 
 setup(
     name="theark",
-    version="0.0.5",
+    version="0.0.6",
     author="meltmedia QA Team",
     author_email="qa-d@meltmedia.com",
     description="meltQA Tools Common Library.",
     license="Apache Software License",
     keywords="selenium helpers qa automation",
     url="https://github.com/meltmedia/the-ark",
-    packages=['the_ark'],
+    packages=['the_ark', 'the_ark.resources'],
     long_description=readme(),
         install_requires=[
         "boto >= 2.29.1",
