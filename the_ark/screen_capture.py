@@ -293,16 +293,17 @@ class Screenshot:
         # Create an image canvas and write the byte data to it
         image = Image.open(StringIO(image_data.decode('base64')))
 
-        if self.sh.desired_capabilities.get("mobile"):
-            return image
-        elif viewport_only:
-            # - Crop the image to just the visible area
-            # Top of the viewport
-            current_scroll_position = self.sh.get_window_current_scroll_position()
+        # - Crop the image to just the visible area
+        # Top of the viewport
+        current_scroll_position = self.sh.get_window_current_scroll_position()
 
-            # Viewport Dimensions
-            viewport_width, viewport_height = self.sh.get_viewport_size()
+        # Viewport Dimensions
+        viewport_width, viewport_height = self.sh.get_viewport_size()
 
+        # Image size of data returned by Selenium
+        image_height, image_width = image.size
+
+        if viewport_only:
             # Calculate the visible area
             crop_box = (0, current_scroll_position, viewport_width, current_scroll_position + viewport_height)
 
@@ -310,7 +311,12 @@ class Screenshot:
             cropped_image = image.crop(crop_box)
             return cropped_image
         else:
-            return image
+            # Calculate the visible area
+            crop_box = (0, 0, viewport_width, image_width)
+
+            # Crop everything of the image but the visible area
+            cropped_image = image.crop(crop_box)
+            return cropped_image
 
     def _crop_and_stitch_image(self, header_image, footer_image):
         """
