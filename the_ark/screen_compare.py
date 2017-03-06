@@ -1,5 +1,8 @@
 import math
+import numpy
 from PIL import Image
+
+OVERLAY_DIFFERENCE_COLOR = (220, 20, 60, 0)
 
 
 def image_difference(image_1, image_2):
@@ -12,7 +15,7 @@ def image_difference(image_1, image_2):
     return rms
 
 
-def compare_image(image_1, image_2):
+def compare_image(image_1, image_2, overlay_color=OVERLAY_DIFFERENCE_COLOR):
 
     # Gather the image data from each image and create an image object to map which pixels matched or not
     try:
@@ -25,38 +28,57 @@ def compare_image(image_1, image_2):
 
         # TODO: Reminder to talk with Alex about the PNG vs JPEG updates he and Vince made on his local (converting jpegs to png so that they can be comparable to eachother?)
         # Get the pixel data for the images
-        im1_data = image_1.getdata()
-        im2_data = image_2.getdata()
+        im1_data = numpy.asarray(image_1)
+        im2_data = numpy.asarray(image_2)
+        overlay_data = numpy.asarray(compare_overlay)
 
         # Set up the variables used in the compare logic
-        pixel_total = (image_1.size[0] * image_1.size[1])
+        pixel_total = (overlay_width * overlay_height)
         total_pixels_changed = 0
-        new_data = []
+        # - The compare data for each pixel that will be stored in the overlay
+        compare_data = []
     except Exception as e:
         raise ScreenCompareException("Error gathering the data for the images: {}".format(e))
 
     try:
-        for i in range(pixel_total):
-            if im1_data[i] != im2_data[i]:
-                new_data.append((220, 20, 60, 0))
-                total_pixels_changed += 1
+        # TODO: Consider taking the image width difference, divided by two, then adding that to the X value of the wider image
+        # TODO: Consider straight up checking if im1_data == im2_data before even jumping in
+
+        for y, overlay_row in enumerate(overlay_data):
+            if len(im1_data) >= y and len(im2_data) >= y:
+
+                # Both images are at least "y" rows tall
+                for x, overlay_pixel in enumerate(overlay_row):
+                    # Both images are at least "x" pixels wide
+                    if len(im1_data[y]) >= x and len(im2_data[y]) >= x:
+                        # Check that the X pixel in the Y row for each image is the same
+                        # - They are NOT the same
+                        pixel1 = im1_data[y][x]
+                        pixel2 = im2_data[y][x]
+                        if pixel1.all() != pixel2.all():
+                            compare_data.append(overlay_color)
+                            total_pixels_changed += 1
+                        else:
+                            compare_data.append((255, 255, 255, 0))
+
+                    # If either image is not X wide, color the pixel
+                    else:
+                        compare_data.append(overlay_color)
+                        total_pixels_changed += 1
+
+            # If either of the images is not Y tall, color the whole row
             else:
-                new_data.append((255, 255, 255, 0))
+                for x in overlay_row:
+                    compare_data.append(overlay_color)
+                    total_pixels_changed += 1
+
     except Exception as e:
         raise ScreenCompareException("Error while appending red pixels: {}".format(e))
-
-    # TODO: What are these pixels? The extra at the bottom when images aren't the same size?
-    # ----- YES! these are the extra pixels in the bigger image.
-    # ----- These won't matter if we're making compare_overlay the proper size
-    for i in range(abs(len(im1_data) - len(new_data))):
-        # TODO: Maybe make these black and count them as changed pixels?
-        # ----- We will still need to find out how to calculate the extra pixels into the compare
-        new_data.append((255, 255, 255, 0))
 
     percentage_changed = 100 * float(total_pixels_changed)/float(pixel_total)
 
     try:
-        compare_overlay.putdata(new_data)
+        compare_overlay.putdata(compare_data)
         if compare_overlay.mode != image_1.mode:
             compare_overlay = compare_overlay.convert(image_1.mode)
         updated_image = Image.blend(image_1, compare_overlay, .8)
@@ -83,3 +105,4 @@ class ScreenCompareException(Exception):
         exception_msg += "Message: {0}".format(self.msg)
 
         return exception_msg
+
