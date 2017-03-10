@@ -45,12 +45,12 @@ def compare_image(image_1, image_2, overlay_color=OVERLAY_DIFFERENCE_COLOR):
         # TODO: Consider straight up checking if im1_data == im2_data before even jumping in
 
         for y, overlay_row in enumerate(overlay_data):
-            if len(im1_data) >= y and len(im2_data) >= y:
+            if len(im1_data) - 1 >= y and len(im2_data) - 1 >= y:
 
                 # Both images are at least "y" rows tall
                 for x, overlay_pixel in enumerate(overlay_row):
                     # Both images are at least "x" pixels wide
-                    if len(im1_data[y]) >= x and len(im2_data[y]) >= x:
+                    if len(im1_data[y]) - 1 >= x and len(im2_data[y]) - 1 >= x:
                         # Check that the X pixel in the Y row for each image is the same
                         # - They are NOT the same
                         pixel1 = im1_data[y][x]
@@ -78,10 +78,13 @@ def compare_image(image_1, image_2, overlay_color=OVERLAY_DIFFERENCE_COLOR):
     percentage_changed = 100 * float(total_pixels_changed)/float(pixel_total)
 
     try:
+        combined_image = Image.new("RGBA", (overlay_width, overlay_height))
+        combined_image.paste(image_1)
+
         compare_overlay.putdata(compare_data)
         if compare_overlay.mode != image_1.mode:
             compare_overlay = compare_overlay.convert(image_1.mode)
-        updated_image = Image.blend(image_1, compare_overlay, .8)
+        updated_image = Image.blend(combined_image, compare_overlay, .8)
 
         return percentage_changed, updated_image
 
