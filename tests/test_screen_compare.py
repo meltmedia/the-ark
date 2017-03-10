@@ -11,8 +11,6 @@ COMPARE_IMAGE_2_PNG = '{0}/etc/compare_image2.png'.format(ROOT)
 BLACK_300_PNG = '{0}/etc/black_300x300.png'.format(ROOT)
 IMAGE_COMPARE_RESULT_1_PNG = '{0}/etc/image_compare_result_1.jpeg'.format(ROOT)
 
-EXPECTED_DIFF = 1448.4916292474734
-
 
 class ScreenCompareTestCase(unittest.TestCase):
 
@@ -24,7 +22,7 @@ class ScreenCompareTestCase(unittest.TestCase):
         im2 = Image.open(COMPARE_IMAGE_2_PNG)
 
         diff_amount = image_difference(im1, im2)
-        self.assertEquals(diff_amount, EXPECTED_DIFF)
+        self.assertEquals(int(diff_amount), 1448)
 
     # ===================================================================
     # --- Compare Image Cases
