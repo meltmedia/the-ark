@@ -62,8 +62,6 @@ class ScreenCompareTestCase(unittest.TestCase):
 
         percent, comp_image = compare_image(im1, im2)
 
-        comp_image.save("/Users/vbraun/Desktop/comp.jpeg")
-
         self.assertEqual(int(percent), 49)
         self.assertIsInstance(comp_image, Image.Image)
 
