@@ -91,7 +91,7 @@ class S3Client(object):
             else:
                 # - Determine whether the file_to_store is an object or file path/string
                 file_type = type(file_to_store)
-                if file_type == str:
+                if file_type in [str, unicode]:
                     s3_file.set_contents_from_filename(file_to_store)
                 else:
                     s3_file.set_contents_from_file(file_to_store)
