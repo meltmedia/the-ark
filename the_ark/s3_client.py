@@ -9,6 +9,8 @@ import urlparse
 from boto.s3.key import Key
 from StringIO import StringIO
 
+from hippo import util
+log = util.create_logger("S3 Client")
 
 class S3Client(object):
     """A client that helps user to send and get files from S3"""
@@ -66,30 +68,42 @@ class S3Client(object):
             s3_file.set_metadata('Content-Type', mime_type)
 
             # - Check if file is a buffer or disk file and if file that is getting uploaded is greater than
-            # chunk_at_size then upload cool multi style
-            if type(file_to_store) == str and os.path.getsize(file_to_store) > chunk_at_size:
-                file_count = 0
-                # - Split the file and get it chunky
-                split_file_dir = self._split_file(file_to_store)
+            #   chunk_at_size then upload cool multi style
+            split_file_dir = None
+            mutli_part_upload_successful = False
+            try:
+                if type(file_to_store) == str and os.path.getsize(file_to_store) > chunk_at_size:
+                    file_count = 0
+                    # - Split the file and get it chunky
+                    split_file_dir = self._split_file(file_to_store)
 
-                # - Initiate the file to be uploaded in parts
-                multipart_file = self.bucket.initiate_multipart_upload(key_name=s3_file.key, metadata=s3_file.metadata)
+                    # - Initiate the file to be uploaded in parts
+                    multipart_file = self.bucket.initiate_multipart_upload(key_name=s3_file.key, metadata=s3_file.metadata)
 
-                # - Upload the file parts
-                for files in os.listdir(split_file_dir):
-                    file_count += 1
-                    file_part = open(os.path.join(split_file_dir, files), 'rb')
-                    multipart_file.upload_part_from_file(file_part, file_count)
+                    # - Upload the file parts
+                    for files in os.listdir(split_file_dir):
+                        file_count += 1
+                        file_part = open(os.path.join(split_file_dir, files), 'rb')
+                        multipart_file.upload_part_from_file(file_part, file_count)
 
-                # - Complete the upload
-                multipart_file.complete_upload()
-
+                    # - Complete the upload
+                    multipart_file.complete_upload()
+                    mutli_part_upload_successful = True
+            except S3ResponseError as s3_error:
+                log.warning("A S3 Response error was caught while attempting to chunk and upload the PDF | {}\n"
+                            "Will now attempt to send the file as a whole...".format(s3_error))
+            except Exception as s3_error:
+                log.warning("Unexpected Error encountered an issue while chunking and uploading the PDF | {}\n"
+                            "Will now attempt to send the file as a whole...".format(s3_error))
+            finally:
                 # - Remove the folder from splitting the file
-                shutil.rmtree(split_file_dir)
+                if split_file_dir:
+                    shutil.rmtree(split_file_dir)
 
             # - Upload the file as a whole
-            else:
-                # - Determine whether the file_to_store is an object or file path/string
+            # else:
+            # - Determine whether the file_to_store is an object or file path/string
+            if not mutli_part_upload_successful:
                 file_type = type(file_to_store)
                 if file_type in [str, unicode]:
                     s3_file.set_contents_from_filename(file_to_store)
@@ -229,12 +243,12 @@ class S3Client(object):
                 fileobject = open(filename, 'wb')
                 fileobject.write(chunk)
                 fileobject.close()  # or simply open(  ).write(  )
+                log.info("File Part #{} size: {}".format(part_number, os.path.getsize(filename)))
             input_file.close()
             assert part_number <= 9999  # join sort fails if 5 digits
             return temp_dir
         except Exception as e:
-            print "Could not split the file.\nError: {}\n".format(e)
-            raise e
+            raise S3ClientException("Could not split the file.\nError: {}\n".format(e))
 
 
 class S3ClientException(Exception):
