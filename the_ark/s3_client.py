@@ -5,12 +5,13 @@ import shutil
 import tempfile
 import urllib
 import urlparse
+import logging
 
 from boto.s3.key import Key
 from StringIO import StringIO
 
-from hippo import util
-log = util.create_logger("S3 Client")
+logger = logging.getLogger(__name__)
+
 
 class S3Client(object):
     """A client that helps user to send and get files from S3"""
@@ -89,12 +90,12 @@ class S3Client(object):
                     # - Complete the upload
                     multipart_file.complete_upload()
                     mutli_part_upload_successful = True
-            except S3ResponseError as s3_error:
-                log.warning("A S3 Response error was caught while attempting to chunk and upload the PDF | {}\n"
-                            "Will now attempt to send the file as a whole...".format(s3_error))
+            except boto.s3.connection.S3ResponseError as s3_error:
+                logger.warning("A S3 Response error was caught while attempting to chunk and upload the PDF | {}\n"
+                               "Will now attempt to send the file as a whole...".format(s3_error))
             except Exception as s3_error:
-                log.warning("Unexpected Error encountered an issue while chunking and uploading the PDF | {}\n"
-                            "Will now attempt to send the file as a whole...".format(s3_error))
+                logger.warning("Unexpected Error encountered an issue while chunking and uploading the PDF | {}\n"
+                               "Will now attempt to send the file as a whole...".format(s3_error))
             finally:
                 # - Remove the folder from splitting the file
                 if split_file_dir:
@@ -243,7 +244,6 @@ class S3Client(object):
                 fileobject = open(filename, 'wb')
                 fileobject.write(chunk)
                 fileobject.close()  # or simply open(  ).write(  )
-                log.info("File Part #{} size: {}".format(part_number, os.path.getsize(filename)))
             input_file.close()
             assert part_number <= 9999  # join sort fails if 5 digits
             return temp_dir
