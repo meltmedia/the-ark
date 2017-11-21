@@ -12,6 +12,10 @@ from StringIO import StringIO
 
 logger = logging.getLogger(__name__)
 
+MAX_FILE_SPLITS = 9999
+DEFAULT_FILE_SPLIT_SIZE = 6291456
+DEFAULT_MINIMUM_SPLIT_AT_SIZE = 20000000
+
 
 class S3Client(object):
     """A client that helps user to send and get files from S3"""
@@ -45,7 +49,8 @@ class S3Client(object):
             message = "Exception while connecting to S3: {0}".format(s3_connection_exception)
             raise S3ClientException(message)
 
-    def store_file(self, s3_path, file_to_store, filename, return_url=False, mime_type=None, chunk_at_size=20000000):
+    def store_file(self, s3_path, file_to_store, filename, return_url=False, mime_type=None,
+                   chunk_at_size=DEFAULT_MINIMUM_SPLIT_AT_SIZE):
         """
         Pushes the desired file up to S3 (e.g. log file).
         :param
@@ -70,18 +75,17 @@ class S3Client(object):
 
             # - Check if file is a buffer or disk file and if file that is getting uploaded is greater than
             #   chunk_at_size then upload cool multi style
-            split_file_dir = None
             mutli_part_upload_successful = False
-            try:
-                if type(file_to_store) == str and os.path.getsize(file_to_store) > chunk_at_size:
-                    file_count = 0
+            if type(file_to_store) == str and os.path.getsize(file_to_store) > chunk_at_size:
+                split_file_dir = None
+                multipart_file = self.bucket.initiate_multipart_upload(key_name=s3_file.key, metadata=s3_file.metadata)
+
+                try:
                     # - Split the file and get it chunky
                     split_file_dir = self._split_file(file_to_store)
 
-                    # - Initiate the file to be uploaded in parts
-                    multipart_file = self.bucket.initiate_multipart_upload(key_name=s3_file.key, metadata=s3_file.metadata)
-
                     # - Upload the file parts
+                    file_count = 0
                     for files in os.listdir(split_file_dir):
                         file_count += 1
                         file_part = open(os.path.join(split_file_dir, files), 'rb')
@@ -90,20 +94,20 @@ class S3Client(object):
                     # - Complete the upload
                     multipart_file.complete_upload()
                     mutli_part_upload_successful = True
-            except boto.s3.connection.S3ResponseError as s3_error:
-                logger.warning("A S3 Response error was caught while attempting to chunk and upload the PDF | {}\n"
-                               "Will now attempt to send the file as a whole...".format(s3_error))
-            except Exception as s3_error:
-                logger.warning("Unexpected Error encountered an issue while chunking and uploading the PDF | {}\n"
-                               "Will now attempt to send the file as a whole...".format(s3_error))
-            finally:
-                # - Remove the folder from splitting the file
-                if split_file_dir:
-                    shutil.rmtree(split_file_dir)
+                except boto.s3.connection.S3ResponseError as s3_error:
+                    logger.warning("A S3 Response error was caught while attempting to chunk and upload the PDF | {}\n"
+                                   "Will now attempt to send the file as a whole...".format(s3_error))
+                    multipart_file.cancel_upload()
+                except Exception as s3_error:
+                    logger.warning("Unexpected Error encountered an issue while chunking and uploading the PDF | {}\n"
+                                   "Will now attempt to send the file as a whole...".format(s3_error))
+                    multipart_file.cancel_upload()
+                finally:
+                    # - Remove the folder from splitting the file
+                    if split_file_dir:
+                        shutil.rmtree(split_file_dir)
 
             # - Upload the file as a whole
-            # else:
-            # - Determine whether the file_to_store is an object or file path/string
             if not mutli_part_upload_successful:
                 file_type = type(file_to_store)
                 if file_type in [str, unicode]:
@@ -219,33 +223,32 @@ class S3Client(object):
                 most_recent_key = key
         return most_recent_key
 
-    def _split_file(self, from_file, file_chunk_size=5242880):
+    def _split_file(self, from_file, file_chunk_size=DEFAULT_FILE_SPLIT_SIZE):
         """
-            Split a given file into smaller chunks named partXXXX into a temp at a default size of ~ 5 mb. The temp
-            folder should be deleted after use.
+        Split a given file into smaller chunks named partXXXX into a temp at a default size of ~ 6 mb. The temp
+        folder should be deleted after use.
 
-            WARNING: You cannot split into more than 9999 files.
+        WARNING: You cannot split into more than 9999 files.
 
-            :param
-                - from_file:        string - the file to split up
-                - file_chunk_size:  int - the size the file should be chunked to (default ~ 5 mb for Amazon S3 minimum)
-            :return:
-                - temp_dir:         string - temp folder location of split file, use to iterate through the split files
-            """
+        :param
+            - from_file:        string - the file to split up
+            - file_chunk_size:  int - number of Bytes each split should contain (Should be > 5 MB for Amazon S3 minimum)
+        :return:
+            - temp_dir:         string - temp folder location of split file, use to iterate through the split files
+        """
+        if os.path.getsize(from_file) > (MAX_FILE_SPLITS * file_chunk_size):
+            raise S3ClientException("Could not split the file.\nError: Input file is too large!\n")
+
         try:
             temp_dir = tempfile.mkdtemp()
-            part_number = 0
-            input_file = open(from_file, 'rb')  # use binary mode on Windows
-            while 1:  # eof=empty string from read
-                chunk = input_file.read(file_chunk_size)  # get next part <= chunk size
-                if not chunk: break
-                part_number += 1
-                filename = os.path.join(temp_dir, ('part%04d' % part_number))
-                fileobject = open(filename, 'wb')
-                fileobject.write(chunk)
-                fileobject.close()  # or simply open(  ).write(  )
-            input_file.close()
-            assert part_number <= 9999  # join sort fails if 5 digits
+            part_num = 0
+            with open(from_file, 'rb') as input_file:
+                chunk = input_file.read(file_chunk_size)
+                while chunk:
+                    part_num += 1
+                    open(os.path.join(temp_dir, ('part%04d' % part_num)), 'wb').write(chunk)
+                    chunk = input_file.read(file_chunk_size)
+
             return temp_dir
         except Exception as e:
             raise S3ClientException("Could not split the file.\nError: {}\n".format(e))
