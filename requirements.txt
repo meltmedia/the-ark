@@ -1,5 +1,5 @@
 boto==2.29.1
-coverage==3.7.1
+coverage==4.4.2
 flake8==2.3.0
 jsonschema
 mandrill==1.0.57
