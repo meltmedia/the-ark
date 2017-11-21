@@ -76,7 +76,7 @@ class S3Client(object):
             # - Check if file is a buffer or disk file and if file that is getting uploaded is greater than
             #   chunk_at_size then upload cool multi style
             mutli_part_upload_successful = False
-            if type(file_to_store) == str and os.path.getsize(file_to_store) > chunk_at_size:
+            if isinstance(file_to_store, str) and os.path.getsize(file_to_store) > chunk_at_size:
                 split_file_dir = None
                 multipart_file = self.bucket.initiate_multipart_upload(key_name=s3_file.key, metadata=s3_file.metadata)
 
@@ -238,6 +238,8 @@ class S3Client(object):
         """
         if os.path.getsize(from_file) > (MAX_FILE_SPLITS * file_chunk_size):
             raise S3ClientException("Could not split the file.\nError: Input file is too large!\n")
+        elif os.path.getsize(from_file) < DEFAULT_FILE_SPLIT_SIZE:
+            raise S3ClientException("Could not split the file.\nError: Input file is too small!\n")
 
         try:
             temp_dir = tempfile.mkdtemp()
