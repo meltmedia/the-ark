@@ -11,7 +11,7 @@ def readme():
 
 setup(
     name="theark",
-    version="0.0.6",
+    version="0.0.8",
     author="meltmedia QA Team",
     author_email="qa-d@meltmedia.com",
     description="meltQA Tools Common Library.",
@@ -23,7 +23,7 @@ setup(
         install_requires=[
         "boto >= 2.29.1",
         "requests >= 2.3.0",
-        "selenium >= 2.45.0"
+        "selenium >= 2.53.0"
     ],
     classifiers=[
         "Development Status :: 1 - Planning",

@@ -1,8 +1,9 @@
 import unittest
 import urlparse
-from the_ark.s3_client import S3Client, S3ClientException
-from mock import Mock, patch
+import the_ark.s3_client
 from boto.s3.key import Key
+from boto.s3.connection import S3ResponseError
+from mock import Mock, patch
 from cStringIO import StringIO
 
 __author__ = 'chaley'
@@ -18,19 +19,19 @@ class S3InitTestCase(unittest.TestCase):
     @patch('boto.s3.connection.S3Connection')
     def test_class_init(self, s3con):
         s3con.return_value = {}
-        client = S3Client(bucket)
+        client = the_ark.s3_client.S3Client(bucket)
         self.assertIsNotNone(client)
 
     @patch('boto.s3.connection.S3Connection')
     def test_class_init_fail(self, s3con):
         s3con.side_effect = Exception('Boom')
-        client = S3Client(bucket)
+        client = the_ark.s3_client.S3Client(bucket)
         self.assertIsNone(client.s3_connection)
 
 
 class S3MethodTestCase(unittest.TestCase):
     def setUp(self):
-        self.client = S3Client(bucket)
+        self.client = the_ark.s3_client.S3Client(bucket)
         self.client.s3_connection = Mock()
         self.client.bucket = Mock()
 
@@ -80,7 +81,7 @@ class S3MethodTestCase(unittest.TestCase):
     def test_verify_file_boom(self):
         self.client.bucket.get_key.side_effect = Exception(
             'Here Comes the Boom!')
-        with self.assertRaises(S3ClientException):
+        with self.assertRaises(the_ark.s3_client.S3ClientException):
             self.client.verify_file('stuff', 'more stuff')
 
     @patch('the_ark.s3_client.S3Client.verify_file')
@@ -98,21 +99,60 @@ class S3MethodTestCase(unittest.TestCase):
         mock_file = Mock()
         verify.return_value = False
         self.client.bucket.get_key.return_value = mock_file
-        with self.assertRaises(S3ClientException):
+        with self.assertRaises(the_ark.s3_client.S3ClientException):
             self.client.get_file('stuff', 'more stuff')
 
     def test_get_file_boom(self):
         self.client.bucket.get_key.side_effect = Exception(
             'Here Comes the Boom!')
-        with self.assertRaises(S3ClientException):
+        with self.assertRaises(the_ark.s3_client.S3ClientException):
             self.client.get_file('stuff', 'more stuff')
 
-    def test_store_file_boom(self):
-        with self.assertRaises(S3ClientException):
-            self.client.store_file('stuff', 'more stuff', 'file_name')
+    def test_store_file_s3_client_error(self):
+        with self.assertRaises(the_ark.s3_client.S3ClientException):
+            self.client.store_file(s3_path='path', file_to_store='file', filename="bob's file")
 
-        with self.assertRaises(S3ClientException):
-            self.client.store_file('stuff', 'more stuff', filename="bob's file")
+    @patch('the_ark.s3_client.S3Client._split_file')
+    @patch('shutil.rmtree')
+    @patch('urlparse.urlparse')
+    @patch('mimetypes.guess_type')
+    @patch('boto.s3.key.Key.set_contents_from_file')
+    @patch('os.path.getsize')
+    @patch('os.listdir')
+    def test_store_file_multipart_s3_error(self, listdir, get_size, set_contents, guess_type, url_parse, rmtree, split_file):
+        url_parse.return_value = url_parse_base.scheme, url_parse_base.netloc, url_parse_base.path, \
+                                 url_parse_base.params, url_parse_base.query, url_parse_base.fragment
+        guess_type.return_value("image/png")
+        mock_multipart_upload = Mock()
+        mock_file = Mock(spec_set=str)
+        temp_dir = Mock()
+        split_file.return_value = temp_dir
+        listdir.return_value = []
+        self.client.bucket.initiate_multipart_upload.return_value = mock_multipart_upload
+        mock_multipart_upload.complete_upload.side_effect = S3ResponseError("error", "S3 multipart exception")
+        get_size.return_value = the_ark.s3_client.DEFAULT_MINIMUM_SPLIT_AT_SIZE + 1000
+        set_contents.return_value(True)
+        self.client.store_file(s3_path='path', file_to_store=mock_file, filename="bob's file")
+        mock_multipart_upload.cancel_upload.assert_called_once_with()
+        rmtree.assert_called_once_with(temp_dir)
+
+    @patch('the_ark.s3_client.S3Client._split_file')
+    @patch('urlparse.urlparse')
+    @patch('mimetypes.guess_type')
+    @patch('boto.s3.key.Key.set_contents_from_file')
+    @patch('os.path.getsize')
+    def test_store_file_multipart_unexpected_error(self, get_size, set_contents, guess_type, url_parse, split_file):
+        url_parse.return_value = url_parse_base.scheme, url_parse_base.netloc, url_parse_base.path, \
+                                 url_parse_base.params, url_parse_base.query, url_parse_base.fragment
+        guess_type.return_value("image/png")
+        mock_multipart_upload = Mock()
+        mock_file = Mock(spec_set=str)
+        split_file.side_effect = the_ark.s3_client.S3ClientException("Unexpected split exception")
+        self.client.bucket.initiate_multipart_upload.return_value = mock_multipart_upload
+        get_size.return_value = the_ark.s3_client.DEFAULT_MINIMUM_SPLIT_AT_SIZE + 1000
+        set_contents.return_value(True)
+        self.client.store_file(s3_path='path', file_to_store=mock_file, filename="bob's file")
+        mock_multipart_upload.cancel_upload.assert_called_once_with()
 
     @patch('urlparse.urlparse')
     @patch('mimetypes.guess_type')
@@ -162,10 +202,25 @@ class S3MethodTestCase(unittest.TestCase):
     @patch('os.path.getsize')
     def test_split_file_boom(self, get_size, make_dir):
         make_dir.side_effect = Exception('Here Comes the Boom?')
-        get_size.return_value = 9999999999999
-        with self.assertRaises(S3ClientException):
-            self.client.store_file(
-                'stuff', "./tests/etc/test.png", return_url=False, filename="this file")
+        get_size.return_value = 9999999999
+        with self.assertRaises(the_ark.s3_client.S3ClientException):
+            self.client._split_file("test")
+
+    @patch('tempfile.mkdtemp')
+    @patch('os.path.getsize')
+    def test_split_file_too_large(self, get_size, make_dir):
+        make_dir.side_effect = Exception('Here Comes the Boom?')
+        get_size.return_value = (the_ark.s3_client.DEFAULT_FILE_SPLIT_SIZE * the_ark.s3_client.MAX_FILE_SPLITS) + 100
+        with self.assertRaises(the_ark.s3_client.S3ClientException):
+            self.client._split_file("test")
+
+    @patch('tempfile.mkdtemp')
+    @patch('os.path.getsize')
+    def test_split_file_too_small(self, get_size, make_dir):
+        make_dir.side_effect = Exception('Here Comes the Boom?')
+        get_size.return_value = (the_ark.s3_client.DEFAULT_FILE_SPLIT_SIZE - 100)
+        with self.assertRaises(the_ark.s3_client.S3ClientException):
+            self.client._split_file("test")
 
     @patch('urlparse.urlparse')
     @patch('mimetypes.guess_type')
@@ -176,7 +231,7 @@ class S3MethodTestCase(unittest.TestCase):
                                  url_parse_sec_token.params, url_parse_sec_token.query, url_parse_sec_token.fragment
         guess_type.return_value("image/png")
         set_contents.return_value(True)
-        get_size.return_value = 9999999999999
+        get_size.return_value = the_ark.s3_client.DEFAULT_MINIMUM_SPLIT_AT_SIZE + 100
         self.client.store_file(
             'stuff', "./tests/etc/test.png", return_url=True, filename="this file")
 
