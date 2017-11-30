@@ -11,7 +11,7 @@ def readme():
 
 setup(
     name="theark",
-    version="0.0.8",
+    version="0.0.9",
     author="meltmedia QA Team",
     author_email="qa-d@meltmedia.com",
     description="meltQA Tools Common Library.",
