@@ -47,7 +47,7 @@ class Screenshot:
 
         self.headless = self.sh.desired_capabilities.get("headless", False)
 
-    def capture_page(self, viewport_only=False, padding=None):
+    def capture_page(self, viewport_only=False, padding=None, delay=0.5):
         """
         Entry point for a screenshot of the whole page. This will send the screenshot off to the correct methods
         depending on whether you need paginated screenshots, just the current viewport area, or the whole page in
@@ -59,7 +59,7 @@ class Screenshot:
         """
         try:
             if self.headless:
-                return self._capture_headless_page(viewport_only)
+                return self._capture_headless_page(viewport_only, delay)
             elif viewport_only:
                 return self._capture_single_viewport()
             elif self.paginated:
@@ -251,7 +251,7 @@ class Screenshot:
             except ElementError:
                 pass
 
-    def _capture_headless_page(self, viewport_only):
+    def _capture_headless_page(self, viewport_only, delay):
         width = None
         height = None
         current_scroll_position = None
@@ -262,6 +262,7 @@ class Screenshot:
 
             # Resize the browser to encompass all of the page content
             self.sh.resize_browser(width, self.sh.get_content_height())
+            time.sleep(delay)
 
         # - Capture the image
         # Gather image byte data
@@ -273,6 +274,7 @@ class Screenshot:
             # Return the browser to its previous size and scroll position
             self.sh.resize_browser(width, height)
             self.sh.scroll_window_to_position(current_scroll_position)
+            time.sleep(delay)
 
         return self._create_image_file(image)
 
