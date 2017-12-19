@@ -45,6 +45,8 @@ class Screenshot:
         self.pixel_match_offset = pixel_match_offset
         self.file_extenson = file_extenson
 
+        self.headless = self.sh.desired_capabilities.get("headless", False)
+
     def capture_page(self, viewport_only=False, padding=None):
         """
         Entry point for a screenshot of the whole page. This will send the screenshot off to the correct methods
@@ -56,7 +58,9 @@ class Screenshot:
             - StringIO: A StingIO object containing the captured image(s)
         """
         try:
-            if viewport_only:
+            if self.headless:
+                return self._capture_headless_page(viewport_only)
+            elif viewport_only:
                 return self._capture_single_viewport()
             elif self.paginated:
                 return self._capture_paginated_page(padding)
@@ -246,6 +250,31 @@ class Screenshot:
             # Continue to the next item is this one did not exist
             except ElementError:
                 pass
+
+    def _capture_headless_page(self, viewport_only):
+        width = None
+        height = None
+        current_scroll_position = None
+        if not viewport_only:
+            # Store the current size and scroll position of the browser
+            width, height = self.sh.get_window_size()
+            current_scroll_position = self.sh.get_window_current_scroll_position()
+
+            # Resize the browser to encompass all of the page content
+            self.sh.resize_browser(width, self.sh.get_content_height())
+
+        # - Capture the image
+        # Gather image byte data
+        image_data = self.sh.get_screenshot_base64()
+        # Create an image canvas and write the byte data to it
+        image = Image.open(StringIO(image_data.decode('base64')))
+
+        if not viewport_only:
+            # Return the browser to its previous size and scroll position
+            self.sh.resize_browser(width, height)
+            self.sh.scroll_window_to_position(current_scroll_position)
+
+        return self._create_image_file(image)
 
     def _capture_paginated_page(self, padding=None):
         """

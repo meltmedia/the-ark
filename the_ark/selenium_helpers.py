@@ -37,7 +37,10 @@ class SeleniumHelpers:
             elif desired_capabilities.get("mobile"):
                 self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
             elif desired_capabilities.get("browserName").lower() == "chrome":
-                self.driver = webdriver.Chrome()
+                options = webdriver.ChromeOptions()
+                if desired_capabilities.get("headless"):
+                    options.add_argument("headless")
+                self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities, executable_path=desired_capabilities.get("binary", None), chrome_options=options)
             elif desired_capabilities.get("browserName").lower() == "firefox":
                 binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
                 self.driver = webdriver.Firefox(firefox_binary=binary)
@@ -106,6 +109,16 @@ class SeleniumHelpers:
             message = "Unable to get the width and/or the height of the window.\n" \
                       "<{0}>".format(get_window_size_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
+
+    def get_content_height(self):
+        height = self.driver.execute_script("""
+        var body = document.body;
+        var html = document.documentElement;
+
+        var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+        return height;
+        """)
+        return height
 
     def load_url(self, url, bypass_status_code_check=False):
         """
