@@ -111,14 +111,19 @@ class SeleniumHelpers:
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def get_content_height(self):
-        height = self.driver.execute_script("""
-        var body = document.body;
-        var html = document.documentElement;
-
-        var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
-        return height;
-        """)
-        return height
+        try:
+            height = self.execute_script("""
+            var body = document.body;
+            var html = document.documentElement;
+    
+            var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+            return height;
+            """)
+            return height
+        except Exception as script_error:
+            message = "Unable to get the height of the page content.\n" \
+                      "{0}".format(script_error)
+            raise DriverURLError(msg=message, stacktrace=traceback.format_exc())
 
     def load_url(self, url, bypass_status_code_check=False):
         """
