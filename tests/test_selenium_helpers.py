@@ -848,7 +848,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_content_height_valid(self):
         height = self.sh.get_content_height()
-        self.assertEquals(height, 822)
+        self.assertEquals(height, 849)
 
     @patch("the_ark.selenium_helpers.SeleniumHelpers.execute_script")
     def test_get_content_height_invalid(self, mock_execute):
@@ -885,12 +885,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_element_location_valid(self):
         height = self.sh.get_element_location(".scrollable")
-        self.assertEquals(height, 269.0)
+        self.assertEquals(height, 269.4375)
 
     def test_get_element_location_with_both_returned(self):
         x, y = self.sh.get_element_location(".scrollable", get_both_positions=True)
         self.assertEquals(x, 8.0)
-        self.assertEquals(y, 269.0)
+        self.assertEquals(y, 269.4375)
 
     def test_get_element_location_with_x_only(self):
         width = self.sh.get_element_location(".scrollable", get_only_x_position=True)
@@ -899,7 +899,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_element_location_with_element(self):
         element = self.sh.get_element(css_selector=".scrollable")
         height = self.sh.get_element_location(web_element=element)
-        self.assertEquals(height, 269.0)
+        self.assertEquals(height, 269.4375)
 
     def test_get_element_location_selenium_error(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_location,
