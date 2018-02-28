@@ -271,8 +271,8 @@ class SeleniumHelpers:
             self.driver.get_screenshot_as_file(file_path + file_name)
         except TypeError as screenshot_error:
             message = "Unable to save screenshot '{0}' to '{1}' on: {2}\n{3}".format(file_name, file_path,
-                                                                                       self.driver.current_url,
-                                                                                       screenshot_error)
+                                                                                     self.driver.current_url,
+                                                                                     screenshot_error)
             raise ScreenshotError(msg=message, stacktrace=traceback.format_exc(), current_url=self.driver.current_url,
                                   file_name=file_name, file_path=file_path)
         except Exception as unexpected_error:
