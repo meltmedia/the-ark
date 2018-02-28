@@ -1141,6 +1141,7 @@ class ScrollPositionError(SeleniumHelperExceptions):
         self.details["y_position"] = self.y_position
         self.details["x_position"] = self.x_position
 
+
 class ScreenshotError(SeleniumHelperExceptions):
     def __init__(self, msg, stacktrace, current_url, file_name, file_path):
         super(ScreenshotError, self).__init__(msg=msg, stacktrace=stacktrace, current_url=current_url)
