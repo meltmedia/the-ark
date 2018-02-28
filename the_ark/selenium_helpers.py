@@ -111,12 +111,20 @@ class SeleniumHelpers:
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def get_content_height(self):
+        """
+        Determines the height of the content on the page. Returns the greatest height out of the body.scrollHeight, 
+        body.offsetHeight, html.clientHeight, html.scrollHeight, or html.offsetHeight
+        favorites bar, etc.
+        :return
+            -   height: integer - The height of the page content in pixels.
+        """
         try:
             height = self.execute_script("""
             var body = document.body;
             var html = document.documentElement;
     
-            var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+            var height = Math.max(body.scrollHeight, body.offsetHeight, 
+                html.clientHeight, html.scrollHeight, html.offsetHeight);
             return height;
             """)
             return height
