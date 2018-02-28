@@ -4,7 +4,7 @@ import traceback
 
 
 def get_jcr_content(root_url, root_path, depth=0, infinity=False):
-    """Returns a the JCR content json for a given url and root path
+    """Returns the JCR content json for a given url and root path
     NOTE: Does not support authentication
     :param root_url:
         STRING fully qualified url for an aem publish instance
