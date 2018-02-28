@@ -40,7 +40,9 @@ class SeleniumHelpers:
                 options = webdriver.ChromeOptions()
                 if desired_capabilities.get("headless"):
                     options.add_argument("headless")
-                self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities, executable_path=desired_capabilities.get("binary", None), chrome_options=options)
+                self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities,
+                                               executable_path=desired_capabilities.get("binary", None),
+                                               chrome_options=options)
             elif desired_capabilities.get("browserName").lower() == "firefox":
                 binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
                 self.driver = webdriver.Firefox(firefox_binary=binary)
