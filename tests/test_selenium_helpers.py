@@ -41,13 +41,21 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh.create_driver(mobile=True)
         mock_mobile.assert_called_once_with(desired_capabilities={'mobile': True})
 
-    @patch("selenium.webdriver.Chrome", autospec=True)
+    @patch("selenium.webdriver.Chrome")
     def test_chrome_browser_valid(self, mock_chrome):
         mock_driver = Mock(spec=mock_chrome)
         mock_chrome.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="chrome")
-        mock_chrome.assert_called_once_with()
+        self.assertTrue(mock_chrome.called)
+
+    @patch("selenium.webdriver.Chrome")
+    def test_chrome_browser_headless(self, mock_chrome):
+        mock_driver = Mock(spec=mock_chrome)
+        mock_chrome.return_value = mock_driver
+        sh = selenium_helpers.SeleniumHelpers()
+        sh.create_driver(browserName="chrome", headless=True)
+        self.assertTrue(mock_chrome.called)
 
     @patch("selenium.webdriver.Firefox", autospec=True)
     def test_firefox_browser_valid(self, mock_firefox):
@@ -56,20 +64,6 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="firefox")
         mock_firefox.assert_called_once_with(firefox_binary=None)
-
-    # @patch("selenium.webdriver.Firefox", autospec=True)
-    # @patch("selenium.webdriver.firefox.firefox_binary.FirefoxBinary", autospec=True)
-    # def test_firefox_browser_with_binary(self, fire_binary, mock_firefox):
-    #     mock_driver = Mock(spec=mock_firefox)
-    #     mock_firefox.return_value = mock_driver
-    #
-    #     mock_binary = Mock(spec=fire_binary)
-    #     fire_binary.return_value = mock_binary
-    #
-    #     sh = selenium_helpers.SeleniumHelpers()
-    #     sh.create_driver(browserName="firefox", binary="/path/to_thing")
-    #
-    #     mock_firefox.assert_called_once_with(firefox_binary=mock_binary)
 
     @patch("selenium.webdriver.PhantomJS", autospec=True)
     def test_phantomjs_browser_valid(self, mock_phantomjs):
@@ -557,7 +551,16 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         valid_css_selector = ".valid a"
         web_element = self.sh.get_element(valid_css_selector)
         self.sh.scroll_to_element(web_element=web_element)
-        self.assertTrue(mock_scroll_top.called)
+
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.execute_script", autospec=True)
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.get_element_location")
+    def test_scroll_to_web_element_with_offset(self, mock_location, mock_execute_script):
+        mock_location.return_value = 100
+        mock_execute_script.return_value = True
+        valid_css_selector = ".scrollable"
+        web_element = self.sh.get_element(valid_css_selector)
+        self.sh.scroll_to_element(web_element=web_element, offset=100)
+        mock_execute_script.assert_called_once_with(self.sh, 'window.scrollTo(0, arguments[0]);', 200)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.execute_script")
     def test_scroll_to_element_top_valid(self, mock_scroll_top):
@@ -842,6 +845,71 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_show_element_unexpected_invalid(self, mock_get):
         mock_get.side_effect = Exception("Boo!")
         self.assertRaises(Exception, self.sh.show_element, css_selector="*invalid_selector")
+
+    def test_get_content_height_valid(self):
+        height = self.sh.get_content_height()
+        self.assertEquals(height, 849)
+
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.execute_script")
+    def test_get_content_height_invalid(self, mock_execute):
+        mock_execute.side_effect = Exception("Boo!")
+        self.assertRaises(Exception, self.sh.get_content_height)
+
+    def test_get_element_size_valid(self):
+        height = self.sh.get_element_size(".scrollable")
+        self.assertEquals(height, 300)
+
+    def test_get_element_size_with_both_returned(self):
+        width, height = self.sh.get_element_size(".scrollable", get_width_and_height=True)
+        self.assertEquals(width, 400)
+        self.assertEquals(height, 300)
+
+    def test_get_element_size_with_width_only(self):
+        width = self.sh.get_element_size(".scrollable", get_only_width=True)
+        self.assertEquals(width, 400)
+
+    def test_get_element_size_with_element(self):
+        element = self.sh.get_element(css_selector=".scrollable")
+        height = self.sh.get_element_size(web_element=element)
+        self.assertEquals(height, 300)
+
+    def test_get_element_size_selenium_error(self):
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_size,
+                          css_selector=".invalid a")
+
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.element_exists")
+    def test_get_element_size_generic_error(self, mock_exists):
+        mock_exists.side_effect = Exception("Boo!")
+        self.assertRaises(Exception, self.sh.get_element_size,
+                          css_selector=".valid a")
+
+    def test_get_element_location_valid(self):
+        height = self.sh.get_element_location(".scrollable")
+        self.assertEquals(height, 296.4375)
+
+    def test_get_element_location_with_both_returned(self):
+        x, y = self.sh.get_element_location(".scrollable", get_both_positions=True)
+        self.assertEquals(x, 8.0)
+        self.assertEquals(y, 296.4375)
+
+    def test_get_element_location_with_x_only(self):
+        width = self.sh.get_element_location(".scrollable", get_only_x_position=True)
+        self.assertEquals(width, 8.0)
+
+    def test_get_element_location_with_element(self):
+        element = self.sh.get_element(css_selector=".scrollable")
+        height = self.sh.get_element_location(web_element=element)
+        self.assertEquals(height, 296.4375)
+
+    def test_get_element_location_selenium_error(self):
+        self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_location,
+                          css_selector=".invalid a")
+
+    @patch("the_ark.selenium_helpers.SeleniumHelpers.element_exists")
+    def test_get_element_location_generic_error(self, mock_exists):
+        mock_exists.side_effect = Exception("Boo!")
+        self.assertRaises(Exception, self.sh.get_element_location,
+                          css_selector=".valid a")
 
     def test_selenium_exception_to_string_with_details(self):
         selenium_exception = selenium_helpers.SeleniumHelperExceptions("message",
