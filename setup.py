@@ -1,4 +1,3 @@
-import os
 from setuptools import setup
 
 
@@ -11,7 +10,7 @@ def readme():
 
 setup(
     name="theark",
-    version="0.0.9",
+    version="0.1.0",
     author="meltmedia QA Team",
     author_email="qa-d@meltmedia.com",
     description="meltQA Tools Common Library.",
