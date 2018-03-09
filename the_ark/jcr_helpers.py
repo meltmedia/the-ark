@@ -23,15 +23,16 @@ def get_jcr_content(root_url, root_path, depth=0, infinity=False):
     root_url = root_url[:-1] if root_url.endswith('/') else root_url
     if not urlparse.urlparse(root_url).scheme:
         root_url = "http://" + root_url
+    jcr_content_url = root_url
 
     try:
         parsed_url = urlparse.urlparse(root_url)
         if infinity:
             jcr_content_url = "{}.infinity.json".format(
-                urlparse.ParseResult(parsed_url.scheme, parsed_url.netloc, root_path, None, None, None).geturl())
+                urlparse.urlunparse((parsed_url.scheme, parsed_url.netloc, root_path, None, None, None)))
         else:
             jcr_content_url = "{}.{}.json".format(
-                urlparse.ParseResult(parsed_url.scheme, parsed_url.netloc, root_path, None, None, None).geturl(),
+                urlparse.urlunparse((parsed_url.scheme, parsed_url.netloc, root_path, None, None, None)),
                 depth)
 
         infinity_json = requests.get(jcr_content_url).json()
