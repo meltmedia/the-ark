@@ -9,7 +9,6 @@ import traceback
 DEFAULT_SCROLL_PADDING = 100
 SCREENSHOT_FILE_EXTENSION = "png"
 DEFAULT_PIXEL_MATCH_OFFSET = 100
-# TODO: Update this to either be divided by the scale factor or just be 8,192 and multiply the image sizes later
 MAX_CHROME_HEIGHT = 16384.0 / 2
 
 
@@ -50,7 +49,7 @@ class Screenshot:
 
         self.headless = self.sh.desired_capabilities.get("headless", False)
 
-    def capture_page(self, viewport_only=False, padding=None, delay=0.5):
+    def capture_page(self, viewport_only=False, padding=None, delay=0):
         """
         Entry point for a screenshot of the whole page. This will send the screenshot off to the correct methods
         depending on whether you need paginated screenshots, just the current viewport area, or the whole page in
@@ -100,8 +99,9 @@ class Screenshot:
             self.sh.scroll_an_element(css_selector, scroll_top=True)
 
             while True:
-                # Capture the image
-                if viewport_only:
+                if self.headless:
+                    image_list.append(self._capture_headless_page(viewport_only))
+                elif viewport_only:
                     image_list.append(self._capture_single_viewport())
                 else:
                     image_list.append(self._capture_full_page())
@@ -254,7 +254,7 @@ class Screenshot:
             except ElementError:
                 pass
 
-    def _capture_headless_page(self, viewport_only, delay):
+    def _capture_headless_page(self, viewport_only, delay=0):
         width = None
         height = None
         current_scroll_position = None
@@ -275,7 +275,7 @@ class Screenshot:
         self.sh.scroll_window_to_position()
 
         # - Capture the image
-        if content_height > MAX_CHROME_HEIGHT:
+        if content_height > MAX_CHROME_HEIGHT and not viewport_only:
             images_list = []
             number_of_loops = int(math.ceil(content_height/MAX_CHROME_HEIGHT))
 
@@ -291,8 +291,8 @@ class Screenshot:
             # Create an image canvas and write the byte data to it
             image = Image.open(StringIO(image_data.decode('base64')))
 
+        # - Return the browser to its previous size and scroll position
         if not viewport_only:
-            # Return the browser to its previous size and scroll position
             self.sh.resize_browser(width, height)
             self.sh.scroll_window_to_position(current_scroll_position)
             time.sleep(delay)
@@ -309,7 +309,6 @@ class Screenshot:
         for image in images_list[:-1]:
             height_of_full_images += image.size[1]
         remaining_height = (content_height * 2) - height_of_full_images
-        print remaining_height
 
         images_list[-1] = images_list[-1].crop((0,
                                                images_list[-1].size[1] - remaining_height,
@@ -319,11 +318,6 @@ class Screenshot:
         for image in images_list:
             total_width = image.size[0] if image.size[0] > total_width else total_width
             total_height += image.size[1]
-
-        # TODO: Remove this
-        for i, image in enumerate(images_list):
-            image_name = "image_{}.png".format(i)
-            image.save("/Users/vbraun/Desktop/test_images/" + image_name)
 
         resulting_image = Image.new('RGB', (total_width, total_height))
         current_height = 0
