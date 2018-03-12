@@ -14,7 +14,6 @@ import traceback
 
 
 class SeleniumHelpers:
-
     def __init__(self):
         """
         Methods to do various and repeatable selenium tasks.
@@ -113,20 +112,12 @@ class SeleniumHelpers:
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
     def get_content_height(self):
-        """
-        Determines the height of the content on the page. Returns the greatest height out of the body.scrollHeight, 
-        body.offsetHeight, html.clientHeight, html.scrollHeight, or html.offsetHeight
-        favorites bar, etc.
-        :return
-            -   height: integer - The height of the page content in pixels.
-        """
         try:
             height = self.execute_script("""
             var body = document.body;
             var html = document.documentElement;
-    
-            var height = Math.max(body.scrollHeight, body.offsetHeight, 
-                html.clientHeight, html.scrollHeight, html.offsetHeight);
+            var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, 
+            html.offsetHeight);
             return height;
             """)
             return height
@@ -331,7 +322,7 @@ class SeleniumHelpers:
                 raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                    current_url=self.driver.current_url, css_selector=css_selector)
         if not element_visible:
-            message = "The element is not visible on page '{0}'. | CSS Selector: '{1}' or WebElement passed through."\
+            message = "The element is not visible on page '{0}'. | CSS Selector: '{1}' or WebElement passed through." \
                 .format(self.driver.current_url, css_selector)
             raise ElementNotVisibleError(msg=message, stacktrace=traceback.format_exc(),
                                          current_url=self.driver.current_url, css_selector=css_selector)
@@ -441,7 +432,7 @@ class SeleniumHelpers:
             ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position).click().perform()
         except SeleniumHelperExceptions as click_location_error:
             click_location_error.msg = "Unable to click the position ({0}, {1}). | " \
-                                       "Based off the CSS Selector: '{2}' or WebElement passed through. | "\
+                                       "Based off the CSS Selector: '{2}' or WebElement passed through. | " \
                                            .format(x_position, y_position, css_selector) + click_location_error.msg
             raise click_location_error
         except Exception as unexpected_error:
@@ -875,7 +866,7 @@ class SeleniumHelpers:
                                          scroll_at_bottom_error.msg
             raise scroll_at_bottom_error
         except Exception as unexpected_error:
-            message = "Unable to determine if the scroll position of the element on page '{0}' is at the bottom."\
+            message = "Unable to determine if the scroll position of the element on page '{0}' is at the bottom." \
                       "\n{1}".format(self.driver.current_url, unexpected_error)
             message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
@@ -908,7 +899,7 @@ class SeleniumHelpers:
                 return True
         except SeleniumHelperExceptions as scroll_at_right_error:
             scroll_at_right_error.msg = "Unable to determine if element is scrolled to the most right. | " + \
-                                         scroll_at_right_error.msg
+                                        scroll_at_right_error.msg
             raise scroll_at_right_error
         except Exception as unexpected_error:
             message = "Unable to determine if the scroll position of the element on page '{0}' is at the most right." \
