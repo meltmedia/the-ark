@@ -130,7 +130,8 @@ class SeleniumHelpers:
             var body = document.body;
             var html = document.documentElement;
 
-            var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+            var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, 
+            html.offsetHeight);
             return height;
             """)
             return height
@@ -315,7 +316,7 @@ class SeleniumHelpers:
         try:
             self.driver.find_element_by_css_selector(css_selector)
             return True
-        except common.exceptions.NoSuchElementException as no_such:
+        except common.exceptions.NoSuchElementException:
             return False
 
     def ensure_element_visible(self, css_selector=None, web_element=None):
