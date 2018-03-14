@@ -1,16 +1,16 @@
 import logging
-
 import requests
+import traceback
 import urlparse
+
 from selenium import common
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as expected_condition
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-import traceback
+from selenium.webdriver.support import expected_conditions as expected_condition
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 class SeleniumHelpers:
@@ -37,10 +37,23 @@ class SeleniumHelpers:
                 self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
             elif desired_capabilities.get("browserName").lower() == "chrome":
                 options = webdriver.ChromeOptions()
+
+                # Set the location of the Chrome binary you'd like to run.
+                if desired_capabilities.get("binary"):
+                    options.binary_location = desired_capabilities.get("binary")
+
+                # Configure browser options for headless use if specified
                 if desired_capabilities.get("headless"):
                     options.add_argument("headless")
+                    options.add_argument("disable-gpu")
+                    options.add_argument("no-sandbox")
+
+                # Update the scale factor (default is 2 in Chrome). Affects the resolution of screenshots, etc.
+                if desired_capabilities.get("scale_factor"):
+                    options.add_argument('force-device-scale-factor={}'.format(desired_capabilities["scale_factor"]))
+
                 self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities,
-                                               executable_path=desired_capabilities.get("binary", None),
+                                               executable_path=desired_capabilities.get("driver", "chromedriver"),
                                                chrome_options=options)
             elif desired_capabilities.get("browserName").lower() == "firefox":
                 binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
@@ -116,8 +129,8 @@ class SeleniumHelpers:
             height = self.execute_script("""
             var body = document.body;
             var html = document.documentElement;
-            var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, 
-            html.offsetHeight);
+
+            var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
             return height;
             """)
             return height
@@ -302,7 +315,7 @@ class SeleniumHelpers:
         try:
             self.driver.find_element_by_css_selector(css_selector)
             return True
-        except common.exceptions.NoSuchElementException:
+        except common.exceptions.NoSuchElementException as no_such:
             return False
 
     def ensure_element_visible(self, css_selector=None, web_element=None):
