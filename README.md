@@ -15,6 +15,9 @@ Field Handlers
 Input Generator
 : Creates a random user to input in a form.
 
+JCR Helpers
+: Simple helper methods for retrieving information about a site on AEM 6 via the JCR API
+
 Picard Client
 : Posts to a created Picard schema.
 
