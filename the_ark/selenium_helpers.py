@@ -46,7 +46,6 @@ class SeleniumHelpers:
                 if desired_capabilities.get("headless"):
                     options.add_argument("headless")
                     options.add_argument("disable-gpu")
-                    options.add_argument("no-sandbox")
 
                 # Update the scale factor (default is 2 in Chrome). Affects the resolution of screenshots, etc.
                 if desired_capabilities.get("scale_factor"):
@@ -57,7 +56,15 @@ class SeleniumHelpers:
                                                chrome_options=options)
             elif desired_capabilities.get("browserName").lower() == "firefox":
                 binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
-                self.driver = webdriver.Firefox(firefox_binary=binary)
+                options = webdriver.FirefoxOptions()
+                profile = webdriver.FirefoxProfile()
+                if desired_capabilities.get("headless"):
+                    profile.set_preference("layout.css.devPixelsPerPx", desired_capabilities.get("scale_factor", "1.0"))
+                    options.add_argument("--headless")
+
+                self.driver = webdriver.Firefox(firefox_binary=binary,
+                                                executable_path="/Users/vbraun/Desktop/geckodriver",
+                                                firefox_profile=profile, firefox_options=options)
             elif desired_capabilities.get("browserName").lower() == "phantomjs":
                 binary_path = desired_capabilities.get("binary", "phantomjs")
                 self.driver = webdriver.PhantomJS(binary_path)
@@ -126,15 +133,7 @@ class SeleniumHelpers:
 
     def get_content_height(self):
         try:
-            height = self.execute_script("""
-            var body = document.body;
-            var html = document.documentElement;
-
-            var height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, 
-            html.offsetHeight);
-            return height;
-            """)
-            return height
+            return int(round(self.get_element_size("html")))
         except Exception as script_error:
             message = "Unable to get the height of the page content.\n" \
                       "{0}".format(script_error)

@@ -9,7 +9,7 @@ import traceback
 DEFAULT_SCROLL_PADDING = 100
 SCREENSHOT_FILE_EXTENSION = "png"
 DEFAULT_PIXEL_MATCH_OFFSET = 100
-MAX_CHROME_HEIGHT = 16384.0 / 2
+FIREFOX_HEAD_HEIGHT = 75
 
 
 class Screenshot:
@@ -45,9 +45,10 @@ class Screenshot:
         self.footers = footer_ids
         self.scroll_padding = scroll_padding
         self.pixel_match_offset = pixel_match_offset
-        self.file_extenson = file_extenson
+        self.file_extenson = "png"
 
         self.headless = self.sh.desired_capabilities.get("headless", False)
+        self.head_padding = FIREFOX_HEAD_HEIGHT if self.sh.desired_capabilities ["browserName"] == "firefox" else 0
 
     def capture_page(self, viewport_only=False, padding=None, delay=0):
         """
@@ -259,37 +260,22 @@ class Screenshot:
         height = None
         current_scroll_position = None
         content_height = self.sh.get_content_height()
-
         if not viewport_only:
             # Store the current size and scroll position of the browser
             width, height = self.sh.get_window_size()
             current_scroll_position = self.sh.get_window_current_scroll_position()
 
-            # Resize the browser to encompass all of the page content
-            if content_height > MAX_CHROME_HEIGHT:
-                self.sh.resize_browser(width, MAX_CHROME_HEIGHT)
-            else:
-                self.sh.resize_browser(width, content_height)
+            self.sh.resize_browser(width, content_height + self.head_padding)
             time.sleep(delay)
 
-        self.sh.scroll_window_to_position()
+            self.sh.scroll_window_to_position()
 
-        # - Capture the image
-        if content_height > MAX_CHROME_HEIGHT and not viewport_only:
-            images_list = []
-            number_of_loops = int(math.ceil(content_height/MAX_CHROME_HEIGHT))
+            self.sh.get_content_height()
 
-            # Loop through, starting at one for multiplication purposes
-            for i in range(1, number_of_loops + 1):
-                image_data = self.sh.get_screenshot_base64()
-                images_list.append(Image.open(StringIO(image_data.decode('base64'))))
-                self.sh.scroll_window_to_position(MAX_CHROME_HEIGHT * i)
-            image = self._stitch_headless_images(images_list, content_height)
-        else:
-            # Gather image byte data
-            image_data = self.sh.get_screenshot_base64()
-            # Create an image canvas and write the byte data to it
-            image = Image.open(StringIO(image_data.decode('base64')))
+        # Gather image byte data
+        image_data = self.sh.get_screenshot_base64()
+        # Create an image canvas and write the byte data to it
+        image = Image.open(StringIO(image_data.decode('base64')))
 
         # - Return the browser to its previous size and scroll position
         if not viewport_only:
@@ -298,34 +284,6 @@ class Screenshot:
             time.sleep(delay)
 
         return self._create_image_file(image)
-
-    def _stitch_headless_images(self, images_list, content_height):
-        height_of_full_images = 0
-        remaining_height = 0
-        total_height = 0
-        total_width = 0
-
-        # Make the last image the height of the remaining content
-        for image in images_list[:-1]:
-            height_of_full_images += image.size[1]
-        remaining_height = (content_height * 2) - height_of_full_images
-
-        images_list[-1] = images_list[-1].crop((0,
-                                               images_list[-1].size[1] - remaining_height,
-                                               images_list[-1].size[0],
-                                               images_list[-1].size[1]))
-
-        for image in images_list:
-            total_width = image.size[0] if image.size[0] > total_width else total_width
-            total_height += image.size[1]
-
-        resulting_image = Image.new('RGB', (total_width, total_height))
-        current_height = 0
-        for image in images_list:
-            resulting_image.paste(im=image, box=(0, current_height))
-            current_height += image.size[1]
-
-        return resulting_image
 
     def _capture_paginated_page(self, padding=None):
         """
