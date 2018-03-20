@@ -52,7 +52,7 @@ class SeleniumHelpers:
                     options.add_argument('force-device-scale-factor={}'.format(desired_capabilities["scale_factor"]))
 
                 self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities,
-                                               executable_path=desired_capabilities.get("driver", "chromedriver"),
+                                               executable_path=desired_capabilities.get("webdriver", "chromedriver"),
                                                chrome_options=options)
             elif desired_capabilities.get("browserName").lower() == "firefox":
                 binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
@@ -63,7 +63,7 @@ class SeleniumHelpers:
                     options.add_argument("--headless")
 
                 self.driver = webdriver.Firefox(firefox_binary=binary,
-                                                executable_path="/Users/vbraun/Desktop/geckodriver",
+                                                executable_path=desired_capabilities.get("webdriver", "geckodriver"),
                                                 firefox_profile=profile, firefox_options=options)
             elif desired_capabilities.get("browserName").lower() == "phantomjs":
                 binary_path = desired_capabilities.get("binary", "phantomjs")
