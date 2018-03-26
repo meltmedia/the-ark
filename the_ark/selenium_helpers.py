@@ -36,6 +36,7 @@ class SeleniumHelpers:
             elif desired_capabilities.get("mobile"):
                 self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
             elif desired_capabilities.get("browserName").lower() == "chrome":
+                executable = desired_capabilities.get("webdriver", "chromedriver")
                 options = webdriver.ChromeOptions()
 
                 # Set the location of the Chrome binary you'd like to run.
@@ -52,19 +53,25 @@ class SeleniumHelpers:
                     options.add_argument('force-device-scale-factor={}'.format(desired_capabilities["scale_factor"]))
 
                 self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities,
-                                               executable_path=desired_capabilities.get("webdriver", "chromedriver"),
+                                               executable_path=executable,
                                                chrome_options=options)
             elif desired_capabilities.get("browserName").lower() == "firefox":
                 binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
+                executable = desired_capabilities.get("webdriver", "geckodriver")
+                print executable
                 options = webdriver.FirefoxOptions()
                 profile = webdriver.FirefoxProfile()
+
+                # Configure browser options for headless use if specified
                 if desired_capabilities.get("headless"):
                     profile.set_preference("layout.css.devPixelsPerPx", desired_capabilities.get("scale_factor", "1.0"))
                     options.add_argument("--headless")
 
                 self.driver = webdriver.Firefox(firefox_binary=binary,
-                                                executable_path=desired_capabilities.get("webdriver", "geckodriver"),
+                                                executable_path=executable,
                                                 firefox_profile=profile, firefox_options=options)
+                print self.driver.capabilities.get('version')
+                print self.driver.capabilities.get('browserVersion')
             elif desired_capabilities.get("browserName").lower() == "phantomjs":
                 binary_path = desired_capabilities.get("binary", "phantomjs")
                 self.driver = webdriver.PhantomJS(binary_path)
