@@ -285,6 +285,34 @@ class Screenshot:
 
         return self._create_image_file(image)
 
+    def _stitch_headless_images(self, images_list, content_height):
+        height_of_full_images = 0
+        remaining_height = 0
+        total_height = 0
+        total_width = 0
+
+        # Make the last image the height of the remaining content
+        for image in images_list[:-1]:
+            height_of_full_images += image.size[1]
+        remaining_height = (content_height * 2) - height_of_full_images
+
+        images_list[-1] = images_list[-1].crop((0,
+                                               images_list[-1].size[1] - remaining_height,
+                                               images_list[-1].size[0],
+                                               images_list[-1].size[1]))
+
+        for image in images_list:
+            total_width = image.size[0] if image.size[0] > total_width else total_width
+            total_height += image.size[1]
+
+        resulting_image = Image.new('RGB', (total_width, total_height))
+        current_height = 0
+        for image in images_list:
+            resulting_image.paste(im=image, box=(0, current_height))
+            current_height += image.size[1]
+
+        return resulting_image
+
     def _capture_paginated_page(self, padding=None):
         """
         Captures the page viewport by viewport, leaving an overlap of pixels the height of the self.padding variable

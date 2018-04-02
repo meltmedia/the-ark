@@ -58,7 +58,6 @@ class SeleniumHelpers:
             elif desired_capabilities.get("browserName").lower() == "firefox":
                 binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
                 executable = desired_capabilities.get("webdriver", "geckodriver")
-                print executable
                 options = webdriver.FirefoxOptions()
                 profile = webdriver.FirefoxProfile()
 
@@ -70,8 +69,6 @@ class SeleniumHelpers:
                 self.driver = webdriver.Firefox(firefox_binary=binary,
                                                 executable_path=executable,
                                                 firefox_profile=profile, firefox_options=options)
-                print self.driver.capabilities.get('version')
-                print self.driver.capabilities.get('browserVersion')
             elif desired_capabilities.get("browserName").lower() == "phantomjs":
                 binary_path = desired_capabilities.get("binary", "phantomjs")
                 self.driver = webdriver.PhantomJS(binary_path)
