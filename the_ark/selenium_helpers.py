@@ -50,7 +50,7 @@ class SeleniumHelpers:
 
                 # Update the scale factor (default is 2 in Chrome). Affects the resolution of screenshots, etc.
                 if desired_capabilities.get("scale_factor"):
-                    options.add_argument('force-device-scale-factor={}'.format(desired_capabilities["scale_factor"]))
+                    options.add_argument("force-device-scale-factor={}".format(desired_capabilities["scale_factor"]))
 
                 self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities,
                                                executable_path=executable,
@@ -63,7 +63,9 @@ class SeleniumHelpers:
 
                 # Configure browser options for headless use if specified
                 if desired_capabilities.get("headless"):
-                    profile.set_preference("layout.css.devPixelsPerPx", desired_capabilities.get("scale_factor", "1.0"))
+                    # Format scale factor into a string to match the firefox Spec
+                    scale_factor = "{}.0".format(desired_capabilities.get("scale_factor", 1))
+                    profile.set_preference("layout.css.devPixelsPerPx", scale_factor)
                     options.add_argument("--headless")
 
                 self.driver = webdriver.Firefox(firefox_binary=binary,

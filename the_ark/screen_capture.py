@@ -10,7 +10,7 @@ DEFAULT_SCROLL_PADDING = 100
 SCREENSHOT_FILE_EXTENSION = "png"
 DEFAULT_PIXEL_MATCH_OFFSET = 100
 FIREFOX_HEAD_HEIGHT = 75
-
+MAX_IMAGE_HEIGHT = 16384.0
 
 class Screenshot:
     """
@@ -49,6 +49,8 @@ class Screenshot:
 
         self.headless = self.sh.desired_capabilities.get("headless", False)
         self.head_padding = FIREFOX_HEAD_HEIGHT if self.sh.desired_capabilities ["browserName"] == "firefox" else 0
+        self.scale_factor = self.sh.desired_capabilities.get("scale_factor", 1)
+        self.max_height = MAX_IMAGE_HEIGHT / self.scale_factor
 
     def capture_page(self, viewport_only=False, padding=None, delay=0):
         """
@@ -256,26 +258,41 @@ class Screenshot:
                 pass
 
     def _capture_headless_page(self, viewport_only, delay=0):
-        width = None
-        height = None
-        current_scroll_position = None
-        content_height = self.sh.get_content_height()
-        if not viewport_only:
-            # Store the current size and scroll position of the browser
-            width, height = self.sh.get_window_size()
-            current_scroll_position = self.sh.get_window_current_scroll_position()
+        # Store the current size and scroll position of the browser
+        width, height = self.sh.get_window_size()
+        current_scroll_position = self.sh.get_window_current_scroll_position()
 
-            self.sh.resize_browser(width, content_height + self.head_padding)
+        if not viewport_only:
+            content_height = self.sh.get_content_height()
+            if content_height > self.max_height:
+                self.sh.resize_browser(width, self.max_height + self.head_padding)
+            else:
+                self.sh.resize_browser(width, content_height + self.head_padding)
             time.sleep(delay)
 
-            self.sh.scroll_window_to_position()
+            if content_height > self.max_height:
+                images_list = []
+                number_of_loops = int(math.ceil(content_height / self.max_height))
 
-            self.sh.get_content_height()
+                # Loop through, starting at one for multiplication purposes
+                for i in range(1, number_of_loops + 1):
+                    image_data = self.sh.get_screenshot_base64()
+                    images_list.append(Image.open(StringIO(image_data.decode('base64'))))
+                    self.sh.scroll_window_to_position(self.max_height * i)
 
-        # Gather image byte data
-        image_data = self.sh.get_screenshot_base64()
-        # Create an image canvas and write the byte data to it
-        image = Image.open(StringIO(image_data.decode('base64')))
+                # Combine al of the images into one capture
+                image = self._stitch_headless_images(images_list, content_height)
+            else:
+                # Gather image byte data
+                image_data = self.sh.get_screenshot_base64()
+                # Create an image canvas and write the byte data to it
+                image = Image.open(StringIO(image_data.decode('base64')))
+
+        else:
+            # Gather image byte data
+            image_data = self.sh.get_screenshot_base64()
+            # Create an image canvas and write the byte data to it
+            image = Image.open(StringIO(image_data.decode('base64')))
 
         # - Return the browser to its previous size and scroll position
         if not viewport_only:
@@ -294,7 +311,7 @@ class Screenshot:
         # Make the last image the height of the remaining content
         for image in images_list[:-1]:
             height_of_full_images += image.size[1]
-        remaining_height = (content_height * 2) - height_of_full_images
+        remaining_height = (content_height * self.scale_factor) - height_of_full_images
 
         images_list[-1] = images_list[-1].crop((0,
                                                images_list[-1].size[1] - remaining_height,
@@ -307,7 +324,8 @@ class Screenshot:
 
         resulting_image = Image.new('RGB', (total_width, total_height))
         current_height = 0
-        for image in images_list:
+        for i, image in enumerate(images_list):
+            image.save("/Users/vbraun/Desktop/test-images/test{}.png".format(i))
             resulting_image.paste(im=image, box=(0, current_height))
             current_height += image.size[1]
 
