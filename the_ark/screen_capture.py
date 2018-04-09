@@ -18,7 +18,7 @@ class Screenshot:
     """
     def __init__(self, selenium_helper, paginated=False, header_ids=None, footer_ids=None,
                  scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET,
-                 file_extenson=SCREENSHOT_FILE_EXTENSION):
+                 file_extenson=SCREENSHOT_FILE_EXTENSION, resize_delay=0):
         """
         Initializes the Screenshot class. These variable will be used throughout to help determine how to capture pages
         for this website.
@@ -51,8 +51,9 @@ class Screenshot:
         self.head_padding = FIREFOX_HEAD_HEIGHT if self.sh.desired_capabilities ["browserName"] == "firefox" else 0
         self.scale_factor = self.sh.desired_capabilities.get("scale_factor", 1)
         self.max_height = MAX_IMAGE_HEIGHT / self.scale_factor
+        self.resize_delay = resize_delay
 
-    def capture_page(self, viewport_only=False, padding=None, delay=0):
+    def capture_page(self, viewport_only=False, padding=None):
         """
         Entry point for a screenshot of the whole page. This will send the screenshot off to the correct methods
         depending on whether you need paginated screenshots, just the current viewport area, or the whole page in
@@ -64,7 +65,7 @@ class Screenshot:
         """
         try:
             if self.headless:
-                return self._capture_headless_page(viewport_only, delay)
+                return self._capture_headless_page(viewport_only)
             elif viewport_only:
                 return self._capture_single_viewport()
             elif self.paginated:
@@ -257,7 +258,7 @@ class Screenshot:
             except ElementError:
                 pass
 
-    def _capture_headless_page(self, viewport_only, delay=0):
+    def _capture_headless_page(self, viewport_only):
         # Store the current size and scroll position of the browser
         width, height = self.sh.get_window_size()
         current_scroll_position = self.sh.get_window_current_scroll_position()
@@ -268,7 +269,7 @@ class Screenshot:
                 self.sh.resize_browser(width, self.max_height + self.head_padding)
             else:
                 self.sh.resize_browser(width, content_height + self.head_padding)
-            time.sleep(delay)
+            time.sleep(self.resize_delay)
 
             if content_height > self.max_height:
                 images_list = []
@@ -281,7 +282,7 @@ class Screenshot:
                     self.sh.scroll_window_to_position(self.max_height * i)
 
                 # Combine al of the images into one capture
-                image = self._stitch_headless_images(images_list, content_height)
+                image = self._combine_vertical_images(images_list, content_height)
             else:
                 # Gather image byte data
                 image_data = self.sh.get_screenshot_base64()
@@ -298,11 +299,11 @@ class Screenshot:
         if not viewport_only:
             self.sh.resize_browser(width, height)
             self.sh.scroll_window_to_position(current_scroll_position)
-            time.sleep(delay)
+            time.sleep(self.resize_delay)
 
         return self._create_image_file(image)
 
-    def _stitch_headless_images(self, images_list, content_height):
+    def _combine_vertical_images(self, images_list, content_height):
         height_of_full_images = 0
         remaining_height = 0
         total_height = 0
@@ -325,7 +326,6 @@ class Screenshot:
         resulting_image = Image.new('RGB', (total_width, total_height))
         current_height = 0
         for i, image in enumerate(images_list):
-            image.save("/Users/vbraun/Desktop/test-images/test{}.png".format(i))
             resulting_image.paste(im=image, box=(0, current_height))
             current_height += image.size[1]
 
