@@ -259,6 +259,9 @@ class Screenshot:
                 pass
 
     def _capture_headless_page(self, viewport_only):
+        if self.paginated and not viewport_only:
+            return self._capture_headless_paginated_page()
+
         # Store the current size and scroll position of the browser
         width, height = self.sh.get_window_size()
         current_scroll_position = self.sh.get_window_current_scroll_position()
@@ -348,6 +351,39 @@ class Screenshot:
         while True:
             # Capture the image
             image_list.append(self._capture_single_viewport())
+
+            # Scroll for the next one!
+            self.sh.scroll_window_to_position(current_scroll_position + viewport_height - scroll_padding)
+            time.sleep(0.25)
+            new_scroll_position = self.sh.get_window_current_scroll_position()
+
+            # Break if the scroll position did not change (because it was at the bottom)
+            if new_scroll_position == current_scroll_position:
+                break
+            else:
+                current_scroll_position = new_scroll_position
+
+        return image_list
+
+    def _capture_headless_paginated_page(self, padding=None):
+        """
+        Captures the page viewport by viewport, leaving an overlap of pixels the height of the self.padding variable
+        between each image
+        """
+        image_list = []
+        scroll_padding = padding if padding else self.scroll_padding
+
+        # Scroll page to the top
+        self.sh.scroll_window_to_position(0)
+
+        current_scroll_position = 0
+        viewport_height = self.sh.driver.execute_script("return document.documentElement.clientHeight")
+
+        while True:
+            # Capture the image
+            image_data = self.sh.get_screenshot_base64()
+            image_file = self._create_image_file(Image.open(StringIO(image_data.decode('base64'))))
+            image_list.append(image_file)
 
             # Scroll for the next one!
             self.sh.scroll_window_to_position(current_scroll_position + viewport_height - scroll_padding)
