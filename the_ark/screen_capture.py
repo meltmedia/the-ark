@@ -270,6 +270,7 @@ class Screenshot:
             content_height = self.sh.get_content_height()
             if content_height > self.max_height:
                 self.sh.resize_browser(width, self.max_height + self.head_padding)
+                self.sh.scroll_window_to_position()
             else:
                 self.sh.resize_browser(width, content_height + self.head_padding)
             time.sleep(self.resize_delay)
@@ -281,7 +282,8 @@ class Screenshot:
                 # Loop through, starting at one for multiplication purposes
                 for i in range(1, number_of_loops + 1):
                     image_data = self.sh.get_screenshot_base64()
-                    images_list.append(Image.open(StringIO(image_data.decode('base64'))))
+                    image = Image.open(StringIO(image_data.decode('base64')))
+                    images_list.append(image)
                     self.sh.scroll_window_to_position(self.max_height * i)
 
                 # Combine al of the images into one capture
@@ -308,7 +310,6 @@ class Screenshot:
 
     def _combine_vertical_images(self, images_list, content_height):
         height_of_full_images = 0
-        remaining_height = 0
         total_height = 0
         total_width = 0
 
