@@ -10,7 +10,8 @@ DEFAULT_SCROLL_PADDING = 100
 SCREENSHOT_FILE_EXTENSION = "png"
 DEFAULT_PIXEL_MATCH_OFFSET = 100
 FIREFOX_HEAD_HEIGHT = 75
-MAX_IMAGE_HEIGHT = 16384.0
+MAX_IMAGE_HEIGHT = 32768.0
+
 
 class Screenshot:
     """
@@ -271,7 +272,7 @@ class Screenshot:
             if content_height > self.max_height:
                 self.sh.resize_browser(width, self.max_height + self.head_padding)
                 self.sh.scroll_window_to_position()
-            else:
+            elif height < content_height:
                 self.sh.resize_browser(width, content_height + self.head_padding)
             time.sleep(self.resize_delay)
 
