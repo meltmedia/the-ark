@@ -18,8 +18,9 @@ class Screenshot:
     A helper class for taking screenshots using a Selenium Helper instance
     """
     def __init__(self, selenium_helper, paginated=False, header_ids=None, footer_ids=None,
-                 scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET,
-                 file_extenson=SCREENSHOT_FILE_EXTENSION, resize_delay=0):
+                 content_container_selector="html", scroll_padding=DEFAULT_SCROLL_PADDING,
+                 pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET, file_extenson=SCREENSHOT_FILE_EXTENSION,
+                 resize_delay=0):
         """
         Initializes the Screenshot class. These variable will be used throughout to help determine how to capture pages
         for this website.
@@ -44,6 +45,7 @@ class Screenshot:
         self.paginated = paginated
         self.headers = header_ids
         self.footers = footer_ids
+        self.content_container_selector = content_container_selector
         self.scroll_padding = scroll_padding
         self.pixel_match_offset = pixel_match_offset
         self.file_extenson = "png"
@@ -268,7 +270,7 @@ class Screenshot:
         current_scroll_position = self.sh.get_window_current_scroll_position()
 
         if not viewport_only:
-            content_height = self.sh.get_content_height()
+            content_height = self.sh.get_content_height(self.content_container_selector)
             if content_height > self.max_height:
                 self.sh.resize_browser(width, self.max_height + self.head_padding)
                 self.sh.scroll_window_to_position()
