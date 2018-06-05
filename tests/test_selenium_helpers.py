@@ -13,7 +13,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sh = selenium_helpers.SeleniumHelpers()
-        cls.driver = cls.sh.create_driver(browserName="chrome", headless=True)
+        cls.driver = cls.sh.create_driver(browserName="phantomjs")
 
     @classmethod
     def tearDownClass(cls):
@@ -120,29 +120,29 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_window_size_width_valid(self):
         width = self.sh.get_window_size(get_only_width=True)
-        self.assertEqual(width, 800)
+        self.assertEqual(width, 400)
 
     def test_get_window_size_width_value_valid(self):
         window_width = self.sh.get_window_size(get_only_width=True)
-        self.assertEqual(window_width, 800)
+        self.assertEqual(window_width, 400)
 
     def test_get_window_size_height_valid(self):
         height = self.sh.get_window_size(get_only_height=True)
-        self.assertEqual(height, 600)
+        self.assertEqual(height, 300)
 
     def test_get_window_size_height_value_valid(self):
         window_height = self.sh.get_window_size(get_only_height=True)
-        self.assertEqual(window_height, 600)
+        self.assertEqual(window_height, 300)
 
     def test_get_window_size_valid(self):
         width, height = self.sh.get_window_size()
-        self.assertEqual(width, 800)
-        self.assertEqual(height, 600)
+        self.assertEqual(width, 400)
+        self.assertEqual(height, 300)
 
     def test_get_window_size_value_valid(self):
         window_width, window_height = self.sh.get_window_size()
-        self.assertEqual(window_width, 800)
-        self.assertEqual(window_height, 600)
+        self.assertEqual(window_width, 400)
+        self.assertEqual(window_height, 300)
 
     def test_window_size_invalid(self):
         sh = selenium_helpers.SeleniumHelpers()
@@ -207,16 +207,16 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_viewport_size_width_value_valid(self):
         viewport_width = self.sh.get_viewport_size(get_only_width=True)
-        self.assertEqual(viewport_width, 800)
+        self.assertEqual(viewport_width, 400)
 
     def test_get_viewport_size_height_value_valid(self):
         viewport_height = self.sh.get_viewport_size(get_only_height=True)
-        self.assertEqual(viewport_height, 600)
+        self.assertEqual(viewport_height, 300)
 
     def test_get_viewport_size_values_valid(self):
         viewport_width, viewport_height = self.sh.get_viewport_size()
-        self.assertEqual(viewport_width, 800)
-        self.assertEqual(viewport_height, 600)
+        self.assertEqual(viewport_width, 400)
+        self.assertEqual(viewport_height, 300)
 
     def test_viewport_size_invalid(self):
         sh = selenium_helpers.SeleniumHelpers()
@@ -849,7 +849,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_content_height_valid(self):
         height = self.sh.get_content_height()
-        self.assertEquals(height, 789)
+        self.assertEquals(height, 300)
 
     @patch("the_ark.selenium_helpers.SeleniumHelpers.execute_script")
     def test_get_content_height_invalid(self, mock_execute):
@@ -886,12 +886,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_element_location_valid(self):
         height = self.sh.get_element_location(".scrollable")
-        self.assertEquals(height, 252.0)
+        self.assertEquals(height, 269.0)
 
     def test_get_element_location_with_both_returned(self):
         x, y = self.sh.get_element_location(".scrollable", get_both_positions=True)
         self.assertEquals(x, 8.0)
-        self.assertEquals(y, 252.0)
+        self.assertEquals(y, 269.0)
 
     def test_get_element_location_with_x_only(self):
         width = self.sh.get_element_location(".scrollable", get_only_x_position=True)
@@ -900,7 +900,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_element_location_with_element(self):
         element = self.sh.get_element(css_selector=".scrollable")
         height = self.sh.get_element_location(web_element=element)
-        self.assertEquals(height, 252.0)
+        self.assertEquals(height, 269.0)
 
     def test_get_element_location_selenium_error(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_location,
