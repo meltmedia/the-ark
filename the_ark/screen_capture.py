@@ -18,9 +18,8 @@ class Screenshot:
     A helper class for taking screenshots using a Selenium Helper instance
     """
     def __init__(self, selenium_helper, paginated=False, header_ids=None, footer_ids=None,
-                 content_container_selector="html", scroll_padding=DEFAULT_SCROLL_PADDING,
-                 pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET, file_extenson=SCREENSHOT_FILE_EXTENSION,
-                 resize_delay=0):
+                 scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET,
+                 file_extenson=SCREENSHOT_FILE_EXTENSION, resize_delay=0, content_container_selector="html"):
         """
         Initializes the Screenshot class. These variable will be used throughout to help determine how to capture pages
         for this website.
