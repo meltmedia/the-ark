@@ -137,9 +137,17 @@ class SeleniumHelpers:
                       "{0}".format(get_window_size_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
-    def get_content_height(self):
+    def get_content_height(self, css_selector="html"):
+        """
+        This will return the content height of a website based on an element height. The element is defaulted to 'html'
+        but a custom CSS Selector can be passed in if 'html' does not get the full height of the content.
+        :param
+            -   css_selector:   string - The specific element that will be interacted with.
+        :return
+            - integer - The height of the content area based on the css_selector used.
+        """
         try:
-            return int(round(self.get_element_size("html")))
+            return int(round(self.get_element_size(css_selector)))
         except Exception as script_error:
             message = "Unable to get the height of the page content.\n" \
                       "{0}".format(script_error)

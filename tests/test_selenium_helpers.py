@@ -21,7 +21,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         cls.driver.quit()
 
     def setUp(self):
-        self.sh.load_url(SELENIUM_TEST_HTML, bypass_status_code_check=True)
+        self.sh.load_url("file://{}".format(SELENIUM_TEST_HTML), bypass_status_code_check=True)
 
     @patch("selenium.webdriver.Remote", autospec=True)
     def test_sauce_browser_valid(self, mock_sauce):
@@ -57,13 +57,13 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh.create_driver(browserName="chrome", headless=True)
         self.assertTrue(mock_chrome.called)
 
-    @patch("selenium.webdriver.Firefox", autospec=True)
+    @patch("selenium.webdriver.Firefox")
     def test_firefox_browser_valid(self, mock_firefox):
         mock_driver = Mock(spec=mock_firefox)
         mock_firefox.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
-        sh.create_driver(browserName="firefox")
-        mock_firefox.assert_called_once_with(firefox_binary=None)
+        sh.create_driver(browserName="firefox", headless=True)
+        self.assertTrue(mock_firefox.called)
 
     @patch("selenium.webdriver.PhantomJS", autospec=True)
     def test_phantomjs_browser_valid(self, mock_phantomjs):
@@ -148,22 +148,22 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh = selenium_helpers.SeleniumHelpers()
         self.assertRaises(selenium_helpers.DriverAttributeError, sh.get_window_size)
 
-    def test_add_coookie_is_valid(self):
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.add_cookie")
+    def test_add_coookie_is_valid(self, mock_add_cookie):
         self.sh.add_cookie("qa", "test")
-        self.assertTrue(self.driver.get_cookie("qa"), True)
-
-    def test_add_cookie_is_false(self):
-        self.sh.add_cookie("qa", "test")
-        self.assertTrue(self.driver.get_cookie("no_cookie") is None)
+        self.assertTrue(mock_add_cookie.called)
 
     def test_add_cookie_expection(self):
         with self.assertRaises(selenium_helpers.DriverAttributeError):
             self.sh.add_cookie(["qa", "test"], "test")
 
-    def test_delete_cookie_is_valid(self):
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.delete_cookie")
+    @patch("selenium.webdriver.remote.webdriver.WebDriver.add_cookie")
+    def test_delete_cookie_is_valid(self, mock_add_cookie, mock_delete_cookie):
         self.sh.add_cookie("qa", "test")
         self.sh.delete_cookie("qa")
-        self.assertEquals(self.driver.get_cookies(), [])
+        self.assertTrue(mock_add_cookie.called)
+        self.assertTrue(mock_delete_cookie.called)
 
     def test_delete_cookie_expection(self):
         with self.assertRaises(selenium_helpers.DriverAttributeError):
@@ -171,22 +171,22 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.get")
     def test_load_url_bypass_valid(self, mock_get):
-        self.sh.load_url("www.google.com", bypass_status_code_check=True)
+        self.sh.load_url("www.meltmedia.com", bypass_status_code_check=True)
         self.assertTrue(mock_get.called)
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.get")
-    def test_load_url_valid(self, mock_get):
-        self.sh.load_url("http://www.google.com")
-        self.assertTrue(mock_get.called)
+    def test_load_url_valid(self, mock_request):
+        self.sh.load_url("http://www.meltmedia.com")
+        self.assertTrue(mock_request.called)
 
     def test_load_404_url_invalid(self):
-        self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="http://www.google.com/404")
+        self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="http://www.meltmedia.com/404")
 
     def test_load_url_invalid(self):
-        self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="google.com")
+        self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="meltmedia.com")
 
     def test_get_current_url_valid(self):
-        test_url = "http://www.google.com/"
+        test_url = "https://www.meltmedia.com/"
         self.sh.load_url(test_url)
         current_url = self.sh.get_current_url()
         self.assertEqual(current_url, test_url)
@@ -197,7 +197,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     @patch("selenium.webdriver.remote.webdriver.WebDriver.refresh")
     def test_refresh_driver_valid(self, mock_refresh):
-        self.sh.load_url("http://www.google.com")
+        self.sh.load_url("http://www.meltmedia.com")
         self.sh.refresh_driver()
         self.assertTrue(mock_refresh.called)
 
@@ -272,7 +272,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     @patch("selenium.webdriver.remote.webdriver.WebDriver.close")
     def test_close_window_valid(self, mock_close):
         sh = selenium_helpers.SeleniumHelpers()
-        sh.create_driver(browserName="phantomjs")
+        sh.create_driver(browserName="firefox", headless=True)
         sh.close_window()
         self.assertTrue(mock_close.called)
 
@@ -283,7 +283,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     @patch("selenium.webdriver.remote.webdriver.WebDriver.quit")
     def test_quit_window_valid(self, mock_quit):
         sh = selenium_helpers.SeleniumHelpers()
-        sh.create_driver(browserName="phantomjs")
+        sh.create_driver(browserName="firefox", headless=True)
         sh.quit_driver()
         self.assertTrue(mock_quit.called)
 
@@ -324,7 +324,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_valid(self):
         valid_css_selector = ".valid"
-        self.assertEqual(self.sh.get_element(valid_css_selector).location, {'y': 21.4375, 'x': 48})
+        self.assertEqual(self.sh.get_element(valid_css_selector).location, {'y': 21.0, 'x': 48.0})
 
     def test_get_invalid(self):
         self.assertRaises(selenium_helpers.ElementError, self.sh.get_element, ".invalid")
@@ -435,6 +435,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_move_cursor_to_location_click_valid(self, mock_click):
         self.sh.move_cursor_to_location(15, 15, click=True)
         self.assertTrue(mock_click.called)
+
 
     def test_move_cursor_to_location_invalid(self):
         self.assertRaises(selenium_helpers.CursorLocationError, self.sh.move_cursor_to_location, x_position="")
@@ -848,11 +849,11 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_content_height_valid(self):
         height = self.sh.get_content_height()
-        self.assertEquals(height, 849)
+        self.assertEquals(height, 300)
 
     @patch("the_ark.selenium_helpers.SeleniumHelpers.execute_script")
     def test_get_content_height_invalid(self, mock_execute):
-        mock_execute.side_effect = Exception("Boo!")
+        mock_execute.side_effect = Exception("This is a test.")
         self.assertRaises(Exception, self.sh.get_content_height)
 
     def test_get_element_size_valid(self):
@@ -885,12 +886,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_element_location_valid(self):
         height = self.sh.get_element_location(".scrollable")
-        self.assertEquals(height, 296.4375)
+        self.assertEquals(height, 269.0)
 
     def test_get_element_location_with_both_returned(self):
         x, y = self.sh.get_element_location(".scrollable", get_both_positions=True)
         self.assertEquals(x, 8.0)
-        self.assertEquals(y, 296.4375)
+        self.assertEquals(y, 269.0)
 
     def test_get_element_location_with_x_only(self):
         width = self.sh.get_element_location(".scrollable", get_only_x_position=True)
@@ -899,7 +900,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_element_location_with_element(self):
         element = self.sh.get_element(css_selector=".scrollable")
         height = self.sh.get_element_location(web_element=element)
-        self.assertEquals(height, 296.4375)
+        self.assertEquals(height, 269.0)
 
     def test_get_element_location_selenium_error(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_location,
