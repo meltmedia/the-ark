@@ -273,7 +273,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     @patch("selenium.webdriver.remote.webdriver.WebDriver.close")
     def test_close_window_valid(self, mock_close):
         sh = selenium_helpers.SeleniumHelpers()
-        sh.create_driver(browserName="firefox", headless=True)
+        sh.create_driver(browserName="phantomjs")
         sh.close_window()
         self.assertTrue(mock_close.called)
 
@@ -284,7 +284,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     @patch("selenium.webdriver.remote.webdriver.WebDriver.quit")
     def test_quit_window_valid(self, mock_quit):
         sh = selenium_helpers.SeleniumHelpers()
-        sh.create_driver(browserName="firefox", headless=True)
+        sh.create_driver(browserName="phantomjs")
         sh.quit_driver()
         self.assertTrue(mock_quit.called)
 
@@ -886,12 +886,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_element_location_valid(self):
         height = self.sh.get_element_location(".scrollable")
-        self.assertEquals(height, 269.0)
+        self.assertAlmostEqual(height, 269.0, 30)
 
     def test_get_element_location_with_both_returned(self):
         x, y = self.sh.get_element_location(".scrollable", get_both_positions=True)
         self.assertEquals(x, 8.0)
-        self.assertEquals(y, 269.0)
+        self.assertAlmostEqual(y, 269.0, 30)
 
     def test_get_element_location_with_x_only(self):
         width = self.sh.get_element_location(".scrollable", get_only_x_position=True)
@@ -900,7 +900,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_element_location_with_element(self):
         element = self.sh.get_element(css_selector=".scrollable")
         height = self.sh.get_element_location(web_element=element)
-        self.assertEquals(height, 269.0)
+        self.assertAlmostEqual(height, 269.0, 30)
 
     def test_get_element_location_selenium_error(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_location,
