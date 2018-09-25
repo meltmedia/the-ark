@@ -886,12 +886,12 @@ class SeleniumHelpersTestCase(unittest.TestCase):
 
     def test_get_element_location_valid(self):
         height = self.sh.get_element_location(".scrollable")
-        self.assertAlmostEqual(height, 269.0, 30)
+        self.assertGreaterEqual(height, 250.0)
 
     def test_get_element_location_with_both_returned(self):
         x, y = self.sh.get_element_location(".scrollable", get_both_positions=True)
         self.assertEquals(x, 8.0)
-        self.assertAlmostEqual(y, 269.0, 30)
+        self.assertGreaterEqual(height, 250.0)
 
     def test_get_element_location_with_x_only(self):
         width = self.sh.get_element_location(".scrollable", get_only_x_position=True)
@@ -900,7 +900,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_element_location_with_element(self):
         element = self.sh.get_element(css_selector=".scrollable")
         height = self.sh.get_element_location(web_element=element)
-        self.assertAlmostEqual(height, 269.0, 30)
+        self.assertGreaterEqual(height, 250.0)
 
     def test_get_element_location_selenium_error(self):
         self.assertRaises(selenium_helpers.SeleniumHelperExceptions, self.sh.get_element_location,
