@@ -180,7 +180,8 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         self.assertTrue(mock_request.called)
 
     def test_load_404_url_invalid(self):
-        self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="http://www.meltmedia.com/404")
+        with self.assertRaises(selenium_helpers.DriverURLError):
+            self.sh.load_url("http://www.meltmedia.com/test")
 
     def test_load_url_invalid(self):
         self.assertRaises(selenium_helpers.DriverURLError, self.sh.load_url, url="meltmedia.com")
@@ -851,10 +852,9 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         height = self.sh.get_content_height()
         self.assertEquals(height, 300)
 
-    @patch("the_ark.selenium_helpers.SeleniumHelpers.execute_script")
-    def test_get_content_height_invalid(self, mock_execute):
-        mock_execute.side_effect = Exception("This is a test.")
-        self.assertRaises(Exception, self.sh.get_content_height)
+    def test_get_content_height_invalid(self):
+        with self.assertRaises(Exception):
+            self.sh.get_content_height("test")
 
     def test_get_element_size_valid(self):
         height = self.sh.get_element_size(".scrollable")
