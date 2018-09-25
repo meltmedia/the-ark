@@ -891,7 +891,7 @@ class SeleniumHelpersTestCase(unittest.TestCase):
     def test_get_element_location_with_both_returned(self):
         x, y = self.sh.get_element_location(".scrollable", get_both_positions=True)
         self.assertEquals(x, 8.0)
-        self.assertGreaterEqual(height, 250.0)
+        self.assertGreaterEqual(y, 250.0)
 
     def test_get_element_location_with_x_only(self):
         width = self.sh.get_element_location(".scrollable", get_only_x_position=True)
