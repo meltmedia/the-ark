@@ -65,16 +65,16 @@ class SeleniumHelpersTestCase(unittest.TestCase):
         sh.create_driver(browserName="firefox", headless=True)
         self.assertTrue(mock_firefox.called)
 
-    @patch("selenium.webdriver.PhantomJS", autospec=True)
+    @patch("selenium.webdriver.PhantomJS")
     def test_phantomjs_browser_valid(self, mock_phantomjs):
         mock_driver = Mock(spec=mock_phantomjs)
         mock_phantomjs.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
         sh.create_driver(browserName="phantomjs")
-        mock_phantomjs.assert_called_once_with()
+        self.assertTrue(mock_phantomjs.called)
 
     @patch("selenium.webdriver.PhantomJS", autospec=True)
-    def test_phantomjs_browser_valid(self, mock_phantomjs):
+    def test_phantomjs_browser_binary_valid(self, mock_phantomjs):
         mock_driver = Mock(spec=mock_phantomjs)
         mock_phantomjs.return_value = mock_driver
         sh = selenium_helpers.SeleniumHelpers()
