@@ -1,20 +1,19 @@
 import logging
-
 import requests
+import traceback
 import urlparse
+
 from selenium import common
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as expected_condition
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-import traceback
+from selenium.webdriver.support import expected_conditions as expected_condition
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 class SeleniumHelpers:
-
     def __init__(self):
         """
         Methods to do various and repeatable selenium tasks.
@@ -37,15 +36,41 @@ class SeleniumHelpers:
             elif desired_capabilities.get("mobile"):
                 self.driver = webdriver.Remote(desired_capabilities=desired_capabilities)
             elif desired_capabilities.get("browserName").lower() == "chrome":
+                executable = desired_capabilities.get("webdriver", "chromedriver")
                 options = webdriver.ChromeOptions()
+
+                # Set the location of the Chrome binary you'd like to run.
+                if desired_capabilities.get("binary"):
+                    options.binary_location = desired_capabilities.get("binary")
+
+                # Configure browser options for headless use if specified
                 if desired_capabilities.get("headless"):
                     options.add_argument("headless")
+                    options.add_argument("disable-gpu")
+
+                # Update the scale factor (default is 2 in Chrome). Affects the resolution of screenshots, etc.
+                if desired_capabilities.get("scale_factor"):
+                    options.add_argument("force-device-scale-factor={}".format(desired_capabilities["scale_factor"]))
+
                 self.driver = webdriver.Chrome(desired_capabilities=desired_capabilities,
-                                               executable_path=desired_capabilities.get("binary", None),
+                                               executable_path=executable,
                                                chrome_options=options)
             elif desired_capabilities.get("browserName").lower() == "firefox":
                 binary = FirefoxBinary(desired_capabilities["binary"]) if "binary" in desired_capabilities else None
-                self.driver = webdriver.Firefox(firefox_binary=binary)
+                executable = desired_capabilities.get("webdriver", "geckodriver")
+                options = webdriver.FirefoxOptions()
+                profile = webdriver.FirefoxProfile()
+
+                # Configure browser options for headless use if specified
+                if desired_capabilities.get("headless"):
+                    # Format scale factor into a string to match the firefox Spec
+                    scale_factor = "{}.0".format(desired_capabilities.get("scale_factor", 1))
+                    profile.set_preference("layout.css.devPixelsPerPx", scale_factor)
+                    options.add_argument("--headless")
+
+                self.driver = webdriver.Firefox(firefox_binary=binary,
+                                                executable_path=executable,
+                                                firefox_profile=profile, firefox_options=options)
             elif desired_capabilities.get("browserName").lower() == "phantomjs":
                 binary_path = desired_capabilities.get("binary", "phantomjs")
                 self.driver = webdriver.PhantomJS(binary_path)
@@ -112,24 +137,17 @@ class SeleniumHelpers:
                       "{0}".format(get_window_size_error)
             raise DriverAttributeError(msg=message, stacktrace=traceback.format_exc())
 
-    def get_content_height(self):
+    def get_content_height(self, css_selector="html"):
         """
-        Determines the height of the content on the page. Returns the greatest height out of the body.scrollHeight, 
-        body.offsetHeight, html.clientHeight, html.scrollHeight, or html.offsetHeight
-        favorites bar, etc.
+        This will return the content height of a website based on an element height. The element is defaulted to 'html'
+        but a custom CSS Selector can be passed in if 'html' does not get the full height of the content.
+        :param
+            -   css_selector:   string - The specific element that will be interacted with.
         :return
-            -   height: integer - The height of the page content in pixels.
+            - integer - The height of the content area based on the css_selector used.
         """
         try:
-            height = self.execute_script("""
-            var body = document.body;
-            var html = document.documentElement;
-    
-            var height = Math.max(body.scrollHeight, body.offsetHeight, 
-                html.clientHeight, html.scrollHeight, html.offsetHeight);
-            return height;
-            """)
-            return height
+            return int(round(self.get_element_size(css_selector)))
         except Exception as script_error:
             message = "Unable to get the height of the page content.\n" \
                       "{0}".format(script_error)
@@ -331,7 +349,7 @@ class SeleniumHelpers:
                 raise ElementError(msg=message, stacktrace=traceback.format_exc(),
                                    current_url=self.driver.current_url, css_selector=css_selector)
         if not element_visible:
-            message = "The element is not visible on page '{0}'. | CSS Selector: '{1}' or WebElement passed through."\
+            message = "The element is not visible on page '{0}'. | CSS Selector: '{1}' or WebElement passed through." \
                 .format(self.driver.current_url, css_selector)
             raise ElementNotVisibleError(msg=message, stacktrace=traceback.format_exc(),
                                          current_url=self.driver.current_url, css_selector=css_selector)
@@ -441,7 +459,7 @@ class SeleniumHelpers:
             ActionChains(self.driver).move_to_element_with_offset(web_element, x_position, y_position).click().perform()
         except SeleniumHelperExceptions as click_location_error:
             click_location_error.msg = "Unable to click the position ({0}, {1}). | " \
-                                       "Based off the CSS Selector: '{2}' or WebElement passed through. | "\
+                                       "Based off the CSS Selector: '{2}' or WebElement passed through. | " \
                                            .format(x_position, y_position, css_selector) + click_location_error.msg
             raise click_location_error
         except Exception as unexpected_error:
@@ -875,7 +893,7 @@ class SeleniumHelpers:
                                          scroll_at_bottom_error.msg
             raise scroll_at_bottom_error
         except Exception as unexpected_error:
-            message = "Unable to determine if the scroll position of the element on page '{0}' is at the bottom."\
+            message = "Unable to determine if the scroll position of the element on page '{0}' is at the bottom." \
                       "\n{1}".format(self.driver.current_url, unexpected_error)
             message += " | Based off the CSS Selector: '{0}' or WebElement passed through.".format(css_selector)
             raise ElementError(msg=message, stacktrace=traceback.format_exc(),
@@ -908,7 +926,7 @@ class SeleniumHelpers:
                 return True
         except SeleniumHelperExceptions as scroll_at_right_error:
             scroll_at_right_error.msg = "Unable to determine if element is scrolled to the most right. | " + \
-                                         scroll_at_right_error.msg
+                                        scroll_at_right_error.msg
             raise scroll_at_right_error
         except Exception as unexpected_error:
             message = "Unable to determine if the scroll position of the element on page '{0}' is at the most right." \

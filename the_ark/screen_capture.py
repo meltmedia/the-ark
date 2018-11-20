@@ -1,3 +1,4 @@
+import math
 import numpy
 from PIL import Image
 from the_ark.selenium_helpers import SeleniumHelperExceptions, ElementNotVisibleError, ElementError
@@ -8,6 +9,8 @@ import traceback
 DEFAULT_SCROLL_PADDING = 100
 SCREENSHOT_FILE_EXTENSION = "png"
 DEFAULT_PIXEL_MATCH_OFFSET = 100
+FIREFOX_HEAD_HEIGHT = 75
+MAX_IMAGE_HEIGHT = 32768.0
 
 
 class Screenshot:
@@ -16,7 +19,7 @@ class Screenshot:
     """
     def __init__(self, selenium_helper, paginated=False, header_ids=None, footer_ids=None,
                  scroll_padding=DEFAULT_SCROLL_PADDING, pixel_match_offset=DEFAULT_PIXEL_MATCH_OFFSET,
-                 file_extenson=SCREENSHOT_FILE_EXTENSION):
+                 file_extenson=SCREENSHOT_FILE_EXTENSION, resize_delay=0, content_container_selector="html"):
         """
         Initializes the Screenshot class. These variable will be used throughout to help determine how to capture pages
         for this website.
@@ -41,9 +44,16 @@ class Screenshot:
         self.paginated = paginated
         self.headers = header_ids
         self.footers = footer_ids
+        self.content_container_selector = content_container_selector
         self.scroll_padding = scroll_padding
         self.pixel_match_offset = pixel_match_offset
-        self.file_extenson = file_extenson
+        self.file_extenson = "png"
+
+        self.headless = self.sh.desired_capabilities.get("headless", False)
+        self.head_padding = FIREFOX_HEAD_HEIGHT if self.sh.desired_capabilities ["browserName"] == "firefox" else 0
+        self.scale_factor = self.sh.desired_capabilities.get("scale_factor", 1)
+        self.max_height = MAX_IMAGE_HEIGHT / self.scale_factor
+        self.resize_delay = resize_delay
 
     def capture_page(self, viewport_only=False, padding=None):
         """
@@ -56,7 +66,9 @@ class Screenshot:
             - StringIO: A StingIO object containing the captured image(s)
         """
         try:
-            if viewport_only:
+            if self.headless:
+                return self._capture_headless_page(viewport_only)
+            elif viewport_only:
                 return self._capture_single_viewport()
             elif self.paginated:
                 return self._capture_paginated_page(padding)
@@ -93,8 +105,9 @@ class Screenshot:
             self.sh.scroll_an_element(css_selector, scroll_top=True)
 
             while True:
-                # Capture the image
-                if viewport_only:
+                if self.headless:
+                    image_list.append(self._capture_headless_page(viewport_only))
+                elif viewport_only:
                     image_list.append(self._capture_single_viewport())
                 else:
                     image_list.append(self._capture_full_page())
@@ -247,6 +260,83 @@ class Screenshot:
             except ElementError:
                 pass
 
+    def _capture_headless_page(self, viewport_only):
+        if self.paginated and not viewport_only:
+            return self._capture_headless_paginated_page()
+
+        # Store the current size and scroll position of the browser
+        width, height = self.sh.get_window_size()
+        current_scroll_position = self.sh.get_window_current_scroll_position()
+
+        if not viewport_only:
+            content_height = self.sh.get_content_height(self.content_container_selector)
+            if content_height > self.max_height:
+                self.sh.resize_browser(width, self.max_height + self.head_padding)
+                self.sh.scroll_window_to_position()
+            elif height < content_height:
+                self.sh.resize_browser(width, content_height + self.head_padding)
+            time.sleep(self.resize_delay)
+
+            if content_height > self.max_height:
+                images_list = []
+                number_of_loops = int(math.ceil(content_height / self.max_height))
+
+                # Loop through, starting at one for multiplication purposes
+                for i in range(1, number_of_loops + 1):
+                    image_data = self.sh.get_screenshot_base64()
+                    image = Image.open(StringIO(image_data.decode('base64')))
+                    images_list.append(image)
+                    self.sh.scroll_window_to_position(self.max_height * i)
+
+                # Combine al of the images into one capture
+                image = self._combine_vertical_images(images_list, content_height)
+            else:
+                # Gather image byte data
+                image_data = self.sh.get_screenshot_base64()
+                # Create an image canvas and write the byte data to it
+                image = Image.open(StringIO(image_data.decode('base64')))
+
+        else:
+            # Gather image byte data
+            image_data = self.sh.get_screenshot_base64()
+            # Create an image canvas and write the byte data to it
+            image = Image.open(StringIO(image_data.decode('base64')))
+
+        # - Return the browser to its previous size and scroll position
+        if not viewport_only:
+            self.sh.resize_browser(width, height)
+            self.sh.scroll_window_to_position(current_scroll_position)
+            time.sleep(self.resize_delay)
+
+        return self._create_image_file(image)
+
+    def _combine_vertical_images(self, images_list, content_height):
+        height_of_full_images = 0
+        total_height = 0
+        total_width = 0
+
+        # Make the last image the height of the remaining content
+        for image in images_list[:-1]:
+            height_of_full_images += image.size[1]
+        remaining_height = (content_height * self.scale_factor) - height_of_full_images
+
+        images_list[-1] = images_list[-1].crop((0,
+                                               images_list[-1].size[1] - remaining_height,
+                                               images_list[-1].size[0],
+                                               images_list[-1].size[1]))
+
+        for image in images_list:
+            total_width = image.size[0] if image.size[0] > total_width else total_width
+            total_height += image.size[1]
+
+        resulting_image = Image.new('RGB', (total_width, total_height))
+        current_height = 0
+        for i, image in enumerate(images_list):
+            resulting_image.paste(im=image, box=(0, current_height))
+            current_height += image.size[1]
+
+        return resulting_image
+
     def _capture_paginated_page(self, padding=None):
         """
         Captures the page viewport by viewport, leaving an overlap of pixels the height of the self.padding variable
@@ -264,6 +354,39 @@ class Screenshot:
         while True:
             # Capture the image
             image_list.append(self._capture_single_viewport())
+
+            # Scroll for the next one!
+            self.sh.scroll_window_to_position(current_scroll_position + viewport_height - scroll_padding)
+            time.sleep(0.25)
+            new_scroll_position = self.sh.get_window_current_scroll_position()
+
+            # Break if the scroll position did not change (because it was at the bottom)
+            if new_scroll_position == current_scroll_position:
+                break
+            else:
+                current_scroll_position = new_scroll_position
+
+        return image_list
+
+    def _capture_headless_paginated_page(self, padding=None):
+        """
+        Captures the page viewport by viewport, leaving an overlap of pixels the height of the self.padding variable
+        between each image
+        """
+        image_list = []
+        scroll_padding = padding if padding else self.scroll_padding
+
+        # Scroll page to the top
+        self.sh.scroll_window_to_position(0)
+
+        current_scroll_position = 0
+        viewport_height = self.sh.driver.execute_script("return document.documentElement.clientHeight")
+
+        while True:
+            # Capture the image
+            image_data = self.sh.get_screenshot_base64()
+            image_file = self._create_image_file(Image.open(StringIO(image_data.decode('base64'))))
+            image_list.append(image_file)
 
             # Scroll for the next one!
             self.sh.scroll_window_to_position(current_scroll_position + viewport_height - scroll_padding)
