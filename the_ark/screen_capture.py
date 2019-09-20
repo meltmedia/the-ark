@@ -190,7 +190,7 @@ class Screenshot:
         cropped_image = self._get_image_data(viewport_only=True)
         return self._create_image_file(cropped_image)
 
-    def _capture_full_page(self):
+        def _capture_full_page(self):
         """
         Captures an image of the whole page. If there are sitcky elements, as specified by the footers and headers
         class variables the code will, the code will capture them only where appropriate ie. headers on top, footers on
@@ -198,36 +198,37 @@ class Screenshot:
         :return
             - StringIO: A StingIO object containing the captured image
         """
-        if self.headers and self.footers:
-            # Capture viewport size window of the headers
+        images = []
+        current_height = 0
+        viewport_height = self.sh.driver.execute_script("return document.documentElement.clientHeight")
+        content_height = self.sh.get_content_height(self.content_container_selector)
+
+        if self.sh.get_window_current_scroll_position != 0:
             self.sh.scroll_window_to_position(0)
-            self._hide_elements(self.footers)
-            header_image = self._get_image_data(True)
+            time.sleep(1)
 
-            # - Capture the page from the bottom without headers
-            self._show_elements(self.footers)
-            #TODO: Update when scroll position updates to have a scroll to bottom option
-            self.sh.scroll_window_to_position(40000)
-            self._hide_elements(self.headers)
-            footer_image = self._get_image_data()
+        while current_height < content_height:
+            if current_height == 0 and self.footers:
+                self.sh.scroll_window_to_position(0)
+                self._hide_elements(self.footers)
+                images.append(self._get_image_data())
+            elif current_height == viewport_height and self.headers:
+                self._hide_elements(self.headers)
+            elif current_height == content_height:
+                self._show_elements(self.footers)
 
-            # Show all header elements again
+            images.append(self._get_image_data())
+            current_height += viewport_height - 200
+            self.sh.scroll_window_to_position(current_height)
+            time.sleep(1)
+
+        if self.headers:
             self._show_elements(self.headers)
+        if self.footers:
+            self._show_elements(self.footers)
 
-            # Send the two images off to get merged into one
-            image_data = self._crop_and_stitch_image(header_image, footer_image)
-        elif self.headers:
-            # Scroll to the top so that the headers are not covering content
-            self.sh.scroll_window_to_position(0)
-            time.sleep(0.5)
-            image_data = self._get_image_data()
-        elif self.footers:
-            # Scroll to the bottom so that the footer items are not covering content
-            self.sh.scroll_window_to_position(40000)
-            time.sleep(0.5)
-            image_data = self._get_image_data()
-        else:
-            image_data = self._get_image_data()
+        cropped_images = self._crop_images(images)
+        image_data = self._combine_vertical_images(cropped_images, content_height)
 
         return self._create_image_file(image_data)
 
@@ -440,6 +441,56 @@ class Screenshot:
             # Crop everything of the image but the visible area
             cropped_image = image.crop(crop_box)
             return cropped_image
+
+        def _crop_images(self, images_list):
+        """
+        This object takes in an array of images. It will search for a block of 25 pixels that matches between the two
+        images being compared. Once it finds that point the correct image will be cropped just about the matched point.
+        Once all images are cropped, if they need to be, a new array of the cropped images is returned.
+        :param
+            - images_list:     array - An array of images that need to be cropped
+        :return
+            - cropped_images:   array - The resulting image array of the cropped images
+        """
+        try:
+            cropped_images = []
+            for counter, image in enumerate(images_list):
+                first_image = image
+                if counter + 1 < len(images_list):
+                    first_image_array = numpy.asarray(first_image)
+                    second_image = images_list[counter + 1]
+                    second_image_array = numpy.asarray(second_image)
+
+                    crop_row = 0
+                    first_image_height = 0
+                    second_image_first_twenty_five = second_image_array[ : 25]
+
+                    for first_image_row_count, first_image_row in enumerate(first_image_array):
+                        if numpy.array_equal(first_image_row, second_image_array[0]):
+                            for second_image_row_count, row in enumerate(second_image_first_twenty_five):
+                                if numpy.array_equal(first_image_array[first_image_row_count + second_image_row_count], second_image_first_twenty_five[second_image_row_count]):
+                                    if second_image_row_count == 25 - 1:
+                                        crop_row = first_image_row_count
+
+                        if crop_row != 0:
+                            first_image_height = crop_row
+                        else:
+                            first_image_height = first_image.size[1]
+
+                else:
+                    first_image_height = first_image.size[1]
+
+                first_image_width = first_image.size[0]
+                crop_box = (0, 0, first_image_width, first_image_height)
+                first_image = first_image.crop(crop_box)
+
+                cropped_images.append(first_image)
+
+            return cropped_images
+
+        except Exception as e:
+            message = "Error while cropping and stitching a full page screenshot | {0}".format(e)
+            raise ScreenshotException(message, stacktrace=traceback.format_exc())
 
     def _crop_and_stitch_image(self, header_image, footer_image):
         """
