@@ -274,7 +274,7 @@ class Screenshot:
                 self.sh.resize_browser(width, self.max_height + self.head_padding)
             elif height < content_height:
                 self.sh.resize_browser(width, content_height + self.head_padding)
-            time.sleep(self.resize_delay)
+            time.sleep(1)
             self.sh.scroll_window_to_position(scroll_bottom=True)
 
             if content_height > self.max_height:
