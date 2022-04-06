@@ -2,7 +2,7 @@ import base64
 import math
 import numpy
 from PIL import Image
-from src.the_ark.selenium_helpers import SeleniumHelperExceptions, ElementNotVisibleError, ElementError
+from the_ark.selenium_helpers import SeleniumHelperExceptions, ElementNotVisibleError, ElementError
 from io import StringIO, BytesIO
 import time
 import traceback
