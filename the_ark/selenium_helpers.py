@@ -47,6 +47,8 @@ class SeleniumHelpers:
                 if desired_capabilities.get("headless"):
                     options.add_argument("headless")
                     options.add_argument("disable-gpu")
+                    options.add_argument('--ignore-ssl-errors=yes')
+                    options.add_argument('--ignore-certificate-errors')
 
                 # Update the scale factor (default is 2 in Chrome). Affects the resolution of screenshots, etc.
                 if desired_capabilities.get("scale_factor"):
